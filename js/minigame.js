@@ -8,12 +8,18 @@ const mgUseCounts = {};
 const MG_CONTAINER = () => document.getElementById('mg-overlay');
 
 function showMinigame(type, difficulty, label, callback, forcedPhrase) {
+  // Safety: if mgActive is stuck but overlay is hidden, reset it
+  const overlay = MG_CONTAINER();
+  if (mgActive && overlay && overlay.classList.contains('hidden')) {
+    mgActive = false;
+    mgResolve = null;
+  }
+
   if (mgActive) { callback(1); return; }
   mgActive = true;
   mgResolve = callback;
 
-  const overlay = MG_CONTAINER();
-  if (!overlay) { callback(1); return; }
+  if (!overlay) { mgActive = false; callback(1); return; }
   overlay.classList.remove('hidden');
   overlay.innerHTML = '';
 
@@ -49,8 +55,16 @@ function resolveMinigame(mult) {
   mgActive = false;
   const overlay = MG_CONTAINER();
   if (overlay) overlay.classList.add('hidden');
-  if (mgResolve) { mgResolve(mult); mgResolve = null; }
+  if (mgResolve) { const cb = mgResolve; mgResolve = null; cb(mult); }
 }
+
+// Escape key = abandon minigame with 0.5x mult (safety valve)
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && mgActive) {
+    e.preventDefault();
+    resolveMinigame(0.5);
+  }
+});
 
 // ── TIMING GAME — single moving bar ──
 function buildTimingGame(el, difficulty, label) {

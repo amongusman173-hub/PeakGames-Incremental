@@ -283,6 +283,15 @@ function gameTick() {
     saveGame();
   }
 
+  // Safety: reset stuck minigame every 30s (120 ticks)
+  if (G.tickCount % 120 === 0 && typeof mgActive !== 'undefined' && mgActive) {
+    const overlay = document.getElementById('mg-overlay');
+    if (overlay && overlay.classList.contains('hidden')) {
+      mgActive = false;
+      mgResolve = null;
+    }
+  }
+
   // UI updates — header every tick, active tab every 2 ticks, banners every 4
   updateHeader();
   if (G.tickCount % 2 === 0) updateActiveTabUI();
