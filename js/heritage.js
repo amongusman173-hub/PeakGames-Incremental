@@ -243,8 +243,8 @@ function stopAutoRoll() {
 function getHeritageCost(category) {
   const p = G.player;
   const rerolls = (p.heritageRerolls && p.heritageRerolls[category]) || 0;
-  const base = { clan: 200, weapon: 150, style: 150 };
-  return Math.floor((base[category] || 200) * Math.pow(2, rerolls));
+  const base = { clan: 5000, weapon: 3500, style: 3500 };
+  return Math.floor((base[category] || 5000) * Math.pow(3, rerolls));
 }
 
 function getHeritageItem(category, id) {
