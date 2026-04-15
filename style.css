@@ -564,23 +564,22 @@ button:disabled{cursor:not-allowed!important;pointer-events:auto}
 }
 
 /* ===== SETTINGS ===== */
-.settings-layout{
-  display:flex;flex-direction:column;gap:20px;
-  max-width:560px;margin:0 auto;
-  padding-bottom:40px;
-}
-.settings-section{
-  background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px;
-}
-.settings-section h3{font-size:14px;font-weight:700;margin-bottom:12px;color:var(--text)}
-.setting-row{
-  display:flex;align-items:center;gap:12px;padding:8px 0;
-  border-bottom:1px solid rgba(255,255,255,0.04);
-}
+.settings-layout{display:flex;flex-direction:column;gap:16px;max-width:600px;margin:0 auto;padding-bottom:40px}
+.settings-section{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:20px}
+.settings-section-header{font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--accent);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.settings-danger-zone{border-color:rgba(229,57,53,0.3)}
+.settings-danger-zone .settings-section-header{color:var(--danger)}
+.setting-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.04)}
 .setting-row:last-child{border-bottom:none}
-.setting-row label:first-child{flex:1;font-size:13px;color:var(--dim)}
-.setting-slider{flex:1;max-width:140px;accent-color:var(--accent)}
-.setting-slider:disabled{opacity:0.4}
+.setting-label{flex:1;font-size:13px;color:var(--text);font-weight:500}
+.setting-control{display:flex;align-items:center;gap:8px;flex:1}
+.setting-val{min-width:38px;text-align:right;font-size:13px;font-weight:700;color:var(--accent)}
+.setting-btn-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.setting-slider{flex:1;accent-color:var(--accent)}
+.settings-info-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.settings-info-item{background:rgba(255,255,255,0.04);border-radius:6px;padding:10px;text-align:center}
+.settings-info-label{display:block;font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px}
+.settings-info-val{display:block;font-size:16px;font-weight:800;color:var(--text)}
 .setting-note{font-size:10px;color:var(--dim);font-style:italic}
 .privacy-box{
   background:rgba(255,255,255,0.03);border-radius:var(--r-sm);padding:12px;

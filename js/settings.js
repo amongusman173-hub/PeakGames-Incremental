@@ -50,38 +50,36 @@ function renderSettings() {
     <div class="settings-layout">
 
       <div class="settings-section">
-        <h3>🔊 Audio</h3>
+        <div class="settings-section-header">🔊 Audio</div>
         <div class="setting-row">
-          <label>🎵 Music Volume</label>
-          <div style="display:flex;align-items:center;gap:8px;flex:1">
+          <label class="setting-label">🎵 Music</label>
+          <div class="setting-control">
             <input type="range" min="0" max="1" step="0.05" value="${s.musicVolume}"
               oninput="updateSetting('musicVolume', parseFloat(this.value)); document.getElementById('music-vol-val').textContent = Math.round(this.value*100)+'%'"
-              class="setting-slider" style="flex:1">
-            <span id="music-vol-val" style="min-width:36px;text-align:right">${Math.round(s.musicVolume*100)}%</span>
-            <button class="btn-small" onclick="updateSetting('musicVolume',0);document.getElementById('music-vol-val').textContent='0%';document.querySelector('.setting-slider').value=0" title="Mute">🔇</button>
+              class="setting-slider">
+            <span class="setting-val" id="music-vol-val">${Math.round(s.musicVolume*100)}%</span>
           </div>
         </div>
         <div class="setting-row">
-          <label>🔔 SFX Volume</label>
-          <div style="display:flex;align-items:center;gap:8px;flex:1">
+          <label class="setting-label">🔔 SFX</label>
+          <div class="setting-control">
             <input type="range" min="0" max="1" step="0.05" value="${s.sfxVolume}"
               oninput="updateSetting('sfxVolume', parseFloat(this.value)); document.getElementById('sfx-vol-val').textContent = Math.round(this.value*100)+'%'"
-              class="setting-slider" style="flex:1">
-            <span id="sfx-vol-val" style="min-width:36px;text-align:right">${Math.round(s.sfxVolume*100)}%</span>
-            <button class="btn-small" onclick="playSound('buttonpress',1.0)" title="Test SFX">▶ Test</button>
+              class="setting-slider">
+            <span class="setting-val" id="sfx-vol-val">${Math.round(s.sfxVolume*100)}%</span>
           </div>
         </div>
-        <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
-          <button class="btn-small" onclick="updateSetting('musicVolume',0.5);renderSettings()">🎵 Reset Music</button>
-          <button class="btn-small" onclick="updateSetting('sfxVolume',0.7);renderSettings()">🔔 Reset SFX</button>
+        <div class="setting-btn-row">
+          <button class="btn-small" onclick="playSound('buttonpress',1.0)">▶ Test SFX</button>
+          <button class="btn-small" onclick="updateSetting('musicVolume',0.5);updateSetting('sfxVolume',0.7);renderSettings()">↺ Reset</button>
           <button class="btn-small" onclick="updateSetting('musicVolume',0);updateSetting('sfxVolume',0);renderSettings()">🔇 Mute All</button>
         </div>
       </div>
 
       <div class="settings-section">
-        <h3>🎮 Gameplay</h3>
+        <div class="settings-section-header">🎮 Gameplay</div>
         <div class="setting-row">
-          <label>✨ Floating Text</label>
+          <label class="setting-label">✨ Floating Text</label>
           <label class="toggle-switch">
             <input type="checkbox" ${s.showFloatingText ? 'checked' : ''}
               onchange="updateSetting('showFloatingText', this.checked)">
@@ -89,7 +87,7 @@ function renderSettings() {
           </label>
         </div>
         <div class="setting-row">
-          <label>⚡ Reduced Animations</label>
+          <label class="setting-label">⚡ Reduced Animations</label>
           <label class="toggle-switch">
             <input type="checkbox" ${s.reducedAnimations ? 'checked' : ''}
               onchange="updateSetting('reducedAnimations', this.checked)">
@@ -99,19 +97,30 @@ function renderSettings() {
       </div>
 
       <div class="settings-section">
-        <h3>⚠️ Data</h3>
-        <p class="tab-desc">This will permanently delete all your progress. There is no undo.</p>
+        <div class="settings-section-header">📊 Game Info</div>
+        <div class="settings-info-grid">
+          <div class="settings-info-item"><span class="settings-info-label">Level</span><span class="settings-info-val">${G.player.level}</span></div>
+          <div class="settings-info-item"><span class="settings-info-label">Rebirth</span><span class="settings-info-val">${G.player.rebirthCount}</span></div>
+          <div class="settings-info-item"><span class="settings-info-label">Gold</span><span class="settings-info-val">${Math.floor(G.player.gold).toLocaleString()}</span></div>
+          <div class="settings-info-item"><span class="settings-info-label">Techniques</span><span class="settings-info-val">${G.player.techniques.length}</span></div>
+          <div class="settings-info-item"><span class="settings-info-label">Bosses Cleared</span><span class="settings-info-val">${G.player.defeatedBosses.length}</span></div>
+          <div class="settings-info-item"><span class="settings-info-label">Chapters Done</span><span class="settings-info-val">${G.player.completedChapters.length}</span></div>
+        </div>
+      </div>
+
+      <div class="settings-section settings-danger-zone">
+        <div class="settings-section-header">⚠️ Danger Zone</div>
+        <p class="tab-desc" style="margin-bottom:12px">Permanently deletes all progress. Cannot be undone.</p>
         <button class="btn-danger" onclick="confirmReset()">🗑️ Reset All Data</button>
       </div>
 
       <div class="settings-section">
-        <h3>📜 Privacy Policy</h3>
+        <div class="settings-section-header">📜 Privacy Policy</div>
         <div class="privacy-box">
           <p><strong>Ascendant — Privacy Policy</strong></p>
           <p>This game runs entirely in your browser. No data is collected, transmitted, or stored on any server.</p>
           <p>All game progress is saved locally in your browser's <code>localStorage</code>. Clearing your browser data will erase your save.</p>
           <p>No cookies, no tracking, no analytics, no third-party services.</p>
-          <p>This game does not collect any personally identifiable information.</p>
           <p style="color:var(--dim);font-size:11px;margin-top:8px">Last updated: 2025</p>
         </div>
       </div>

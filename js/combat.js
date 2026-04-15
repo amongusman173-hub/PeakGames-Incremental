@@ -741,6 +741,17 @@ function endRaidBattle(won) {
     else               { resultText.textContent = '🏃 Escaped!'; resultText.style.color = 'var(--warn)'; }
   }
   if (combatCallback) combatCallback(won);
+
+  // Auto-return to raid list after 2.5s so one-taps don't get stuck
+  setTimeout(() => {
+    const raidBattle = document.getElementById('raid-battle');
+    const raidList   = document.getElementById('raids-list');
+    if (raidBattle && !raidBattle.classList.contains('hidden')) {
+      raidBattle.classList.add('hidden');
+      if (raidList) raidList.classList.remove('hidden');
+      if (resultEl) resultEl.classList.add('hidden');
+    }
+  }, 2500);
 }
 
 // ── STORY BATTLE (interactive, with minigames) ──

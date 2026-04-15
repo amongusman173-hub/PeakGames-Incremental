@@ -758,7 +758,7 @@ function buildTypingGame(el, difficulty, label, forcedPhrase) {
 
 // ── X SLASH GAME — draw two crossing diagonal lines ──
 function buildXSlashGame(el, difficulty, label) {
-  const timeLimit = [3000, 2500, 2000][Math.min(2, difficulty - 1)];
+  const timeLimit = [5000, 4000, 3000][Math.min(2, difficulty - 1)]; // more time than before
   let phase = 1, points1 = [], points2 = [], drawing = false, done = false;
 
   el.innerHTML = `<div class="mg-box">
@@ -1109,7 +1109,7 @@ function buildPullHoldGame(el, difficulty, label) {
     if (holding && pull < 100) pull += 1.3;
     if (pull >= 100 && !done) { done = true; cancelAnimationFrame(raf); cleanup(); showMgResult(el, 0.3, '💨 Pulled too hard! Enemy escaped!', () => resolveMinigame(0.3)); return; }
     bar.style.width = pull + '%';
-    enemy.style.right = Math.max(5, 90 - pull * 0.8) + 'px';
+    enemy.style.right = Math.max(5, Math.min(85, 90 - pull * 0.75)) + 'px';
     pctEl.textContent = Math.floor(pull) + '% pull';
     raf = requestAnimationFrame(animate);
   }
@@ -1649,7 +1649,7 @@ const TECHNIQUE_MINIGAMES = {
 
 // Forced phrases for specific techniques — always type exactly this
 const TECHNIQUE_FORCED_PHRASES = {
-  'domain_expansion': 'domain expansion',
+  'domain_expansion': 'malevolent shrine',
   'domain_infinite_void': 'infinite void',
 };
 
