@@ -261,11 +261,13 @@ function buySkillNode(nodeId) {
   if (!spendGold(cost)) { toast('Not enough gold!', 'warn'); return; }
   if (!G.player.skillNodes) G.player.skillNodes = {};
   G.player.skillNodes[nodeId] = (G.player.skillNodes[nodeId] || 0) + 1;
-  node.effect(G.player, G.player.skillNodes[nodeId]);
+  // Recalculate all stats from scratch so bonuses stack correctly and persist through level-ups
+  recalcStats();
+  G.player.hp = Math.min(G.player.hp, G.player.maxHp);
+  G.player.stamina = Math.min(G.player.stamina, G.player.maxStamina);
   toast(`Upgraded: ${node.name} (Lv.${G.player.skillNodes[nodeId]})`, 'success');
   spawnFloatingText(`-${cost}g`, 'float-dmg');
   renderSkillTree();
-  // Refresh jobs display so gold multiplier shows immediately
   renderJobs();
 }
 

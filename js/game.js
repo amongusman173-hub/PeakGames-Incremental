@@ -278,7 +278,7 @@ function gameTick() {
 // ===== INIT =====
 function initGame() {
   loadGame();
-  applyRebirthMultipliers();
+  applyRebirthMultipliers(); // calls recalcStats() internally
   setInterval(gameTick, G.tickRate);
   initUI();
   updateHeader();

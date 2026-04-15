@@ -4,6 +4,35 @@ function xpForLevel(level) {
   return Math.floor(100 * Math.pow(1.15, level - 1));
 }
 
+// Compute the total stat bonuses from all purchased skill tree nodes
+function getSkillTreeBonuses() {
+  const bonus = { atk: 0, def: 0, spd: 0, maxHp: 0, maxStamina: 0, regenBonus: 0 };
+  if (!G.player.skillNodes) return bonus;
+  SKILL_TREE.forEach(node => {
+    const lvl = G.player.skillNodes[node.id] || 0;
+    if (lvl <= 0) return;
+    // Run the effect into a temp object to capture what it adds
+    const tmp = { atk:0, def:0, spd:0, maxHp:0, maxStamina:0, regenBonus:0 };
+    for (let i = 0; i < lvl; i++) {
+      node.effect(tmp, i + 1);
+    }
+    for (const k in bonus) bonus[k] += (tmp[k] || 0);
+  });
+  return bonus;
+}
+
+function recalcStats() {
+  const p = G.player;
+  const sm = p.statMult || 1;
+  const b = getSkillTreeBonuses();
+  p.maxHp      = Math.floor((30 + p.level * 8) * sm) + b.maxHp;
+  p.maxStamina = Math.floor((40 + p.level * 3) * sm) + b.maxStamina;
+  p.atk        = Math.floor((2 + p.level * 1.2) * sm) + b.atk;
+  p.def        = Math.floor((1 + p.level * 0.6) * sm) + b.def;
+  p.spd        = Math.floor((2 + p.level * 0.5) * sm) + b.spd;
+  p.regenBonus = b.regenBonus;
+}
+
 function gainXP(amount) {
   const p = G.player;
   const actual = Math.floor(amount * p.xpMult);
@@ -18,13 +47,8 @@ function gainXP(amount) {
 
 function onLevelUp() {
   const p = G.player;
-  const sm = p.statMult;
-  p.maxHp = Math.floor((30 + p.level * 8) * sm);
+  recalcStats();
   p.hp = p.maxHp;
-  p.maxStamina = Math.floor((40 + p.level * 3) * sm);
-  p.atk = Math.floor((2 + p.level * 1.2) * sm);
-  p.def = Math.floor((1 + p.level * 0.6) * sm);
-  p.spd = Math.floor((2 + p.level * 0.5) * sm);
   toast(`⬆️ Level Up! Now level ${p.level}`, 'success');
   spawnFloatingText(`Lv.${p.level}!`, 'float-xp');
   // Flash the header
@@ -38,14 +62,9 @@ function onLevelUp() {
 
 function applyRebirthMultipliers() {
   const p = G.player;
-  const sm = p.statMult;
-  p.maxHp = Math.floor((30 + p.level * 8) * sm);
+  recalcStats();
   p.hp = Math.min(p.hp, p.maxHp);
-  p.maxStamina = Math.floor((40 + p.level * 3) * sm);
   p.stamina = Math.min(p.stamina, p.maxStamina);
-  p.atk = Math.floor((2 + p.level * 1.2) * sm);
-  p.def = Math.floor((1 + p.level * 0.6) * sm);
-  p.spd = Math.floor((2 + p.level * 0.5) * sm);
 }
 
 function gainGold(amount) {
