@@ -744,6 +744,7 @@ function startStoryBattle(enemy, storyCallback) {
   combatStatusPlayer = [];
   combatStatusEnemy = [];
   resetMgCounts();
+  resetTechCooldowns();
   // Only reset vessel switch on a fresh story session (not when chaining enemies)
   // vesselSwitchActive / vesselSwitchCharges are preserved across chained fights
 
@@ -789,6 +790,49 @@ let vesselSwitchActive = false;
 let vesselSwitchCharges = 0;
 const VESSEL_SWITCH_CHARGES = 3;
 
+// ── TECHNIQUE COOLDOWNS ──
+// techId → turns remaining on cooldown (0 = ready)
+const techCooldowns = {};
+
+// Cooldown definitions: techId → turns before can use again (0 = no cooldown)
+const TECH_COOLDOWN_MAP = {
+  // No cooldown — spammable
+  'slash': 0, 'iron_fist': 0, 'quick_step': 0, 'dismantle': 0, 'basic': 0,
+  // 1-turn cooldown
+  'block': 1, 'leg_sweep': 1, 'fang_strike': 1, 'earth_crush': 1, 'cleave': 1,
+  'spark': 1, 'frost_bolt': 1, 'flame_burst': 1, 'war_cry': 1, 'counter': 1,
+  // 2-turn cooldown
+  'power_strike': 2, 'holy_slash': 2, 'tidal_wave': 2, 'shadow_clone': 2,
+  'arcane_bolt': 2, 'mana_shield': 2, 'chain_lightning': 2, 'berserker_rush': 2,
+  'ancient_strike': 2, 'crystal_shard': 2,
+  // 3-turn cooldown
+  'hellfire': 3, 'void_rend': 3, 'divine_heal': 3, 'death_blow': 3,
+  'thousand_fists': 3, 'meteor': 3, 'fuga': 3,
+  // 4-turn cooldown — very powerful
+  'void_blast': 4, 'time_stop': 4, 'reversal_red': 4, 'lapse_blue': 4,
+  'reversal_red_max': 4, 'lapse_blue_max': 4, 'hollow_purple': 4,
+  // 5-turn cooldown — domain expansions
+  'domain_expansion': 5, 'domain_infinite_void': 5,
+  // Vessel switch: 3-turn cooldown after use
+  'vessel_switch': 3,
+  // Infinity: 4-turn cooldown
+  'infinity': 4,
+};
+
+function getTechCooldown(techId) {
+  return TECH_COOLDOWN_MAP[techId] || 0;
+}
+
+function tickTechCooldowns() {
+  for (const id in techCooldowns) {
+    if (techCooldowns[id] > 0) techCooldowns[id]--;
+  }
+}
+
+function resetTechCooldowns() {
+  for (const id in techCooldowns) delete techCooldowns[id];
+}
+
 function renderTechniqueActions() {
   const container = document.getElementById('technique-actions');
   if (!container) return;
@@ -800,7 +844,12 @@ function renderTechniqueActions() {
   container.innerHTML = equipped.map(techId => {
     const tech = TECHNIQUES.find(t => t.id === techId);
     if (!tech) return '';
-    return `<button class="btn-action${tech._jjk ? ' jjk-btn' : ''}" onclick="useTechnique('${tech.id}')">${tech.icon} ${tech.name}</button>`;
+    const cd = techCooldowns[techId] || 0;
+    const onCd = cd > 0;
+    return `<button class="btn-action${tech._jjk ? ' jjk-btn' : ''}${onCd ? ' btn-on-cd' : ''}"
+      onclick="useTechnique('${tech.id}')" ${onCd ? 'disabled' : ''}>
+      ${tech.icon} ${tech.name}${onCd ? ` <span class="cd-badge">${cd}</span>` : ''}
+    </button>`;
   }).join('');
 }
 
@@ -810,8 +859,13 @@ function renderVesselTechniqueActions() {
   const jjkIds = ['dismantle', 'cleave', 'fuga', 'domain_expansion'];
   const buttons = jjkIds.map(id => {
     const tech = TECHNIQUES.find(t => t.id === id);
-    if (!tech) return `<button class="btn-action jjk-btn" onclick="useTechnique('${id}')">${id}</button>`;
-    return `<button class="btn-action jjk-btn" onclick="useTechnique('${id}')">${tech.icon} ${tech.name}</button>`;
+    const cd = techCooldowns[id] || 0;
+    const onCd = cd > 0;
+    const label = tech ? `${tech.icon} ${tech.name}` : id;
+    return `<button class="btn-action jjk-btn${onCd ? ' btn-on-cd' : ''}"
+      onclick="useTechnique('${id}')" ${onCd ? 'disabled' : ''}>
+      ${label}${onCd ? ` <span class="cd-badge">${cd}</span>` : ''}
+    </button>`;
   }).join('');
   container.innerHTML =
     `<div style="width:100%;font-size:10px;color:#ff3333;margin-bottom:4px">🩸 SUKUNA MODE — ${vesselSwitchCharges} fight(s) remaining</div>` +
@@ -820,6 +874,10 @@ function renderVesselTechniqueActions() {
 
 function applyTechniqueEffect(tech, mult, afterCb) {
   const p = G.player;
+
+  // Set cooldown for this technique
+  const cd = getTechCooldown(tech.id);
+  if (cd > 0) techCooldowns[tech.id] = cd;
 
   // ── VESSEL SWITCH — swap moveset to JJK techniques for 3 enemy kills ──
   if (tech.effect === 'vessel' || tech._vesselSwitch) {
@@ -926,7 +984,11 @@ function applyTechniqueEffect(tech, mult, afterCb) {
 
 function useTechnique(techId) {
   const tech = TECHNIQUES.find(t => t.id === techId);
-  if (!tech) return;
+  if (!tech) {
+    // Safety: if tech not found but vessel is active, re-enable buttons
+    if (vesselSwitchActive) setBattleActionsEnabled(true, 'story');
+    return;
+  }
   setBattleActionsEnabled(false, 'story');
   techniqueMinigame(tech, (mult) => {
     applyTechniqueEffect(tech, mult, () => setTimeout(enemyTurn, 500));
@@ -987,24 +1049,29 @@ function enemyTurn() {
   }).filter(s => s.turns > 0);
 
   // Tick enemy status effects (domain slash deals damage to enemy each turn)
+  // Also check if enemy is immobilized/stunned
+  let enemySkipTurn = false;
   combatStatusEnemy = combatStatusEnemy.map(s => {
     if (s.dot && s.isEnemyDot) {
       const dmg = Math.max(1, s.dot - combatEnemy.def);
       combatEnemyHP -= dmg;
       appendLog(combatLog, `🏯 Malevolent Shrine slashes for ${dmg} dmg!`, 'log-crit');
     }
+    if (s.skipTurn) enemySkipTurn = true;
     return { ...s, turns: s.turns - 1 };
   }).filter(s => s.turns > 0);
 
   updateBattleUI();
   if (combatPlayerHP <= 0) { endBattle(false); return; }
   if (combatEnemyHP <= 0) { endBattle(true); return; }
-  if (skipTurn) { appendLog(combatLog, `${combatEnemy.name} is stunned/immobilized!`, 'log-info'); setBattleActionsEnabled(true, 'story'); return; }
+  if (skipTurn) { appendLog(combatLog, `${combatEnemy.name} is stunned/immobilized!`, 'log-info'); tickTechCooldowns(); setBattleActionsEnabled(true, 'story'); return; }
+  if (enemySkipTurn) { appendLog(combatLog, `${combatEnemy.name} is immobilized — cannot act!`, 'log-info'); tickTechCooldowns(); setBattleActionsEnabled(true, 'story'); return; }
 
   // Check Infinity shield
   const hasShield = combatStatusPlayer.some(s => s.shield);
   if (hasShield) {
     appendLog(combatLog, `♾️ Infinity blocks the attack!`, 'log-heal');
+    tickTechCooldowns();
     setBattleActionsEnabled(true, 'story');
     return;
   }
@@ -1046,6 +1113,7 @@ function enemyTurn() {
 
   updateBattleUI();
   if (combatPlayerHP <= 0) { endBattle(false); return; }
+  tickTechCooldowns();
   setBattleActionsEnabled(true, 'story');
 }
 

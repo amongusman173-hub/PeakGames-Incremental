@@ -27,6 +27,8 @@ function showMinigame(type, difficulty, label, callback) {
     case 'draw_line': buildDrawLineGame(overlay, difficulty, label); break;
     case 'drag_crush':buildDragCrushGame(overlay, difficulty, label); break;
     case 'quick_tap': buildQuickTapGame(overlay, difficulty, label); break;
+    case 'typing':    buildTypingGame(overlay, difficulty, label); break;
+    case 'x_slash':   buildXSlashGame(overlay, difficulty, label); break;
     default:          resolveMinigame(1);
   }
 }
@@ -647,6 +649,182 @@ function quickJobMinigame(job, callback) {
   quickJobIndex++;
   game(job, callback);
 }
+// ── TYPING GAME — type a phrase as fast as possible ──
+function buildTypingGame(el, difficulty, label) {
+  const phrases = {
+    1: ['attack', 'strike', 'slash'],
+    2: ['domain expansion', 'malevolent shrine', 'cursed technique'],
+    3: ['domain expansion', 'infinite void', 'hollow purple'],
+  };
+  const pool = phrases[Math.min(3, difficulty)] || phrases[2];
+  const phrase = pool[Math.floor(Math.random() * pool.length)];
+  const timeLimit = Math.max(3000, phrase.length * 300 + 1000);
+  let done = false;
+
+  el.innerHTML = `<div class="mg-box">
+    <div class="mg-label">${label}</div>
+    <div class="mg-hint">Type the phrase exactly! Press Enter when done.</div>
+    <div class="mg-typing-phrase" id="mg-phrase">${phrase}</div>
+    <input id="mg-type-input" class="mg-type-input" type="text" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Type here…" maxlength="${phrase.length + 5}">
+    <div class="mg-timer-bar"><div class="mg-timer-fill" id="mg-tfill" style="width:100%"></div></div>
+    <div id="mg-type-status" style="font-size:12px;color:var(--dim);margin-top:4px">Start typing…</div>
+  </div>`;
+
+  const input = el.querySelector('#mg-type-input');
+  const fill = el.querySelector('#mg-tfill');
+  const status = el.querySelector('#mg-type-status');
+  const start = Date.now();
+
+  // Auto-focus
+  setTimeout(() => input.focus(), 50);
+
+  const interval = setInterval(() => {
+    const elapsed = Date.now() - start;
+    const pct = Math.max(0, 100 - (elapsed / timeLimit) * 100);
+    fill.style.width = pct + '%';
+    if (elapsed >= timeLimit && !done) {
+      done = true;
+      clearInterval(interval);
+      input.removeEventListener('keydown', onKey);
+      showMgResult(el, 0.3, '⏰ Too slow!', () => resolveMinigame(0.3));
+    }
+  }, 50);
+
+  function finish() {
+    if (done) return;
+    done = true;
+    clearInterval(interval);
+    input.removeEventListener('keydown', onKey);
+    const typed = input.value.trim().toLowerCase();
+    const elapsed = Date.now() - start;
+    const timePct = elapsed / timeLimit;
+    if (typed === phrase) {
+      const mult = timePct < 0.4 ? 2.2 : timePct < 0.7 ? 1.8 : 1.4;
+      const msg = timePct < 0.4 ? '💥 BLAZING FAST!' : timePct < 0.7 ? '✅ Perfect!' : '👍 Done!';
+      showMgResult(el, mult, msg, () => resolveMinigame(mult));
+    } else {
+      // Partial credit based on how close
+      let correct = 0;
+      for (let i = 0; i < Math.min(typed.length, phrase.length); i++) {
+        if (typed[i] === phrase[i]) correct++;
+      }
+      const ratio = correct / phrase.length;
+      const mult = ratio > 0.8 ? 1.0 : ratio > 0.5 ? 0.6 : 0.3;
+      showMgResult(el, mult, ratio > 0.8 ? '⚠️ Almost!' : '❌ Wrong!', () => resolveMinigame(mult));
+    }
+  }
+
+  function onKey(e) {
+    if (e.key === 'Enter') { e.preventDefault(); finish(); return; }
+    // Live feedback
+    setTimeout(() => {
+      const typed = input.value.toLowerCase();
+      const correct = phrase.startsWith(typed);
+      input.style.borderColor = typed.length === 0 ? '' : correct ? 'var(--ok)' : 'var(--danger)';
+      status.textContent = correct ? `${typed.length}/${phrase.length} chars` : '❌ Wrong character!';
+      if (typed === phrase) finish();
+    }, 0);
+  }
+  input.addEventListener('keydown', onKey);
+  input.addEventListener('input', () => {
+    const typed = input.value.toLowerCase();
+    if (typed === phrase) finish();
+  });
+}
+
+// ── X SLASH GAME — draw two crossing diagonal lines ──
+function buildXSlashGame(el, difficulty, label) {
+  const timeLimit = [3000, 2500, 2000][Math.min(2, difficulty - 1)];
+  let phase = 1, points1 = [], points2 = [], drawing = false, done = false;
+
+  el.innerHTML = `<div class="mg-box">
+    <div class="mg-label">${label}</div>
+    <div class="mg-hint">Draw an <strong>X</strong> — two crossing diagonal lines! Phase <span id="mg-xphase">1/2</span></div>
+    <canvas id="mg-canvas" class="mg-canvas" width="280" height="160"></canvas>
+    <div id="mg-x-status" style="font-size:12px;color:var(--dim);margin-top:6px">Draw first slash ↘</div>
+  </div>`;
+
+  const canvas = el.querySelector('#mg-canvas');
+  const ctx = canvas.getContext('2d');
+  const status = el.querySelector('#mg-x-status');
+
+  // Draw guide X
+  ctx.strokeStyle = 'rgba(108,159,255,0.25)'; ctx.lineWidth = 2; ctx.setLineDash([6,6]);
+  ctx.beginPath(); ctx.moveTo(20,20); ctx.lineTo(260,140); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(260,20); ctx.lineTo(20,140); ctx.stroke();
+  ctx.setLineDash([]);
+
+  function getPos(e) {
+    const r = canvas.getBoundingClientRect();
+    const src = e.touches ? e.touches[0] : e;
+    return { x: src.clientX - r.left, y: src.clientY - r.top };
+  }
+
+  function scoreSlash(pts, expectedDir) {
+    if (pts.length < 4) return 0;
+    const s = pts[0], e = pts[pts.length-1];
+    const dx = e.x - s.x, dy = e.y - s.y;
+    const len = Math.sqrt(dx*dx+dy*dy);
+    if (len < 40) return 0;
+    let totalDev = 0;
+    pts.forEach(p => {
+      const dev = Math.abs(dy*p.x - dx*p.y + e.x*s.y - e.y*s.x) / (len||1);
+      totalDev += dev;
+    });
+    const straight = Math.max(0, 1 - (totalDev/pts.length)/25);
+    // expectedDir: 1 = down-right (↘), -1 = down-left (↙)
+    const dirOk = expectedDir === 1 ? (dx > 0 && dy > 0) : (dx < 0 && dy > 0);
+    return straight * (dirOk ? 1 : 0.3);
+  }
+
+  function startDraw(e) {
+    if (done) return;
+    e.preventDefault();
+    drawing = true;
+    const pos = getPos(e);
+    if (phase === 1) { points1 = [pos]; ctx.strokeStyle='rgba(39,174,96,0.9)'; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(pos.x,pos.y); }
+    else             { points2 = [pos]; ctx.strokeStyle='rgba(245,197,66,0.9)'; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(pos.x,pos.y); }
+  }
+  function moveDraw(e) {
+    if (!drawing||done) return;
+    e.preventDefault();
+    const pos = getPos(e);
+    if (phase===1) points1.push(pos); else points2.push(pos);
+    ctx.lineTo(pos.x,pos.y); ctx.stroke();
+  }
+  function endDraw(e) {
+    if (!drawing||done) return;
+    drawing = false;
+    if (phase === 1) {
+      const s1 = scoreSlash(points1, 1);
+      if (s1 < 0.3) {
+        done = true;
+        showMgResult(el, 0.3, '❌ First slash too crooked!', () => resolveMinigame(0.3));
+        return;
+      }
+      phase = 2;
+      el.querySelector('#mg-xphase').textContent = '2/2';
+      status.textContent = 'Now draw second slash ↙';
+    } else {
+      done = true;
+      const s1 = scoreSlash(points1, 1);
+      const s2 = scoreSlash(points2, -1);
+      const combined = (s1 + s2) / 2;
+      const mult = Math.min(2.2, combined * 2.2);
+      const msg = mult >= 1.8 ? '💥 PERFECT X!' : mult >= 1.2 ? '✅ Good X!' : mult >= 0.6 ? '⚠️ Wobbly X' : '❌ Too crooked!';
+      showMgResult(el, mult, msg, () => resolveMinigame(mult));
+    }
+  }
+
+  canvas.addEventListener('mousedown', startDraw);
+  canvas.addEventListener('mousemove', moveDraw);
+  canvas.addEventListener('mouseup', endDraw);
+  canvas.addEventListener('touchstart', startDraw, {passive:false});
+  canvas.addEventListener('touchmove', moveDraw, {passive:false});
+  canvas.addEventListener('touchend', endDraw);
+  setTimeout(() => { if (!done) { done=true; showMgResult(el, 0.3, '⏰ Too slow!', () => resolveMinigame(0.3)); } }, timeLimit);
+}
+
 function showMgResult(el, mult, msg, cb) {
   const color = mult >= 1.8 ? 'var(--gold)' : mult >= 1.4 ? 'var(--ok)' : mult >= 0.9 ? 'var(--accent)' : 'var(--danger)';
   const resultDiv = document.createElement('div');
@@ -687,7 +865,7 @@ const TECHNIQUE_MINIGAMES = {
   'earth_crush':     ['drag_crush','hold',        2, '🪨 Earth Crush — drag down!', '🪨 Earth Crush — charge!'],
   'fang_strike':     ['draw_line', 'mash',        2, '🐺 Fang Strike — slash!',     '🐺 Fang Strike — frenzy!'],
   'war_cry':         ['hold',      'sequence',  2, '📣 War Cry!',             '📣 War Cry — sequence!'],
-  'holy_slash':      ['sequence',  'dual_zone', 2, '✨ Holy Slash!',          '✨ Holy Slash — divine!'],
+  'holy_slash':      ['x_slash',   'dual_zone', 2, '✨ Holy Slash — draw the X!',  '✨ Holy Slash — divine!'],
   'tidal_wave':      ['mash',      'reaction',  3, '🌊 Tidal Wave!',          '🌊 Tidal Wave — react!'],
   'shadow_clone':    ['timing',    'sequence',  3, '👤 Shadow Clone!',        '👤 Shadow Clone — pattern!'],
   'hellfire':        ['hold',      'dual_zone', 3, '🔥 Hellfire!',            '🔥 Hellfire — double!'],
@@ -716,7 +894,7 @@ const TECHNIQUE_MINIGAMES = {
   'dismantle':       ['timing',    'dual_zone', 3, '✂️ Dismantle — precise cut!', '✂️ Dismantle — double slash!'],
   'cleave':          ['mash',      'sequence',  3, '🔪 Cleave — mash it!',     '🔪 Cleave — pattern!'],
   'fuga':            ['hold',      'dual_zone', 3, '🔥 Fuga — charge the flame!', '🔥 Fuga — double fire!'],
-  'domain_expansion':['sequence',  'reaction',  3, '🏯 Domain Expansion!',    '🏯 Malevolent Shrine — react!'],
+  'domain_expansion':['typing',    'reaction',  3, '🏯 Domain Expansion — type it!', '🏯 Malevolent Shrine — react!'],
 };
 
 function techniqueMinigame(tech, callback) {

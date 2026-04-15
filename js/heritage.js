@@ -84,6 +84,27 @@ function rollHeritage(category) {
   const cost = getHeritageCost(category);
   if (!spendGold(cost)) { toast('Not enough gold!', 'warn'); return; }
 
+  // ── Slot machine animation ──
+  const cardEl = document.querySelector(`.heritage-card[data-cat="${category}"]`);
+  const resultArea = cardEl ? cardEl.querySelector('.heritage-result, .heritage-empty') : null;
+  const icons = ['⚙️','💨','🪨','🌑','🔥','⚡','🐉','🌀','✨','😈','🌟','🔵'];
+  let spinCount = 0;
+  const spinEl = document.createElement('div');
+  spinEl.style.cssText = `font-size:40px;text-align:center;padding:12px;animation:none;`;
+  if (resultArea) resultArea.replaceWith(spinEl);
+
+  const spinInterval = setInterval(() => {
+    spinEl.textContent = icons[spinCount % icons.length];
+    spinEl.style.transform = `scale(${1 + Math.sin(spinCount * 0.8) * 0.2})`;
+    spinCount++;
+    if (spinCount > 18) {
+      clearInterval(spinInterval);
+      doRoll();
+    }
+  }, 80);
+
+  function doRoll() {
+
   let result;
   if (category === 'clan')    result = weightedRoll(CLANS);
   if (category === 'weapon')  result = weightedRoll(WEAPONS);
@@ -122,9 +143,65 @@ function rollHeritage(category) {
 
   const rarityColor = { common:'var(--dim)', uncommon:'var(--accent)', rare:'var(--accent2)', legendary:'var(--gold)', secret:'#ff3333' };
   toast(`${result.icon} ${result.name} — ${result.rarity.toUpperCase()}!`, result.rarity === 'secret' ? 'rare' : result.rarity === 'legendary' ? 'rare' : 'success');
+
+  // ── Roll VFX ──
+  const colors = {
+    common:    ['#aaa','#ccc','#fff'],
+    uncommon:  ['#6c9fff','#88aaff','#fff'],
+    rare:      ['#b06aff','#cc88ff','#fff'],
+    legendary: ['#f5c542','#ffdd66','#ff9900','#fff'],
+    secret:    ['#ff1744','#b71c1c','#fff','#ff8a80'],
+  }[result.rarity] || ['#fff'];
+  const count = result.rarity === 'secret' ? 50 : result.rarity === 'legendary' ? 35 : result.rarity === 'rare' ? 22 : 12;
+  const spread = result.rarity === 'secret' ? 130 : result.rarity === 'legendary' ? 100 : 70;
+
+  // Find the roll button area to anchor particles
+  const anchor = document.querySelector('.heritage-card') || document.getElementById('heritage-container');
+  if (anchor) {
+    const rect = anchor.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    for (let i = 0; i < count; i++) {
+      const p = document.createElement('div');
+      const angle = (Math.PI * 2 * i / count) + Math.random() * 0.8;
+      const dist = spread * (0.5 + Math.random() * 0.8);
+      const size = 4 + Math.random() * 8;
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      p.style.cssText = `position:fixed;z-index:9998;pointer-events:none;border-radius:50%;
+        width:${size}px;height:${size}px;background:${color};
+        left:${cx}px;top:${cy}px;
+        --dx:${Math.cos(angle)*dist}px;--dy:${Math.sin(angle)*dist}px;
+        animation:digBurst 0.7s ease-out forwards;animation-delay:${Math.random()*0.1}s;`;
+      document.body.appendChild(p);
+      setTimeout(() => p.remove(), 900);
+    }
+  }
+
+  // Screen flash for rare+
+  if (result.rarity === 'secret') {
+    const f = document.createElement('div');
+    f.style.cssText = `position:fixed;inset:0;z-index:9997;pointer-events:none;
+      background:rgba(180,0,0,0.45);animation:digFlash 0.8s ease-out forwards;`;
+    document.body.appendChild(f);
+    setTimeout(() => f.remove(), 900);
+  } else if (result.rarity === 'legendary') {
+    const f = document.createElement('div');
+    f.style.cssText = `position:fixed;inset:0;z-index:9997;pointer-events:none;
+      background:rgba(245,197,66,0.25);animation:digFlash 0.6s ease-out forwards;`;
+    document.body.appendChild(f);
+    setTimeout(() => f.remove(), 700);
+  } else if (result.rarity === 'rare') {
+    const f = document.createElement('div');
+    f.style.cssText = `position:fixed;inset:0;z-index:9997;pointer-events:none;
+      background:rgba(176,106,255,0.2);animation:digFlash 0.5s ease-out forwards;`;
+    document.body.appendChild(f);
+    setTimeout(() => f.remove(), 600);
+  }
+
   spawnFloatingText(result.icon, 'float-xp');
   renderHeritage();
-}
+  } // end doRoll
+} // end rollHeritage
 
 function getHeritageCost(category) {
   const p = G.player;
@@ -174,7 +251,7 @@ function renderHeritage() {
     const rerolls   = p.heritageRerolls[cat.key] || 0;
     const rarityColors = { common:'var(--dim)', uncommon:'var(--accent)', rare:'var(--accent2)', legendary:'var(--gold)', secret:'#ff3333' };
 
-    return `<div class="heritage-card">
+    return `<div class="heritage-card" data-cat="${cat.key}">
       <div class="heritage-header">
         <h3>${cat.label}</h3>
         <p class="tab-desc" style="margin:0">${cat.desc}</p>
