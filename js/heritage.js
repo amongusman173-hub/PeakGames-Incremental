@@ -19,8 +19,8 @@ const CLANS = [
   // Legendary (2.5%)
   { id: 'demon_clan',   name: 'Demon Clan',       icon: '😈', rarity: 'legendary', weight: 1,  desc: 'Cursed bloodline of the underworld.',bonus: { atk: 60, spd: 30 },   techs: ['hellfire', 'void_rend'] },
   { id: 'god_clan',     name: 'God Clan',         icon: '🌟', rarity: 'legendary', weight: 0.5,desc: 'Divine blood flows through you.',  bonus: { atk: 50, def: 40, maxHp: 200 }, techs: ['holy_slash', 'divine_heal'] },
-  // SECRET (~0.8%) — Gojo Clan
-  { id: 'gojo_clan',    name: 'Gojo Clan',        icon: '🔵', rarity: 'secret',    weight: 0.8, desc: 'The honored one. Six Eyes. Infinity.',
+  // SECRET (~0.5%) — Gojo Clan
+  { id: 'gojo_clan',    name: 'Gojo Clan',        icon: '🔵', rarity: 'secret',    weight: 0.5, desc: 'The honored one. Six Eyes. Infinity.',
     bonus: { atk: 100, def: 80, spd: 60, maxHp: 500 },
     techs: ['infinity', 'reversal_red', 'lapse_blue', 'hollow_purple', 'domain_infinite_void'],
     _gojo: true },

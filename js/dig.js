@@ -336,8 +336,8 @@ function digTile(index) {
   const tileEl = document.querySelector(`[data-dig-idx="${index}"]`);
   digDirtSpray(tileEl);
 
-  // ── SECRET: 0.9% chance to find Sukuna's Finger on any tile ──
-  if (Math.random() < 0.009 && !G.player.techniques.includes('vessel_switch')) {
+  // ── SECRET: 0.5% chance to find Sukuna's Finger on any tile ──
+  if (Math.random() < 0.005 && !G.player.techniques.includes('vessel_switch')) {
     const finger = DIG_LOOT_TABLE.find(i => i.id === 'sukuna_finger');
     tile.loot = finger;
     // Dramatic VFX

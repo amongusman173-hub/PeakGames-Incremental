@@ -1,17 +1,17 @@
 // ===== RAIDS / BOSS SYSTEM — Turn-Based =====
 
 const BOSSES = [
-  // Tier 1 — Early game (still punishing)
+  // Tier 1 — Early game
   {
     id:'goblin_king', name:'Goblin King', icon:'👺', levelReq:3,
-    hp:180, atk:22, def:6, spd:10, abilityCount:2,
+    hp:300, atk:28, def:8, spd:12, abilityCount:2,
     xpReward:80, goldReward:30, techReward:'slash',
     lore:'The Goblin King has terrorized the village for years.',
     intro:'Grrr! You dare challenge the King?! I\'ll crush your bones!'
   },
   {
     id:'stone_golem', name:'Stone Golem', icon:'🗿', levelReq:8,
-    hp:420, atk:42, def:28, spd:4, abilityCount:2,
+    hp:700, atk:55, def:35, spd:5, abilityCount:2,
     xpReward:200, goldReward:80, techReward:'earth_crush',
     lore:'Awakened by dark magic, it guards the ancient ruins.',
     intro:'...*the ground shakes*...'
@@ -19,14 +19,14 @@ const BOSSES = [
   // Tier 2 — Mid game
   {
     id:'shadow_wolf', name:'Shadow Wolf Alpha', icon:'🐺', levelReq:15,
-    hp:800, atk:85, def:20, spd:55, abilityCount:3,
+    hp:1500, atk:100, def:25, spd:60, abilityCount:3,
     xpReward:500, goldReward:200, techReward:'fang_strike',
     lore:'It hunts at night, leaving no trace. The pack follows its howl.',
     intro:'*a deafening howl echoes through the dark*'
   },
   {
     id:'iron_knight', name:'Iron Knight Valdris', icon:'⚔️', levelReq:22,
-    hp:1400, atk:130, def:80, spd:30, abilityCount:3,
+    hp:3000, atk:160, def:100, spd:35, abilityCount:3,
     xpReward:1000, goldReward:400, techReward:'holy_slash',
     lore:'Once a hero, now a servant of darkness. His armor is unbreakable.',
     intro:'You cannot stop what I have become. Kneel, or be broken.'
@@ -34,14 +34,14 @@ const BOSSES = [
   // Tier 3 — Hard
   {
     id:'sea_serpent', name:'Leviathan', icon:'🐉', levelReq:30,
-    hp:2800, atk:200, def:110, spd:45, abilityCount:4,
+    hp:6000, atk:240, def:130, spd:50, abilityCount:4,
     xpReward:2000, goldReward:800, techReward:'tidal_wave',
     lore:'Ancient sailors called it the World Ender. It has sunk a thousand ships.',
     intro:'*the sea boils* The ocean claims all who dare enter my domain...'
   },
   {
     id:'demon_lord', name:'Demon Lord Vael', icon:'😈', levelReq:40,
-    hp:5500, atk:340, def:160, spd:80, abilityCount:5,
+    hp:12000, atk:400, def:190, spd:90, abilityCount:5,
     xpReward:5000, goldReward:2500, techReward:'hellfire',
     lore:'He who breaks the seal shall face oblivion. Vael has consumed entire kingdoms.',
     intro:'I have waited an eternity for a worthy soul to consume. You will do nicely.'
@@ -49,17 +49,32 @@ const BOSSES = [
   // Tier 4 — Endgame
   {
     id:'void_titan', name:'Void Titan', icon:'🌑', levelReq:55,
-    hp:12000, atk:550, def:250, spd:100, abilityCount:6,
+    hp:28000, atk:650, def:300, spd:110, abilityCount:6,
     xpReward:12000, goldReward:6000, techReward:'void_rend',
     lore:'A being of pure nothingness. It does not kill — it erases.',
     intro:'*reality fractures around it* You should not exist. Let me fix that.'
   },
   {
     id:'god_of_war', name:'God of War — Kael\'thas', icon:'⚡', levelReq:70,
-    hp:25000, atk:900, def:400, spd:160, abilityCount:6,
+    hp:60000, atk:1100, def:500, spd:180, abilityCount:6,
     xpReward:30000, goldReward:15000, techReward:'divine_heal',
     lore:'The war god himself descends. No mortal has ever survived this encounter.',
     intro:'A mortal challenges a god? *laughs* This will be over in an instant.'
+  },
+  // Tier 5 — True Endgame
+  {
+    id:'celestial_dragon', name:'Celestial Dragon Auros', icon:'🐲', levelReq:80,
+    hp:120000, atk:1600, def:700, spd:220, abilityCount:7,
+    xpReward:80000, goldReward:40000, techReward:'ancient_strike',
+    lore:'A dragon born from starlight. Its scales deflect divine magic itself.',
+    intro:'*the sky splits open* You have earned the right to die by my claws.'
+  },
+  {
+    id:'primordial_chaos', name:'Primordial Chaos', icon:'🌀', levelReq:90,
+    hp:250000, atk:2200, def:900, spd:280, abilityCount:8,
+    xpReward:200000, goldReward:100000, techReward:'void_blast',
+    lore:'Before creation there was chaos. It has returned to reclaim what was taken.',
+    intro:'*existence itself trembles* I am what was before. I am what will be after. You are nothing.'
   },
 ];
 

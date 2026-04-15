@@ -247,8 +247,8 @@ function getStageEnemy(chapter, stage) {
   const p = G.player;
 
   // Scale factor: enemies scale with player level so they're always challenging
-  // Base multiplier starts at 1.5 (hard from the start) and scales up with level
-  const levelScale = 1.5 + (p.level * 0.08);
+  // Base multiplier starts at 2.0 (hard from the start) and scales up with level
+  const levelScale = 2.0 + (p.level * 0.12);
 
   if (isLast) {
     const b = chapter.bossEnemy;
@@ -266,7 +266,7 @@ function getStageEnemy(chapter, stage) {
   if (chapter.stageEnemies && chapter.stageEnemies[stage]) {
     const e = chapter.stageEnemies[stage];
     // Stage scaling: each stage within chapter also gets harder
-    const stageScale = levelScale * (1 + stage * 0.08);
+    const stageScale = levelScale * (1 + stage * 0.12);
     return {
       ...e,
       hp:   Math.floor(e.hp  * stageScale),
