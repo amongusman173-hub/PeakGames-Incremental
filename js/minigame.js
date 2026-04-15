@@ -7,7 +7,7 @@ const mgUseCounts = {};
 
 const MG_CONTAINER = () => document.getElementById('mg-overlay');
 
-function showMinigame(type, difficulty, label, callback) {
+function showMinigame(type, difficulty, label, callback, forcedPhrase) {
   if (mgActive) { callback(1); return; }
   mgActive = true;
   mgResolve = callback;
@@ -27,7 +27,7 @@ function showMinigame(type, difficulty, label, callback) {
     case 'draw_line': buildDrawLineGame(overlay, difficulty, label); break;
     case 'drag_crush':buildDragCrushGame(overlay, difficulty, label); break;
     case 'quick_tap': buildQuickTapGame(overlay, difficulty, label); break;
-    case 'typing':    buildTypingGame(overlay, difficulty, label); break;
+    case 'typing':    buildTypingGame(overlay, difficulty, label, forcedPhrase); break;
     case 'x_slash':   buildXSlashGame(overlay, difficulty, label); break;
     default:          resolveMinigame(1);
   }
@@ -650,14 +650,14 @@ function quickJobMinigame(job, callback) {
   game(job, callback);
 }
 // ── TYPING GAME — type a phrase as fast as possible ──
-function buildTypingGame(el, difficulty, label) {
+function buildTypingGame(el, difficulty, label, forcedPhrase) {
   const phrases = {
     1: ['attack', 'strike', 'slash'],
     2: ['domain expansion', 'malevolent shrine', 'cursed technique'],
     3: ['domain expansion', 'infinite void', 'hollow purple'],
   };
   const pool = phrases[Math.min(3, difficulty)] || phrases[2];
-  const phrase = pool[Math.floor(Math.random() * pool.length)];
+  const phrase = forcedPhrase || pool[Math.floor(Math.random() * pool.length)];
   const timeLimit = Math.max(3000, phrase.length * 300 + 1000);
   let done = false;
 
@@ -897,19 +897,26 @@ const TECHNIQUE_MINIGAMES = {
   'domain_expansion':['typing',    'reaction',  3, '🏯 Domain Expansion — type it!', '🏯 Malevolent Shrine — react!'],
 };
 
+// Forced phrases for specific techniques — always type exactly this
+const TECHNIQUE_FORCED_PHRASES = {
+  'domain_expansion': 'domain expansion',
+  'domain_infinite_void': 'infinite void',
+};
+
 function techniqueMinigame(tech, callback) {
   const mg = TECHNIQUE_MINIGAMES[tech.id];
+  const forcedPhrase = TECHNIQUE_FORCED_PHRASES[tech.id] || null;
   if (mg) {
     const [typeOdd, typeEven, diff, labelOdd, labelEven] = mg;
     const count = (mgUseCounts[tech.id] = (mgUseCounts[tech.id] || 0) + 1);
     const type  = count % 2 === 1 ? typeOdd : typeEven;
     const label = count % 2 === 1 ? labelOdd : labelEven;
-    showMinigame(type, diff, label, callback);
+    showMinigame(type, diff, label, callback, forcedPhrase);
   } else {
     const typeMap = { damage:'timing', multi:'mash', stun:'sequence', heal:'hold' };
     const type = typeMap[tech.effect] || 'timing';
     const diff = tech.rarity === 'legendary' ? 3 : tech.rarity === 'rare' ? 2 : 1;
-    showMinigame(type, diff, `${tech.icon} ${tech.name}`, callback);
+    showMinigame(type, diff, `${tech.icon} ${tech.name}`, callback, forcedPhrase);
   }
 }
 
