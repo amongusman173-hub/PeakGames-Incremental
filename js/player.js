@@ -116,7 +116,7 @@ function onLevelUp() {
   if (justUnlocked.length > 0) {
     setTimeout(() => toast(`🔓 Unlocked: ${justUnlocked.join(', ')}!`, 'rare'), 800);
   }
-}}
+}
 
 function applyRebirthMultipliers() {
   const p = G.player;
