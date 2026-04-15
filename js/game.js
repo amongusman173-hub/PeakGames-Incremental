@@ -109,6 +109,7 @@ function loadGame() {
     if (!G.player.skillNodes || typeof G.player.skillNodes !== 'object') G.player.skillNodes = {};
     if (!G.player.alchemyInv || typeof G.player.alchemyInv !== 'object') G.player.alchemyInv = {};
     if (!Array.isArray(G.player.alchemyRecipes)) G.player.alchemyRecipes = [];
+    if (!G.player.potionInv || typeof G.player.potionInv !== 'object') G.player.potionInv = {};
     if (!G.player.libraryStudy || typeof G.player.libraryStudy !== 'object') G.player.libraryStudy = {};
     if (!Array.isArray(G.player.gardenPlots)) G.player.gardenPlots = [];
     if (typeof G.player.waterCharges !== 'number') G.player.waterCharges = 5;
@@ -171,6 +172,7 @@ function resetGame() {
     skillNodes: {},
     alchemyInv: {},
     alchemyRecipes: [],
+    potionInv: {},
     libraryStudy: {},
     gardenPlots: [],
     waterCharges: 5,
@@ -200,10 +202,10 @@ function gameTick() {
   // HP regen out of combat: base 1% of maxHp every 4 ticks (1s), boosted by Tough Skin skill
   // Does NOT regen during active combat
   if (G.tickCount % 4 === 0 && !combatActive) {
-    if (p.hp < p.maxHp) {
+    if (Math.floor(p.hp) < p.maxHp) {
       const regenRate = 0.01 + (p.regenBonus || 0);
       const regenAmt = Math.max(2, Math.floor(p.maxHp * regenRate));
-      p.hp = Math.min(p.maxHp, p.hp + regenAmt);
+      p.hp = Math.min(p.maxHp, Math.floor(p.hp) + regenAmt);
     }
   }
 

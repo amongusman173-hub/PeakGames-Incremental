@@ -43,12 +43,15 @@ function recalcStats() {
   const sm = p.statMult || 1;
   const b  = getSkillTreeBonuses();
   const hb = getHeritageBonuses();
+  const oldMaxHp = p.maxHp;
   p.maxHp      = Math.floor((30 + p.level * 8) * sm) + b.maxHp + hb.maxHp;
   p.maxStamina = Math.floor((40 + p.level * 3) * sm) + b.maxStamina;
   p.atk        = Math.floor((2 + p.level * 1.2) * sm) + b.atk + hb.atk;
   p.def        = Math.floor((1 + p.level * 0.6) * sm) + b.def + hb.def;
   p.spd        = Math.floor((2 + p.level * 0.5) * sm) + b.spd + hb.spd;
   p.regenBonus = b.regenBonus;
+  // Always clamp HP to new maxHp — never let it exceed or go below 1
+  p.hp = Math.max(1, Math.min(p.hp, p.maxHp));
 }
 
 function gainXP(amount) {

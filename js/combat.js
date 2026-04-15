@@ -551,6 +551,17 @@ function startRaidBattle(enemy, logEl, callback) {
   if (combatActive) { toast('Already in combat!', 'warn'); return; }
   combatActive = true;
   combatContext = 'raid';
+  combatCallback = callback;
+  combatEnemy = { ...enemy, abilities: getEnemyAbilities(enemy), _atkBuff: 0 };
+  combatLog = logEl;
+  combatPlayerHP = G.player.hp;
+  combatEnemyHP = enemy.hp;
+  combatTurn = 0;
+  combatStatusPlayer = [];
+  combatStatusEnemy = [];
+  resetMgCounts();
+  resetTechCooldowns();
+
   const raidBattle = document.getElementById('raid-battle');
   const raidList   = document.getElementById('raids-list');
   if (raidBattle) raidBattle.classList.remove('hidden');
@@ -711,6 +722,7 @@ function enemyTurnRaid() {
 
   updateRaidBattleUI();
   if (combatPlayerHP <= 0) { endRaidBattle(false); return; }
+  tickTechCooldowns();
   setBattleActionsEnabled(true, 'raid');
 }
 

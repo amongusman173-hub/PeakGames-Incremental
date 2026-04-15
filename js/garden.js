@@ -142,15 +142,22 @@ function waterPlot(plotIndex) {
   if (!plot) { toast('Nothing to water here!', 'warn'); return; }
   if (plot.ready) { toast('Already fully grown!', 'info'); return; }
 
-  p.waterCharges--;
-  plot.lastWateredTick = G.tickCount;
-  if (plot.wilted) {
-    plot.wilted = false;
-    toast('💧 Plant revived!', 'success');
-  } else {
-    toast('💧 Watered!', 'info');
-  }
-  renderGarden();
+  // Watering minigame — timing game, hit the zone to water well
+  showMinigame('timing', 1, '💧 Water the plant — hit the zone!', (mult) => {
+    p.waterCharges--;
+    plot.lastWateredTick = G.tickCount;
+    if (plot.wilted) {
+      plot.wilted = false;
+      toast('💧 Plant revived!', 'success');
+    } else if (mult >= 1.8) {
+      // Perfect water — speed up growth a bit
+      plot.plantedTick = Math.max(0, plot.plantedTick - 20);
+      toast('💧 Perfect watering! Growth boosted!', 'success');
+    } else {
+      toast('💧 Watered!', 'info');
+    }
+    renderGarden();
+  });
 }
 
 function harvestPlot(plotIndex) {
