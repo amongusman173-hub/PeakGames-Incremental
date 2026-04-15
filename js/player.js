@@ -11,12 +11,29 @@ function getSkillTreeBonuses() {
   SKILL_TREE.forEach(node => {
     const lvl = G.player.skillNodes[node.id] || 0;
     if (lvl <= 0) return;
-    // Run the effect into a temp object to capture what it adds
     const tmp = { atk:0, def:0, spd:0, maxHp:0, maxStamina:0, regenBonus:0 };
-    for (let i = 0; i < lvl; i++) {
-      node.effect(tmp, i + 1);
-    }
+    for (let i = 0; i < lvl; i++) node.effect(tmp, i + 1);
     for (const k in bonus) bonus[k] += (tmp[k] || 0);
+  });
+  return bonus;
+}
+
+// Compute stat bonuses from heritage (clan/weapon/style)
+function getHeritageBonuses() {
+  const bonus = { atk: 0, def: 0, spd: 0, maxHp: 0 };
+  const p = G.player;
+  if (!p.heritage) return bonus;
+  const items = [
+    p.heritage.clan   ? (typeof CLANS !== 'undefined'          ? CLANS.find(x=>x.id===p.heritage.clan)           : null) : null,
+    p.heritage.weapon ? (typeof WEAPONS !== 'undefined'        ? WEAPONS.find(x=>x.id===p.heritage.weapon)       : null) : null,
+    p.heritage.style  ? (typeof FIGHTING_STYLES !== 'undefined'? FIGHTING_STYLES.find(x=>x.id===p.heritage.style): null) : null,
+  ];
+  items.forEach(item => {
+    if (!item || !item.bonus) return;
+    if (item.bonus.atk)   bonus.atk   += item.bonus.atk;
+    if (item.bonus.def)   bonus.def   += item.bonus.def;
+    if (item.bonus.spd)   bonus.spd   += item.bonus.spd;
+    if (item.bonus.maxHp) bonus.maxHp += item.bonus.maxHp;
   });
   return bonus;
 }
@@ -24,12 +41,13 @@ function getSkillTreeBonuses() {
 function recalcStats() {
   const p = G.player;
   const sm = p.statMult || 1;
-  const b = getSkillTreeBonuses();
-  p.maxHp      = Math.floor((30 + p.level * 8) * sm) + b.maxHp;
+  const b  = getSkillTreeBonuses();
+  const hb = getHeritageBonuses();
+  p.maxHp      = Math.floor((30 + p.level * 8) * sm) + b.maxHp + hb.maxHp;
   p.maxStamina = Math.floor((40 + p.level * 3) * sm) + b.maxStamina;
-  p.atk        = Math.floor((2 + p.level * 1.2) * sm) + b.atk;
-  p.def        = Math.floor((1 + p.level * 0.6) * sm) + b.def;
-  p.spd        = Math.floor((2 + p.level * 0.5) * sm) + b.spd;
+  p.atk        = Math.floor((2 + p.level * 1.2) * sm) + b.atk + hb.atk;
+  p.def        = Math.floor((1 + p.level * 0.6) * sm) + b.def + hb.def;
+  p.spd        = Math.floor((2 + p.level * 0.5) * sm) + b.spd + hb.spd;
   p.regenBonus = b.regenBonus;
 }
 

@@ -508,6 +508,7 @@ function getSpdMgTimeBonus() {
 }
 
 let combatActive = false;
+let combatContext = 'story'; // 'story' or 'raid'
 let combatCallback = null;
 let combatEnemy = null;
 let combatLog = null;
@@ -549,17 +550,7 @@ function appendLog(logEl, msg, cls = '') {
 function startRaidBattle(enemy, logEl, callback) {
   if (combatActive) { toast('Already in combat!', 'warn'); return; }
   combatActive = true;
-  combatCallback = callback;
-  combatEnemy = { ...enemy, abilities: getEnemyAbilities(enemy), _atkBuff: 0 };
-  combatLog = logEl;
-  combatPlayerHP = G.player.hp;
-  combatEnemyHP = enemy.hp;
-  combatTurn = 0;
-  combatStatusPlayer = [];
-  combatStatusEnemy = [];
-  resetMgCounts();
-
-  // Show raid battle UI
+  combatContext = 'raid';
   const raidBattle = document.getElementById('raid-battle');
   const raidList   = document.getElementById('raids-list');
   if (raidBattle) raidBattle.classList.remove('hidden');
@@ -601,11 +592,19 @@ function updateRaidBattleUI() {
 function renderRaidTechniqueActions() {
   const container = document.getElementById('raid-technique-actions');
   if (!container) return;
+  if (vesselSwitchActive) {
+    renderVesselTechniqueActions();
+    return;
+  }
   const equipped = G.player.equipped.filter(id => id !== null);
   container.innerHTML = equipped.map(techId => {
     const tech = TECHNIQUES.find(t => t.id === techId);
     if (!tech) return '';
-    return `<button class="btn-action" onclick="useRaidTechnique('${tech.id}')">${tech.icon} ${tech.name}</button>`;
+    const cd = techCooldowns[techId] || 0;
+    const onCd = cd > 0;
+    return `<button class="btn-action${onCd ? ' btn-on-cd' : ''}" onclick="useRaidTechnique('${tech.id}')" ${onCd ? 'disabled' : ''}>
+      ${tech.icon} ${tech.name}${onCd ? ` <span class="cd-badge">${cd}</span>` : ''}
+    </button>`;
   }).join('');
 }
 
@@ -735,6 +734,7 @@ function endRaidBattle(won) {
 function startStoryBattle(enemy, storyCallback) {
   if (combatActive) return;
   combatActive = true;
+  combatContext = 'story';
   combatCallback = storyCallback;
   combatEnemy = { ...enemy, abilities: getEnemyAbilities(enemy), _atkBuff: 0 };
   combatLog = document.getElementById('battle-log');
@@ -857,13 +857,15 @@ function renderVesselTechniqueActions() {
   const container = document.getElementById('technique-actions');
   if (!container) return;
   const jjkIds = ['dismantle', 'cleave', 'fuga', 'domain_expansion'];
+  // Use the right handler depending on whether we're in story or raid
+  const handler = combatContext === 'raid' ? 'useRaidTechnique' : 'useTechnique';
   const buttons = jjkIds.map(id => {
     const tech = TECHNIQUES.find(t => t.id === id);
     const cd = techCooldowns[id] || 0;
     const onCd = cd > 0;
     const label = tech ? `${tech.icon} ${tech.name}` : id;
     return `<button class="btn-action jjk-btn${onCd ? ' btn-on-cd' : ''}"
-      onclick="useTechnique('${id}')" ${onCd ? 'disabled' : ''}>
+      onclick="${handler}('${id}')" ${onCd ? 'disabled' : ''}>
       ${label}${onCd ? ` <span class="cd-badge">${cd}</span>` : ''}
     </button>`;
   }).join('');
@@ -895,7 +897,7 @@ function applyTechniqueEffect(tech, mult, afterCb) {
     updateBattleUI();
     // Enemy takes a turn, then re-enable the new vessel buttons
     setTimeout(() => {
-      enemyTurn();
+      if (combatContext === 'raid') enemyTurnRaid(); else enemyTurn();
     }, 500);
     return;
   }
@@ -1130,7 +1132,8 @@ function endBattle(won) {
       vesselSwitchCharges = 0;
       appendLog(combatLog, '🩸 Sukuna recedes... Vessel Switch expired.', 'log-info');
       // Swap buttons back to normal moveset immediately
-      renderTechniqueActions();
+      if (combatContext === 'raid') renderRaidTechniqueActions();
+      else renderTechniqueActions();
     }
   }
 
@@ -1157,7 +1160,7 @@ function setBattleActionsEnabled(enabled, context) {
   });
   // If enabling story buttons while vessel switch is active, re-render vessel buttons first
   // so the fresh DOM elements exist before we try to enable them
-  if (enabled && context === 'story' && vesselSwitchActive) {
+  if (enabled && vesselSwitchActive && (context === 'story' || context === 'raid')) {
     renderVesselTechniqueActions();
   }
   const techContainer = context === 'raid' ? '#raid-technique-actions' : '#technique-actions';

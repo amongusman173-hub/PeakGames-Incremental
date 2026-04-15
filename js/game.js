@@ -278,6 +278,13 @@ function gameTick() {
 // ===== INIT =====
 function initGame() {
   loadGame();
+  // Re-register Gojo techniques into TECHNIQUES array if player has them
+  // (they're added at runtime and lost on page refresh)
+  if (typeof GOJO_TECHNIQUES !== 'undefined') {
+    GOJO_TECHNIQUES.forEach(t => {
+      if (!TECHNIQUES.find(x => x.id === t.id)) TECHNIQUES.push(t);
+    });
+  }
   applyRebirthMultipliers(); // calls recalcStats() internally
   setInterval(gameTick, G.tickRate);
   initUI();

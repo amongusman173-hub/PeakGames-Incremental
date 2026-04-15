@@ -112,13 +112,9 @@ function rollHeritage(category) {
 
   p.heritage[category] = result.id;
 
-  // Apply stat bonuses
-  if (result.bonus) {
-    if (result.bonus.atk)    p.atk    += result.bonus.atk;
-    if (result.bonus.def)    p.def    += result.bonus.def;
-    if (result.bonus.spd)    p.spd    += result.bonus.spd;
-    if (result.bonus.maxHp)  { p.maxHp += result.bonus.maxHp; p.hp = Math.min(p.hp + result.bonus.maxHp, p.maxHp); }
-  }
+  // Stat bonuses are applied via recalcStats() which reads heritage — no direct mutation needed
+  recalcStats();
+  p.hp = Math.min(p.hp + (result.bonus?.maxHp || 0), p.maxHp); // restore HP proportionally
 
   // Grant techniques
   if (result.techs) {
