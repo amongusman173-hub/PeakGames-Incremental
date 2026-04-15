@@ -81,14 +81,42 @@ function onLevelUp() {
   spawnFloatingText(`Lv.${p.level}!`, 'float-xp');
   const hdr = document.getElementById('header');
   if (hdr) { hdr.classList.add('level-up-flash'); setTimeout(() => hdr.classList.remove('level-up-flash'), 700); }
-  // Only re-render the currently visible tab to avoid 4 full DOM rebuilds
+
+  // Level gates — re-render any tab whose unlock threshold was just crossed
+  // so the locked section disappears immediately without needing a refresh
+  const lvl = p.level;
+  const GATES = {
+    training: 1, jobs: 1, raids: 8, dig: 5,
+    shop: 1, dojo: 15, library: 20, alchemy: 18,
+    garden: 10, heritage: 1, story: 1,
+  };
+
   if (typeof activeTab !== 'undefined') {
+    // Always re-render the active tab
     if (activeTab === 'training') renderTraining();
-    else if (activeTab === 'jobs') renderJobs();
-    else if (activeTab === 'raids') renderRaids();
-    else if (activeTab === 'story') renderStoryChapters();
+    else if (activeTab === 'jobs')     renderJobs();
+    else if (activeTab === 'raids')    renderRaids();
+    else if (activeTab === 'story')    renderStoryChapters();
+    else if (activeTab === 'dig')      renderDigUI();
+    else if (activeTab === 'dojo')     renderDojo();
+    else if (activeTab === 'library')  renderLibrary();
+    else if (activeTab === 'alchemy')  renderAlchemy();
+    else if (activeTab === 'garden')   renderGarden();
+    else if (activeTab === 'shop')     renderSkillTree();
   }
-}
+
+  // If we just hit a gate level, show a toast so the player knows something unlocked
+  const justUnlocked = [];
+  if (lvl === 5)  justUnlocked.push('⛏️ Excavation');
+  if (lvl === 8)  justUnlocked.push('⚔️ Raids');
+  if (lvl === 10) justUnlocked.push('🌱 Garden');
+  if (lvl === 15) justUnlocked.push('🥋 Dojo');
+  if (lvl === 18) justUnlocked.push('⚗️ Alchemy');
+  if (lvl === 20) justUnlocked.push('📚 Library');
+  if (justUnlocked.length > 0) {
+    setTimeout(() => toast(`🔓 Unlocked: ${justUnlocked.join(', ')}!`, 'rare'), 800);
+  }
+}}
 
 function applyRebirthMultipliers() {
   const p = G.player;

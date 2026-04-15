@@ -128,6 +128,49 @@ function toggleBrewSlot(ingredientId) {
 
 function clearBrewSlots() { brewSlots = [null, null, null, null]; renderAlchemy(); }
 
+// ── ALCHEMY VFX ──
+function alchemyBrewVFX(rarity) {
+  const cauldron = document.querySelector('.brew-slots') || document.getElementById('alchemy-container');
+  if (!cauldron) return;
+  const rect = cauldron.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+
+  const palettes = {
+    common:    ['#a5d6a7','#66bb6a','#fff9c4','#fff'],
+    uncommon:  ['#6c9fff','#b388ff','#fff9c4','#fff'],
+    rare:      ['#b06aff','#cc88ff','#f48fb1','#fff'],
+    legendary: ['#f5c542','#ffdd66','#ff9900','#fff','#ff80ab'],
+  };
+  const colors = palettes[rarity] || palettes.common;
+  const count = rarity === 'legendary' ? 30 : rarity === 'rare' ? 22 : rarity === 'uncommon' ? 16 : 10;
+
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement('div');
+    const angle = (Math.PI * 2 * i / count) + Math.random() * 0.8;
+    const dist = (rarity === 'legendary' ? 80 : rarity === 'rare' ? 60 : 40) * (0.5 + Math.random() * 0.8);
+    const size = 4 + Math.random() * 7;
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    p.style.cssText = `position:fixed;z-index:9998;pointer-events:none;border-radius:50%;
+      width:${size}px;height:${size}px;background:${color};
+      left:${cx}px;top:${cy}px;
+      --dx:${Math.cos(angle)*dist}px;--dy:${Math.sin(angle)*dist}px;
+      animation:digBurst 0.7s ease-out forwards;animation-delay:${Math.random()*0.1}s;`;
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 900);
+  }
+
+  if (rarity === 'legendary') {
+    const f = document.createElement('div');
+    f.style.cssText = `position:fixed;inset:0;z-index:9997;pointer-events:none;background:rgba(245,197,66,0.25);animation:digFlash 0.6s ease-out forwards;`;
+    document.body.appendChild(f); setTimeout(() => f.remove(), 700);
+  } else if (rarity === 'rare') {
+    const f = document.createElement('div');
+    f.style.cssText = `position:fixed;inset:0;z-index:9997;pointer-events:none;background:rgba(176,106,255,0.15);animation:digFlash 0.5s ease-out forwards;`;
+    document.body.appendChild(f); setTimeout(() => f.remove(), 600);
+  }
+}
+
 // ── BREWING MINIGAME — rarity determines difficulty and type ──
 // common: 1 easy hold
 // uncommon: 1 medium hold + timing
@@ -197,11 +240,16 @@ function attemptBrew() {
         toast(`🧪 Recipe discovered: ${match.name}!`, 'rare');
         spawnFloatingText('Recipe!', 'float-xp');
         gainXP(500);
+        // Discovery flash
+        const f = document.createElement('div');
+        f.style.cssText = `position:fixed;inset:0;z-index:9997;pointer-events:none;background:rgba(245,197,66,0.2);animation:digFlash 0.6s ease-out forwards;`;
+        document.body.appendChild(f); setTimeout(() => f.remove(), 700);
       }
       const count = mult >= 1.8 ? 3 : mult >= 1.4 ? 2 : 1;
       addPotion(match.id, count);
       gainXP(50 * count);
       playSound('make potion');
+      alchemyBrewVFX(match.rarity);
       toast(`${match.icon} Brewed ${count}x ${match.name}!`, 'success');
       spawnFloatingText(`+${count} ${match.icon}`, 'float-xp');
     } else {
@@ -233,6 +281,8 @@ function useKnownRecipe(recipeId) {
     }
     const count = mult >= 1.8 ? 3 : mult >= 1.4 ? 2 : 1;
     addPotion(recipe.id, count);
+    alchemyBrewVFX(recipe.rarity);
+    playSound('make potion');
     toast(`${recipe.icon} Brewed ${count}x ${recipe.name}!`, 'success');
     spawnFloatingText(`+${count} ${recipe.icon}`, 'float-xp');
     renderAlchemy();
@@ -330,12 +380,16 @@ function renderAlchemy() {
           <div style="font-size:24px">❓</div>
           <div style="font-size:11px;color:var(--dim);margin-top:4px">${r.rarity} recipe — buy hint to reveal</div>
         </div>`;
-        // Show partial hint: ingredient count and first ingredient
-        const firstIng = ALCHEMY_INGREDIENTS.find(x => x.id === r.ingredients[0]);
+        // Show partial hint: first 2 ingredients and total count
+        const hintIngs = r.ingredients.slice(0, 2).map(id => {
+          const ing = ALCHEMY_INGREDIENTS.find(x => x.id === id);
+          return ing ? `${ing.icon} ${ing.name}` : '?';
+        });
+        const more = r.ingredients.length > 2 ? ` + ${r.ingredients.length - 2} more` : '';
         return `<div class="card" style="padding:10px">
           <div style="font-size:11px;color:var(--dim)">🔍 ${r.rarity} · ${r.ingredients.length} ingredients</div>
-          <div style="font-size:12px;margin-top:4px">Starts with: ${firstIng ? firstIng.icon + firstIng.name : '?'}</div>
-          <div style="font-size:11px;color:var(--dim);margin-top:2px">Experiment to discover the rest!</div>
+          <div style="font-size:12px;margin-top:4px;color:var(--text)">${hintIngs.join(' + ')}${more}</div>
+          <div style="font-size:11px;color:var(--dim);margin-top:2px">Discover the full recipe by experimenting!</div>
         </div>`;
       }).join('')}
     </div>`;

@@ -1,8 +1,8 @@
 // ===== SETTINGS =====
 
 const SETTINGS_DEFAULTS = {
-  musicVolume: 0.5,
-  sfxVolume: 0.7,
+  musicVolume: 0.15,
+  sfxVolume: 1.0,
   showFloatingText: true,
   reducedAnimations: false,
 };

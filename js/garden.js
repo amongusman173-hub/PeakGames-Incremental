@@ -71,7 +71,47 @@ const SEEDS = [
   { id: 'phoenix_seed',    name: 'Phoenix Seed',     icon: '🦅', yields: 'phoenix_ash',  yieldCount: [1,1], growTicks: 1000, waterInterval: 200, cost: 300, levelReq: 40, stages: ['🌱','🌱','🔥','🦅','🦅'] },
 ];
 
-// Plot state: { seedId, plantedTick, lastWateredTick, stage (0-4), wilted, ready }
+// ── GARDEN VFX ──
+function gardenVFX(type, plotIndex) {
+  const cell = document.querySelector(`.garden-cell:nth-child(${plotIndex + 1})`);
+  const rect = cell ? cell.getBoundingClientRect() : null;
+  const cx = rect ? rect.left + rect.width / 2 : window.innerWidth / 2;
+  const cy = rect ? rect.top + rect.height / 2 : window.innerHeight / 2;
+
+  const configs = {
+    water:   { colors: ['#29b6f6','#81d4fa','#b3e5fc','#fff'], count: 12, spread: 40, emoji: '💧' },
+    plant:   { colors: ['#66bb6a','#a5d6a7','#fff9c4','#fff'], count: 10, spread: 35, emoji: '🌱' },
+    harvest: { colors: ['#ffca28','#ffd54f','#fff9c4','#a5d6a7','#fff'], count: 18, spread: 55, emoji: '🌾' },
+    wilt:    { colors: ['#8d6e63','#a1887f','#fff'], count: 8, spread: 30, emoji: '🥀' },
+    revive:  { colors: ['#66bb6a','#29b6f6','#fff'], count: 14, spread: 45, emoji: '💚' },
+  };
+  const cfg = configs[type] || configs.water;
+
+  for (let i = 0; i < cfg.count; i++) {
+    const p = document.createElement('div');
+    const angle = (Math.PI * 2 * i / cfg.count) + Math.random() * 0.8;
+    const dist = cfg.spread * (0.4 + Math.random() * 0.8);
+    const size = 3 + Math.random() * 5;
+    const color = cfg.colors[Math.floor(Math.random() * cfg.colors.length)];
+    p.style.cssText = `position:fixed;z-index:9998;pointer-events:none;border-radius:50%;
+      width:${size}px;height:${size}px;background:${color};
+      left:${cx}px;top:${cy}px;
+      --dx:${Math.cos(angle)*dist}px;--dy:${Math.sin(angle)*dist}px;
+      animation:digBurst 0.5s ease-out forwards;animation-delay:${Math.random()*0.08}s;`;
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 700);
+  }
+
+  // Floating emoji
+  const el = document.createElement('div');
+  el.textContent = cfg.emoji;
+  el.style.cssText = `position:fixed;z-index:9999;pointer-events:none;font-size:22px;
+    left:${cx - 11}px;top:${cy - 10}px;animation:floatUp 0.8s ease-out forwards;`;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 900);
+}
+
+
 function getGardenPlots() {
   if (!G.player.gardenPlots) G.player.gardenPlots = [];
   const maxPlots = getMaxGardenPlots();
@@ -146,14 +186,17 @@ function waterPlot(plotIndex) {
   showMinigame('timing', 1, '💧 Water the plant — hit the zone!', (mult) => {
     p.waterCharges--;
     plot.lastWateredTick = G.tickCount;
+    playSound('waterplant', 0.8);
     if (plot.wilted) {
       plot.wilted = false;
+      gardenVFX('revive', plotIndex);
       toast('💧 Plant revived!', 'success');
     } else if (mult >= 1.8) {
-      // Perfect water — speed up growth a bit
       plot.plantedTick = Math.max(0, plot.plantedTick - 20);
+      gardenVFX('water', plotIndex);
       toast('💧 Perfect watering! Growth boosted!', 'success');
     } else {
+      gardenVFX('water', plotIndex);
       toast('💧 Watered!', 'info');
     }
     renderGarden();
@@ -170,6 +213,7 @@ function harvestPlot(plotIndex) {
   addIngredient(seed.yields, count);
   const ing = ALCHEMY_INGREDIENTS.find(i => i.id === seed.yields);
   gainXP(count * 20);
+  gardenVFX('harvest', plotIndex);
   toast(`🌾 Harvested ${count}x ${ing ? ing.name : seed.yields}!`, 'success');
   spawnFloatingText(`+${count} ${ing?.icon || '🌿'}`, 'float-xp');
   plots[plotIndex] = null;
@@ -193,6 +237,7 @@ function plantSeed(plotIndex, seedId) {
     ready: false,
   };
   toast(`Planted ${seed.icon} ${seed.name}!`, 'success');
+  gardenVFX('plant', plotIndex);
   selectedSeed = null;
   renderGarden();
 }
