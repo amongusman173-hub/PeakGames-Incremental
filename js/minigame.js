@@ -29,6 +29,13 @@ function showMinigame(type, difficulty, label, callback, forcedPhrase) {
     case 'quick_tap': buildQuickTapGame(overlay, difficulty, label); break;
     case 'typing':    buildTypingGame(overlay, difficulty, label, forcedPhrase); break;
     case 'x_slash':   buildXSlashGame(overlay, difficulty, label); break;
+    case 'triple_slash':   buildTripleSlashGame(overlay, difficulty, label); break;
+    case 'arrow_charge':   buildArrowChargeGame(overlay, difficulty, label); break;
+    case 'push_mash':      buildPushMashGame(overlay, difficulty, label); break;
+    case 'double_push':    buildDoublePushGame(overlay, difficulty, label); break;
+    case 'pull_hold':      buildPullHoldGame(overlay, difficulty, label); break;
+    case 'gravity_crush':  buildGravityCrushGame(overlay, difficulty, label); break;
+    case 'color_merge':    buildColorMergeGame(overlay, difficulty, label); break;
     default:          resolveMinigame(1);
   }
 }
@@ -825,6 +832,403 @@ function buildXSlashGame(el, difficulty, label) {
   setTimeout(() => { if (!done) { done=true; showMgResult(el, 0.3, '⏰ Too slow!', () => resolveMinigame(0.3)); } }, timeLimit);
 }
 
+  setTimeout(() => { if (!done) { done=true; showMgResult(el, 0.3, '⏰ Too slow!', () => resolveMinigame(0.3)); } }, timeLimit);
+}
+
+// ── TRIPLE SLASH — draw 3 diagonal lines in sequence (Cleave) ──
+function buildTripleSlashGame(el, difficulty, label) {
+  const timeLimit = 5000;
+  let phase = 0, points = [], drawing = false, done = false;
+  const colors = ['rgba(255,109,0,0.9)', 'rgba(255,87,34,0.9)', 'rgba(255,61,0,0.9)'];
+
+  el.innerHTML = `<div class="mg-box">
+    <div class="mg-label">${label}</div>
+    <div class="mg-hint">Draw <strong>3 diagonal slashes</strong> ↘ in sequence!</div>
+    <canvas id="mg-canvas" class="mg-canvas" width="280" height="160"></canvas>
+    <div id="mg-slash-status" style="font-size:13px;font-weight:700;color:var(--gold);text-align:center;margin-top:6px">Slash 1 / 3</div>
+  </div>`;
+
+  const canvas = el.querySelector('#mg-canvas');
+  const ctx = canvas.getContext('2d');
+  const status = el.querySelector('#mg-slash-status');
+  let scores = [];
+
+  function drawGuides() {
+    ctx.clearRect(0,0,280,160);
+    for (let i = 0; i < 3; i++) {
+      const x = 20 + i * 85;
+      ctx.strokeStyle = i < phase ? 'rgba(255,109,0,0.5)' : i === phase ? 'rgba(108,159,255,0.4)' : 'rgba(255,255,255,0.1)';
+      ctx.lineWidth = 2; ctx.setLineDash([6,4]);
+      ctx.beginPath(); ctx.moveTo(x, 10); ctx.lineTo(x + 60, 150); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }
+  drawGuides();
+
+  function getPos(e) {
+    const r = canvas.getBoundingClientRect();
+    const src = e.touches ? e.touches[0] : e;
+    return { x: src.clientX - r.left, y: src.clientY - r.top };
+  }
+
+  function scoreSlash(pts) {
+    if (pts.length < 4) return 0;
+    const s = pts[0], e = pts[pts.length-1];
+    const dx = e.x - s.x, dy = e.y - s.y;
+    const len = Math.sqrt(dx*dx+dy*dy);
+    if (len < 30) return 0;
+    let dev = 0;
+    pts.forEach(p => { dev += Math.abs(dy*p.x - dx*p.y + e.x*s.y - e.y*s.x) / (len||1); });
+    const straight = Math.max(0, 1 - (dev/pts.length)/25);
+    return straight * ((dx > 0 && dy > 0) ? 1 : 0.4);
+  }
+
+  function startDraw(e) { if (done) return; e.preventDefault(); drawing = true; points = [getPos(e)]; ctx.strokeStyle = colors[phase]; ctx.lineWidth = 3; ctx.setLineDash([]); ctx.beginPath(); ctx.moveTo(points[0].x, points[0].y); }
+  function moveDraw(e) { if (!drawing||done) return; e.preventDefault(); const p = getPos(e); points.push(p); ctx.lineTo(p.x,p.y); ctx.stroke(); }
+  function endDraw(e) {
+    if (!drawing||done) return; drawing = false;
+    const s = scoreSlash(points);
+    scores.push(s);
+    phase++;
+    if (phase >= 3) {
+      done = true;
+      const avg = scores.reduce((a,b)=>a+b,0)/3;
+      const mult = Math.min(2.2, avg * 2.2);
+      const msg = mult >= 1.8 ? '💥 TRIPLE CLEAVE!' : mult >= 1.2 ? '✅ Good cleave!' : '⚠️ Sloppy...';
+      showMgResult(el, mult, msg, () => resolveMinigame(mult));
+    } else {
+      status.textContent = `Slash ${phase+1} / 3`;
+      drawGuides();
+    }
+  }
+
+  canvas.addEventListener('mousedown', startDraw); canvas.addEventListener('mousemove', moveDraw); canvas.addEventListener('mouseup', endDraw);
+  canvas.addEventListener('touchstart', startDraw, {passive:false}); canvas.addEventListener('touchmove', moveDraw, {passive:false}); canvas.addEventListener('touchend', endDraw);
+  setTimeout(() => { if (!done) { done=true; const avg = scores.length ? scores.reduce((a,b)=>a+b,0)/scores.length : 0; const mult = Math.max(0.3, avg); showMgResult(el, mult, '⏰ Too slow!', () => resolveMinigame(mult)); } }, timeLimit);
+}
+
+// ── ARROW CHARGE — hold to charge a giant arrow, release at max (Fuga) ──
+function buildArrowChargeGame(el, difficulty, label) {
+  let holding = false, charge = 0, raf, done = false;
+  const TARGET = 85; // % to release in
+
+  el.innerHTML = `<div class="mg-box">
+    <div class="mg-label">${label}</div>
+    <div class="mg-hint">Hold to charge the arrow — release in the <span style="color:#ff7043">🔥 FIRE ZONE</span>!</div>
+    <div style="position:relative;height:60px;background:rgba(0,0,0,0.3);border-radius:8px;overflow:hidden;margin:12px 0">
+      <div style="position:absolute;left:${TARGET-10}%;width:15%;height:100%;background:rgba(255,112,67,0.35);border-left:2px solid #ff7043;border-right:2px solid #ff7043"></div>
+      <div id="mg-arrow-fill" style="height:100%;width:0%;background:linear-gradient(90deg,#ff6f00,#ff7043,#ffab40);transition:none;border-radius:8px"></div>
+      <div id="mg-arrow-emoji" style="position:absolute;top:50%;transform:translateY(-50%);left:0%;font-size:28px;transition:none">🏹</div>
+    </div>
+    <div id="mg-arrow-pct" style="text-align:center;font-size:14px;font-weight:700;color:var(--gold)">0%</div>
+    <button class="btn-primary mg-btn" id="mg-arrow-btn">Hold to charge… [Space]</button>
+  </div>`;
+
+  const fill = el.querySelector('#mg-arrow-fill');
+  const emoji = el.querySelector('#mg-arrow-emoji');
+  const pct = el.querySelector('#mg-arrow-pct');
+  const btn = el.querySelector('#mg-arrow-btn');
+
+  function animate() {
+    if (holding && charge < 100) charge += 1.5;
+    if (charge >= 100 && !done) { done = true; cancelAnimationFrame(raf); cleanup(); showMgResult(el, 0.3, '💨 Overcharged! Arrow missed!', () => resolveMinigame(0.3)); return; }
+    fill.style.width = charge + '%';
+    emoji.style.left = Math.min(90, charge) + '%';
+    pct.textContent = Math.floor(charge) + '%';
+    raf = requestAnimationFrame(animate);
+  }
+  raf = requestAnimationFrame(animate);
+
+  function cleanup() { document.removeEventListener('keydown', onKey); document.removeEventListener('keyup', onKeyUp); }
+  function startHold() { holding = true; btn.textContent = '🔥 Charging…'; }
+  function release() {
+    if (done) return; done = true; holding = false; cancelAnimationFrame(raf); cleanup();
+    const inZone = charge >= TARGET - 10 && charge <= TARGET + 5;
+    const center = Math.abs(charge - TARGET) / 10;
+    let mult, msg;
+    if (inZone) { mult = center < 0.3 ? 2.2 : 1.7; msg = center < 0.3 ? '💥 PERFECT SHOT!' : '✅ Good shot!'; }
+    else if (charge < TARGET - 10) { mult = 0.5; msg = '⚠️ Undercharged!'; }
+    else { mult = 0.3; msg = '❌ Overcharged!'; }
+    showMgResult(el, mult, msg, () => resolveMinigame(mult));
+  }
+
+  function onKey(e) { if (e.code === 'Space') { e.preventDefault(); startHold(); } }
+  function onKeyUp(e) { if (e.code === 'Space') { e.preventDefault(); release(); } }
+  document.addEventListener('keydown', onKey); document.addEventListener('keyup', onKeyUp);
+  btn.addEventListener('mousedown', startHold); btn.addEventListener('touchstart', e => { e.preventDefault(); startHold(); }, {passive:false});
+  btn.addEventListener('mouseup', release); btn.addEventListener('touchend', release);
+}
+
+// ── PUSH MASH — mash to push the enemy (Reversal Red) ──
+function buildPushMashGame(el, difficulty, label) {
+  const target = 12;
+  const timeMs = 2000;
+  let count = 0, done = false;
+
+  el.innerHTML = `<div class="mg-box">
+    <div class="mg-label">${label}</div>
+    <div class="mg-hint">MASH to push the enemy away! <strong>${target} pushes</strong> in 2s!</div>
+    <div style="position:relative;height:70px;background:rgba(0,0,0,0.3);border-radius:8px;overflow:hidden;margin:10px 0">
+      <div id="mg-push-enemy" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:32px;transition:right 0.1s">😈</div>
+      <div id="mg-push-arrow" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:24px;color:#ff5252">→</div>
+    </div>
+    <div class="mg-mash-count" id="mg-count" style="color:#ff5252">0 / ${target}</div>
+    <div class="mg-timer-bar"><div class="mg-timer-fill" id="mg-tfill" style="background:#ff5252"></div></div>
+    <button class="btn-primary mg-btn" id="mg-push-btn" style="background:rgba(229,57,53,0.3);border-color:#e53935">🔴 PUSH! [Space]</button>
+  </div>`;
+
+  const countEl = el.querySelector('#mg-count');
+  const fill = el.querySelector('#mg-tfill');
+  const enemy = el.querySelector('#mg-push-enemy');
+  const start = Date.now();
+
+  const interval = setInterval(() => {
+    const elapsed = Date.now() - start;
+    fill.style.width = Math.max(0, 100 - (elapsed/timeMs)*100) + '%';
+    if (elapsed >= timeMs && !done) {
+      done = true; clearInterval(interval); document.removeEventListener('keydown', onKey);
+      const ratio = count / target;
+      const mult = ratio >= 1 ? 2.0 : ratio >= 0.6 ? 1.3 : 0.5;
+      showMgResult(el, mult, ratio >= 1 ? '💥 MAXIMUM REPULSION!' : ratio >= 0.6 ? '✅ Pushed!' : '❌ Too weak!', () => resolveMinigame(mult));
+    }
+  }, 50);
+
+  function push() {
+    if (done) return;
+    count++;
+    countEl.textContent = `${count} / ${target}`;
+    const pct = Math.min(90, (count/target)*80);
+    enemy.style.right = (10 + pct) + 'px';
+    if (count >= target && !done) {
+      done = true; clearInterval(interval); document.removeEventListener('keydown', onKey);
+      showMgResult(el, 2.0, '💥 MAXIMUM REPULSION!', () => resolveMinigame(2.0));
+    }
+  }
+
+  function onKey(e) { if (e.code === 'Space') { e.preventDefault(); push(); } }
+  document.addEventListener('keydown', onKey);
+  el.querySelector('#mg-push-btn').addEventListener('click', push);
+}
+
+// ── DOUBLE PUSH — two-phase push mash (Reversal Red MAX) ──
+function buildDoublePushGame(el, difficulty, label) {
+  let phase = 1, count = 0, done = false;
+  const target = 8;
+  const timeMs = 3000;
+
+  el.innerHTML = `<div class="mg-box">
+    <div class="mg-label">${label}</div>
+    <div class="mg-hint">TWO waves of repulsion! Mash <strong>${target}</strong> each wave!</div>
+    <div style="position:relative;height:70px;background:rgba(0,0,0,0.3);border-radius:8px;overflow:hidden;margin:10px 0">
+      <div id="mg-dpush-enemy" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:32px">😈</div>
+    </div>
+    <div style="font-size:12px;color:var(--dim);text-align:center">Wave <span id="mg-wave">1</span>/2 — <span id="mg-dcount" style="color:#ff5252;font-weight:700">0/${target}</span></div>
+    <div class="mg-timer-bar"><div class="mg-timer-fill" id="mg-dtfill" style="background:#ff1744"></div></div>
+    <button class="btn-primary mg-btn" id="mg-dpush-btn" style="background:rgba(183,28,28,0.3);border-color:#b71c1c">🔴🔴 PUSH! [Space]</button>
+  </div>`;
+
+  const countEl = el.querySelector('#mg-dcount');
+  const waveEl = el.querySelector('#mg-wave');
+  const fill = el.querySelector('#mg-dtfill');
+  const enemy = el.querySelector('#mg-dpush-enemy');
+  const start = Date.now();
+
+  const interval = setInterval(() => {
+    const elapsed = Date.now() - start;
+    fill.style.width = Math.max(0, 100 - (elapsed/timeMs)*100) + '%';
+    if (elapsed >= timeMs && !done) {
+      done = true; clearInterval(interval); document.removeEventListener('keydown', onKey);
+      const mult = phase === 2 && count >= target ? 2.2 : 0.6;
+      showMgResult(el, mult, mult >= 2 ? '💥 DOUBLE REPULSION!' : '⚠️ Incomplete!', () => resolveMinigame(mult));
+    }
+  }, 50);
+
+  function push() {
+    if (done) return;
+    count++;
+    countEl.textContent = `${count}/${target}`;
+    const pct = Math.min(80, (count/target)*40 + (phase-1)*40);
+    enemy.style.right = (10 + pct) + 'px';
+    if (count >= target) {
+      if (phase === 1) {
+        phase = 2; count = 0;
+        waveEl.textContent = '2';
+        countEl.textContent = `0/${target}`;
+        enemy.style.right = '10px';
+        enemy.style.fontSize = '28px';
+        enemy.textContent = '😡';
+      } else {
+        done = true; clearInterval(interval); document.removeEventListener('keydown', onKey);
+        showMgResult(el, 2.2, '💥 DOUBLE REPULSION! OBLITERATED!', () => resolveMinigame(2.2));
+      }
+    }
+  }
+
+  function onKey(e) { if (e.code === 'Space') { e.preventDefault(); push(); } }
+  document.addEventListener('keydown', onKey);
+  el.querySelector('#mg-dpush-btn').addEventListener('click', push);
+}
+
+// ── PULL HOLD — hold to pull enemy in, release at perfect moment (Lapse Blue) ──
+function buildPullHoldGame(el, difficulty, label) {
+  let holding = false, pull = 0, raf, done = false;
+  const TARGET = 75;
+
+  el.innerHTML = `<div class="mg-box">
+    <div class="mg-label">${label}</div>
+    <div class="mg-hint">Hold to pull the enemy — release in the <span style="color:#42a5f5">💙 PULL ZONE</span>!</div>
+    <div style="position:relative;height:70px;background:rgba(0,0,0,0.3);border-radius:8px;overflow:hidden;margin:10px 0">
+      <div id="mg-pull-enemy" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:32px">😈</div>
+      <div style="position:absolute;left:${TARGET-8}%;width:16%;height:100%;background:rgba(66,165,245,0.25);border-left:2px solid #42a5f5;border-right:2px solid #42a5f5"></div>
+      <div id="mg-pull-bar" style="position:absolute;right:0;height:100%;width:0%;background:linear-gradient(270deg,#0d47a1,#42a5f5);border-radius:8px 0 0 8px"></div>
+    </div>
+    <div id="mg-pull-pct" style="text-align:center;font-size:14px;font-weight:700;color:#42a5f5">0% pull</div>
+    <button class="btn-primary mg-btn" id="mg-pull-btn" style="background:rgba(13,71,161,0.3);border-color:#1565c0">Hold to pull… [Space]</button>
+  </div>`;
+
+  const bar = el.querySelector('#mg-pull-bar');
+  const enemy = el.querySelector('#mg-pull-enemy');
+  const pctEl = el.querySelector('#mg-pull-pct');
+  const btn = el.querySelector('#mg-pull-btn');
+
+  function animate() {
+    if (holding && pull < 100) pull += 1.3;
+    if (pull >= 100 && !done) { done = true; cancelAnimationFrame(raf); cleanup(); showMgResult(el, 0.3, '💨 Pulled too hard! Enemy escaped!', () => resolveMinigame(0.3)); return; }
+    bar.style.width = pull + '%';
+    enemy.style.right = Math.max(5, 90 - pull * 0.8) + 'px';
+    pctEl.textContent = Math.floor(pull) + '% pull';
+    raf = requestAnimationFrame(animate);
+  }
+  raf = requestAnimationFrame(animate);
+
+  function cleanup() { document.removeEventListener('keydown', onKey); document.removeEventListener('keyup', onKeyUp); }
+  function startHold() { holding = true; btn.textContent = '💙 Pulling…'; }
+  function release() {
+    if (done) return; done = true; holding = false; cancelAnimationFrame(raf); cleanup();
+    const inZone = pull >= TARGET - 8 && pull <= TARGET + 8;
+    const center = Math.abs(pull - TARGET) / 8;
+    let mult, msg;
+    if (inZone) { mult = center < 0.3 ? 2.2 : 1.7; msg = center < 0.3 ? '💥 PERFECT PULL!' : '✅ Good pull!'; }
+    else if (pull < TARGET - 8) { mult = 0.6; msg = '⚠️ Not enough pull!'; }
+    else { mult = 0.3; msg = '❌ Pulled too hard!'; }
+    showMgResult(el, mult, msg, () => resolveMinigame(mult));
+  }
+
+  function onKey(e) { if (e.code === 'Space') { e.preventDefault(); startHold(); } }
+  function onKeyUp(e) { if (e.code === 'Space') { e.preventDefault(); release(); } }
+  document.addEventListener('keydown', onKey); document.addEventListener('keyup', onKeyUp);
+  btn.addEventListener('mousedown', startHold); btn.addEventListener('touchstart', e => { e.preventDefault(); startHold(); }, {passive:false});
+  btn.addEventListener('mouseup', release); btn.addEventListener('touchend', release);
+}
+
+// ── GRAVITY CRUSH — drag enemy down into the crush zone (Lapse Blue MAX) ──
+function buildGravityCrushGame(el, difficulty, label) {
+  const targetY = 140;
+  const tolerance = 15;
+  let dragging = false, enemyY = 20, done = false;
+
+  el.innerHTML = `<div class="mg-box">
+    <div class="mg-label">${label}</div>
+    <div class="mg-hint">Drag the enemy ⬇ into the <span style="color:#42a5f5">💙 CRUSH ZONE</span>!</div>
+    <div id="mg-grav-area" class="mg-crush-area" style="border-color:#1565c0">
+      <div id="mg-grav-zone" class="mg-target-zone" style="top:${targetY-tolerance}px;height:${tolerance*2}px;background:rgba(66,165,245,0.2);border-color:#42a5f5"></div>
+      <div id="mg-grav-enemy" style="position:absolute;top:${enemyY}px;left:50%;transform:translateX(-50%);font-size:32px;cursor:grab;user-select:none">😈</div>
+    </div>
+    <div style="font-size:11px;color:var(--dim);text-align:center;margin-top:6px">Drag the enemy into the blue zone</div>
+  </div>`;
+
+  const area = el.querySelector('#mg-grav-area');
+  const enemy = el.querySelector('#mg-grav-enemy');
+
+  function getY(e) { const r = area.getBoundingClientRect(); const src = e.touches ? e.touches[0] : e; return src.clientY - r.top - 16; }
+
+  enemy.addEventListener('mousedown', e => { dragging = true; e.preventDefault(); });
+  enemy.addEventListener('touchstart', e => { dragging = true; e.preventDefault(); }, {passive:false});
+  area.addEventListener('mousemove', e => { if (!dragging||done) return; enemyY = Math.max(5, Math.min(165, getY(e))); enemy.style.top = enemyY + 'px'; });
+  area.addEventListener('touchmove', e => { if (!dragging||done) return; e.preventDefault(); enemyY = Math.max(5, Math.min(165, getY(e))); enemy.style.top = enemyY + 'px'; }, {passive:false});
+
+  function release() {
+    if (!dragging||done) return; dragging = false; done = true;
+    const dist = Math.abs(enemyY - targetY);
+    let mult, msg;
+    if (dist <= tolerance * 0.3) { mult = 2.2; msg = '💥 GRAVITATIONAL COLLAPSE!'; enemy.textContent = '💥'; }
+    else if (dist <= tolerance)   { mult = 1.7; msg = '✅ Crushed!'; enemy.textContent = '💢'; }
+    else if (dist <= tolerance*2) { mult = 1.0; msg = '⚠️ Close!'; enemy.textContent = '😬'; }
+    else                          { mult = 0.4; msg = '❌ Missed!'; enemy.textContent = '😅'; }
+    showMgResult(el, mult, msg, () => resolveMinigame(mult));
+  }
+
+  area.addEventListener('mouseup', release); area.addEventListener('touchend', release);
+  setTimeout(() => { if (!done) { done = true; showMgResult(el, 0.3, '⏰ Too slow!', () => resolveMinigame(0.3)); } }, 5000);
+}
+
+// ── COLOR MERGE — hit red zone then blue zone to create purple (Hollow Purple) ──
+function buildColorMergeGame(el, difficulty, label) {
+  const zoneW = 18;
+  const redStart = 10 + Math.random() * 25;
+  const blueStart = 60 + Math.random() * 20;
+  const speed = 1.8;
+  let pos = 0, dir = 1, raf, phase = 1, done = false;
+
+  el.innerHTML = `<div class="mg-box">
+    <div class="mg-label">${label}</div>
+    <div class="mg-hint">Hit <span style="color:#ff5252">🔴 RED</span> then <span style="color:#42a5f5">🔵 BLUE</span> to create <span style="color:#ce93d8">🟣 PURPLE</span>!</div>
+    <div class="mg-timing-track" id="mg-track">
+      <div id="mg-red-zone" style="position:absolute;left:${redStart}%;width:${zoneW}%;height:100%;background:rgba(229,57,53,0.35);border:1px solid #e53935;border-radius:3px"></div>
+      <div id="mg-blue-zone" style="position:absolute;left:${blueStart}%;width:${zoneW}%;height:100%;background:rgba(66,165,245,0.35);border:1px solid #42a5f5;border-radius:3px;opacity:0.4"></div>
+      <div class="mg-indicator" id="mg-ind"></div>
+    </div>
+    <div style="font-size:12px;color:var(--dim);text-align:center;margin:4px 0">Phase: <span id="mg-cphase" style="font-weight:700;color:#ff5252">🔴 Hit RED</span></div>
+    <button class="btn-primary mg-btn" id="mg-merge-btn" style="background:rgba(128,0,128,0.2);border-color:#9c27b0">⚡ Strike! [Space]</button>
+  </div>`;
+
+  const ind = el.querySelector('#mg-ind');
+  const phaseEl = el.querySelector('#mg-cphase');
+
+  function animate() {
+    pos += speed * dir;
+    if (pos >= 100) { pos = 100; dir = -1; }
+    if (pos <= 0)   { pos = 0;   dir = 1; }
+    ind.style.left = pos + '%';
+    raf = requestAnimationFrame(animate);
+  }
+  raf = requestAnimationFrame(animate);
+
+  const timeout = setTimeout(() => {
+    cancelAnimationFrame(raf); document.removeEventListener('keydown', onKey);
+    showMgResult(el, 0.3, '⏰ Too slow!', () => resolveMinigame(0.3));
+  }, 6000);
+
+  function fire() {
+    if (phase === 1) {
+      const inRed = pos >= redStart && pos <= redStart + zoneW;
+      if (inRed) {
+        phase = 2;
+        phaseEl.textContent = '🔵 Hit BLUE'; phaseEl.style.color = '#42a5f5';
+        el.querySelector('#mg-red-zone').style.opacity = '0.3';
+        el.querySelector('#mg-blue-zone').style.opacity = '1';
+      } else {
+        cancelAnimationFrame(raf); clearTimeout(timeout); document.removeEventListener('keydown', onKey);
+        showMgResult(el, 0.4, '❌ Missed RED!', () => resolveMinigame(0.4));
+      }
+    } else {
+      cancelAnimationFrame(raf); clearTimeout(timeout); document.removeEventListener('keydown', onKey);
+      const inBlue = pos >= blueStart && pos <= blueStart + zoneW;
+      if (inBlue) {
+        // Purple explosion!
+        phaseEl.textContent = '🟣 HOLLOW PURPLE!'; phaseEl.style.color = '#ce93d8';
+        showMgResult(el, 2.2, '🟣 HOLLOW PURPLE!', () => resolveMinigame(2.2));
+      } else {
+        showMgResult(el, 0.6, '⚠️ Missed BLUE — incomplete!', () => resolveMinigame(0.6));
+      }
+    }
+  }
+
+  function onKey(e) { if (e.code === 'Space') { e.preventDefault(); fire(); } }
+  document.addEventListener('keydown', onKey);
+  el.querySelector('#mg-merge-btn').addEventListener('click', fire);
+}
+
 function showMgResult(el, mult, msg, cb) {
   const color = mult >= 1.8 ? 'var(--gold)' : mult >= 1.4 ? 'var(--ok)' : mult >= 0.9 ? 'var(--accent)' : 'var(--danger)';
   const resultDiv = document.createElement('div');
@@ -901,12 +1305,18 @@ const TECHNIQUE_MINIGAMES = {
   'soul_drain':      ['hold',      'reaction',  3, '💀 Soul Drain!',          '💀 Soul Drain — react!'],
   'star_fall':       ['mash',      'dual_zone', 3, '🌟 Star Fall!',           '🌟 Star Fall — double!'],
   'divine_wrath':    ['sequence',  'mash',      3, '⚡ Divine Wrath!',        '⚡ Divine Wrath — obliterate!'],
-  // JJK secret techniques
-  'vessel_switch':   ['reaction',  'dual_zone', 3, '🩸 Vessel Switch — react!', '🩸 Vessel Switch — double!'],
-  'dismantle':       ['timing',    'dual_zone', 3, '✂️ Dismantle — precise cut!', '✂️ Dismantle — double slash!'],
-  'cleave':          ['mash',      'sequence',  3, '🔪 Cleave — mash it!',     '🔪 Cleave — pattern!'],
-  'fuga':            ['hold',      'dual_zone', 3, '🔥 Fuga — charge the flame!', '🔥 Fuga — double fire!'],
-  'domain_expansion':['typing',    'reaction',  3, '🏯 Domain Expansion — type it!', '🏯 Malevolent Shrine — react!'],
+  // JJK secret techniques — each has a unique custom minigame
+  'vessel_switch':        ['reaction',      'dual_zone',    3, '🩸 Vessel Switch — react instantly!',        '🩸 Vessel Switch — double strike!'],
+  'dismantle':            ['x_slash',       'x_slash',      3, '✂️ Dismantle — draw the X!',                 '✂️ Dismantle — draw the X!'],
+  'cleave':               ['triple_slash',  'triple_slash', 3, '🔪 Cleave — draw 3 slashes!',                '🔪 Cleave — draw 3 slashes!'],
+  'fuga':                 ['arrow_charge',  'arrow_charge', 3, '🏹 Fuga — charge the Giant Flame Arrow!',    '🏹 Fuga — charge the Giant Flame Arrow!'],
+  'domain_expansion':     ['typing',        'typing',       3, '🏯 Domain Expansion — type it!',             '🏯 Domain Expansion — type it!'],
+  'reversal_red':         ['push_mash',     'push_mash',    3, '🔴 Reversal Red — PUSH!',                    '🔴 Reversal Red — PUSH!'],
+  'reversal_red_max':     ['double_push',   'double_push',  3, '🔴 Reversal Red MAX — DOUBLE PUSH!',         '🔴 Reversal Red MAX — DOUBLE PUSH!'],
+  'lapse_blue':           ['pull_hold',     'pull_hold',    3, '🔵 Lapse Blue — PULL!',                      '🔵 Lapse Blue — PULL!'],
+  'lapse_blue_max':       ['gravity_crush', 'gravity_crush',3, '🔵 Lapse Blue MAX — Gravitational Collapse!','🔵 Lapse Blue MAX — Gravitational Collapse!'],
+  'hollow_purple':        ['color_merge',   'color_merge',  3, '🟣 Hollow Purple — merge Red and Blue!',     '🟣 Hollow Purple — merge Red and Blue!'],
+  'domain_infinite_void': ['typing',        'typing',       3, '🌌 Domain Expansion: Infinite Void!',        '🌌 Domain Expansion: Infinite Void!'],
 };
 
 // Forced phrases for specific techniques — always type exactly this
