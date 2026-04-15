@@ -78,11 +78,17 @@ function weightedRoll(pool) {
   return pool[pool.length - 1];
 }
 
+// Lock to prevent double-rolling when clicking multiple buttons quickly
+const _heritageRolling = { clan: false, weapon: false, style: false };
+
 function rollHeritage(category) {
+  if (_heritageRolling[category]) return; // already rolling
+  _heritageRolling[category] = true;
+
   const p = G.player;
   if (!p.heritage) p.heritage = {};
   const cost = getHeritageCost(category);
-  if (!spendGold(cost)) { toast('Not enough gold!', 'warn'); return; }
+  if (!spendGold(cost)) { toast('Not enough gold!', 'warn'); _heritageRolling[category] = false; return; }
 
   // ── Confirm before rolling over legendary/secret ──
   const currentId = p.heritage[category];
@@ -94,11 +100,18 @@ function rollHeritage(category) {
         `⚠️ You currently have ${rarityLabel}: ${current.icon} ${current.name}\n\nRe-rolling will permanently replace it. Are you sure?`
       );
       if (!confirmed) {
-        // Refund the gold since we already spent it
         p.gold += cost;
+        _heritageRolling[category] = false;
         return;
       }
     }
+  }
+
+  // Skip animation if setting enabled
+  if (G.player.heritageSkipAnim) {
+    _doHeritageRoll(category);
+    _heritageRolling[category] = false;
+    return;
   }
 
   // ── Slot machine animation ──
@@ -107,7 +120,7 @@ function rollHeritage(category) {
   const icons = ['⚙️','💨','🪨','🌑','🔥','⚡','🐉','🌀','✨','😈','🌟','🔵'];
   let spinCount = 0;
   const spinEl = document.createElement('div');
-  spinEl.style.cssText = `font-size:40px;text-align:center;padding:12px;animation:none;`;
+  spinEl.style.cssText = `font-size:40px;text-align:center;padding:12px;`;
   if (resultArea) resultArea.replaceWith(spinEl);
 
   const spinInterval = setInterval(() => {
@@ -116,37 +129,29 @@ function rollHeritage(category) {
     spinCount++;
     if (spinCount > 18) {
       clearInterval(spinInterval);
-      doRoll();
+      _doHeritageRoll(category);
+      _heritageRolling[category] = false;
     }
   }, 80);
+}
 
-  function doRoll() {
-
+function _doHeritageRoll(category) {
+  const p = G.player;
   let result;
   if (category === 'clan')    result = weightedRoll(CLANS);
   if (category === 'weapon')  result = weightedRoll(WEAPONS);
   if (category === 'style')   result = weightedRoll(FIGHTING_STYLES);
+  if (!result) return;
 
   p.heritage[category] = result.id;
-
-  // Stat bonuses are applied via recalcStats() which reads heritage — no direct mutation needed
   recalcStats();
-  p.hp = Math.min(p.hp + (result.bonus?.maxHp || 0), p.maxHp); // restore HP proportionally
+  p.hp = Math.min(p.hp + (result.bonus?.maxHp || 0), p.maxHp);
 
-  // Grant techniques
-  if (result.techs) {
-    result.techs.forEach(id => grantTechnique(id));
-  }
+  if (result.techs) result.techs.forEach(id => grantTechnique(id));
 
-  // Gojo clan special handling
   if (result._gojo) {
-    // Register all Gojo techniques
-    GOJO_TECHNIQUES.forEach(t => {
-      if (!TECHNIQUES.find(x => x.id === t.id)) TECHNIQUES.push(t);
-    });
-    // Grant base Gojo techniques
+    GOJO_TECHNIQUES.forEach(t => { if (!TECHNIQUES.find(x => x.id === t.id)) TECHNIQUES.push(t); });
     ['infinity', 'reversal_red', 'lapse_blue', 'hollow_purple', 'domain_infinite_void'].forEach(id => grantTechnique(id));
-    // Dramatic reveal
     setTimeout(() => {
       toast('👁️ Six Eyes awakened...', 'rare');
       setTimeout(() => toast('♾️ Infinity activated. You are the honored one.', 'rare'), 1500);
@@ -154,67 +159,85 @@ function rollHeritage(category) {
     }, 500);
   }
 
-  const rarityColor = { common:'var(--dim)', uncommon:'var(--accent)', rare:'var(--accent2)', legendary:'var(--gold)', secret:'#ff3333' };
-  toast(`${result.icon} ${result.name} — ${result.rarity.toUpperCase()}!`, result.rarity === 'secret' ? 'rare' : result.rarity === 'legendary' ? 'rare' : 'success');
+  toast(`${result.icon} ${result.name} — ${result.rarity.toUpperCase()}!`, result.rarity === 'secret' || result.rarity === 'legendary' ? 'rare' : 'success');
+  playSound('rollingspin sound');
 
-  // ── Roll VFX ──
-  const colors = {
-    common:    ['#aaa','#ccc','#fff'],
-    uncommon:  ['#6c9fff','#88aaff','#fff'],
-    rare:      ['#b06aff','#cc88ff','#fff'],
-    legendary: ['#f5c542','#ffdd66','#ff9900','#fff'],
-    secret:    ['#ff1744','#b71c1c','#fff','#ff8a80'],
-  }[result.rarity] || ['#fff'];
+  // VFX
+  const colors = { common:['#aaa','#ccc','#fff'], uncommon:['#6c9fff','#88aaff','#fff'], rare:['#b06aff','#cc88ff','#fff'], legendary:['#f5c542','#ffdd66','#ff9900','#fff'], secret:['#ff1744','#b71c1c','#fff','#ff8a80'] }[result.rarity] || ['#fff'];
   const count = result.rarity === 'secret' ? 50 : result.rarity === 'legendary' ? 35 : result.rarity === 'rare' ? 22 : 12;
   const spread = result.rarity === 'secret' ? 130 : result.rarity === 'legendary' ? 100 : 70;
-
-  // Find the roll button area to anchor particles
   const anchor = document.querySelector('.heritage-card') || document.getElementById('heritage-container');
-  if (anchor) {
+  if (anchor && !G.player.heritageSkipAnim) {
     const rect = anchor.getBoundingClientRect();
-    const cx = rect.left + rect.width / 2;
-    const cy = rect.top + rect.height / 2;
+    const cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
     for (let i = 0; i < count; i++) {
-      const p = document.createElement('div');
+      const el = document.createElement('div');
       const angle = (Math.PI * 2 * i / count) + Math.random() * 0.8;
       const dist = spread * (0.5 + Math.random() * 0.8);
       const size = 4 + Math.random() * 8;
       const color = colors[Math.floor(Math.random() * colors.length)];
-      p.style.cssText = `position:fixed;z-index:9998;pointer-events:none;border-radius:50%;
-        width:${size}px;height:${size}px;background:${color};
-        left:${cx}px;top:${cy}px;
-        --dx:${Math.cos(angle)*dist}px;--dy:${Math.sin(angle)*dist}px;
-        animation:digBurst 0.7s ease-out forwards;animation-delay:${Math.random()*0.1}s;`;
-      document.body.appendChild(p);
-      setTimeout(() => p.remove(), 900);
+      el.style.cssText = `position:fixed;z-index:9998;pointer-events:none;border-radius:50%;width:${size}px;height:${size}px;background:${color};left:${cx}px;top:${cy}px;--dx:${Math.cos(angle)*dist}px;--dy:${Math.sin(angle)*dist}px;animation:digBurst 0.7s ease-out forwards;animation-delay:${Math.random()*0.1}s;`;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 900);
     }
   }
-
-  // Screen flash for rare+
-  if (result.rarity === 'secret') {
-    const f = document.createElement('div');
-    f.style.cssText = `position:fixed;inset:0;z-index:9997;pointer-events:none;
-      background:rgba(180,0,0,0.45);animation:digFlash 0.8s ease-out forwards;`;
-    document.body.appendChild(f);
-    setTimeout(() => f.remove(), 900);
-  } else if (result.rarity === 'legendary') {
-    const f = document.createElement('div');
-    f.style.cssText = `position:fixed;inset:0;z-index:9997;pointer-events:none;
-      background:rgba(245,197,66,0.25);animation:digFlash 0.6s ease-out forwards;`;
-    document.body.appendChild(f);
-    setTimeout(() => f.remove(), 700);
-  } else if (result.rarity === 'rare') {
-    const f = document.createElement('div');
-    f.style.cssText = `position:fixed;inset:0;z-index:9997;pointer-events:none;
-      background:rgba(176,106,255,0.2);animation:digFlash 0.5s ease-out forwards;`;
-    document.body.appendChild(f);
-    setTimeout(() => f.remove(), 600);
-  }
+  if (result.rarity === 'secret') { const f = document.createElement('div'); f.style.cssText = `position:fixed;inset:0;z-index:9997;pointer-events:none;background:rgba(180,0,0,0.45);animation:digFlash 0.8s ease-out forwards;`; document.body.appendChild(f); setTimeout(() => f.remove(), 900); }
+  else if (result.rarity === 'legendary') { const f = document.createElement('div'); f.style.cssText = `position:fixed;inset:0;z-index:9997;pointer-events:none;background:rgba(245,197,66,0.25);animation:digFlash 0.6s ease-out forwards;`; document.body.appendChild(f); setTimeout(() => f.remove(), 700); }
+  else if (result.rarity === 'rare') { const f = document.createElement('div'); f.style.cssText = `position:fixed;inset:0;z-index:9997;pointer-events:none;background:rgba(176,106,255,0.2);animation:digFlash 0.5s ease-out forwards;`; document.body.appendChild(f); setTimeout(() => f.remove(), 600); }
 
   spawnFloatingText(result.icon, 'float-xp');
   renderHeritage();
-  } // end doRoll
-} // end rollHeritage
+}
+
+// ── AUTO-ROLL SYSTEM ──
+let _autoRollInterval = null;
+const RARITY_ORDER = ['common', 'uncommon', 'rare', 'legendary', 'secret'];
+
+function startAutoRoll() {
+  const rarityEl = document.getElementById('heritage-auto-rarity');
+  const catEl = document.getElementById('heritage-auto-cat');
+  if (!rarityEl || !catEl) return;
+  const targetRarity = rarityEl.value;
+  const category = catEl.value;
+  if (!targetRarity) { toast('Select a target rarity first!', 'warn'); return; }
+
+  stopAutoRoll();
+  G.player.heritageSkipAnim = true; // force skip during auto-roll
+  document.getElementById('btn-stop-autoroll').style.display = '';
+  toast(`🎯 Auto-rolling ${category} until ${targetRarity}+…`, 'info');
+
+  const targetIdx = RARITY_ORDER.indexOf(targetRarity);
+
+  _autoRollInterval = setInterval(() => {
+    const cost = getHeritageCost(category);
+    if (G.player.gold < cost) {
+      stopAutoRoll();
+      toast('❌ Auto-roll stopped — not enough gold!', 'warn');
+      return;
+    }
+
+    // Check current result
+    const currentId = G.player.heritage[category];
+    const current = currentId ? getHeritageItem(category, currentId) : null;
+    const currentIdx = current ? RARITY_ORDER.indexOf(current.rarity) : -1;
+
+    if (currentIdx >= targetIdx) {
+      stopAutoRoll();
+      toast(`✅ Auto-roll done! Got ${current.icon} ${current.name} (${current.rarity})`, 'success');
+      return;
+    }
+
+    // Roll without confirm (auto-roll bypasses legendary confirm)
+    if (!spendGold(cost)) { stopAutoRoll(); return; }
+    _doHeritageRoll(category);
+  }, 300);
+}
+
+function stopAutoRoll() {
+  if (_autoRollInterval) { clearInterval(_autoRollInterval); _autoRollInterval = null; }
+  const btn = document.getElementById('btn-stop-autoroll');
+  if (btn) btn.style.display = 'none';
+}
 
 function getHeritageCost(category) {
   const p = G.player;
@@ -312,6 +335,29 @@ function renderHeritage() {
     </div>` : '';
 
   container.innerHTML = `
+    <div class="heritage-options" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px;padding:10px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid var(--border)">
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer">
+        <input type="checkbox" ${p.heritageSkipAnim ? 'checked' : ''} onchange="G.player.heritageSkipAnim=this.checked">
+        ⚡ Skip roll animation
+      </label>
+      <div style="display:flex;align-items:center;gap:6px;font-size:12px">
+        🎯 Auto-roll until:
+        <select id="heritage-auto-rarity" style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:2px 6px;color:var(--text);font-size:11px">
+          <option value="">— off —</option>
+          <option value="uncommon">Uncommon+</option>
+          <option value="rare">Rare+</option>
+          <option value="legendary">Legendary+</option>
+          <option value="secret">Secret only</option>
+        </select>
+        <select id="heritage-auto-cat" style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:2px 6px;color:var(--text);font-size:11px">
+          <option value="clan">Clan</option>
+          <option value="weapon">Weapon</option>
+          <option value="style">Style</option>
+        </select>
+        <button class="btn-small" onclick="startAutoRoll()">▶ Start</button>
+        <button class="btn-small" onclick="stopAutoRoll()" id="btn-stop-autoroll" style="display:none">■ Stop</button>
+      </div>
+    </div>
     <div class="heritage-grid">${html}</div>
     ${gojoSection}
     <div class="heritage-odds">

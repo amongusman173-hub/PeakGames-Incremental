@@ -58,6 +58,7 @@ const G = {
     // Heritage: { clan, weapon, style }
     heritage: {},
     heritageRerolls: {},
+    heritageSkipAnim: false,
     // Equipped technique ids (4 slots)
     equipped: [null, null, null, null],
     // Offline time tracking
@@ -307,6 +308,7 @@ function initGame() {
   renderGarden();
   renderHeritage();
   toast('Welcome back, Hero!', 'info');
+  playBgMusic();
 }
 
 window.addEventListener('DOMContentLoaded', initGame);

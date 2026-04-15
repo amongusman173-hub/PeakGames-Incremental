@@ -159,10 +159,12 @@ function attemptBrew() {
         G.player.alchemyRecipes.push(match.id);
         toast(`🧪 Recipe discovered: ${match.name}!`, 'rare');
         spawnFloatingText('Recipe!', 'float-xp');
+        gainXP(500);
       }
-      // Good brew (mult >= 1.5) = 2 potions, decent = 1
       const count = mult >= 1.8 ? 3 : mult >= 1.4 ? 2 : 1;
       addPotion(match.id, count);
+      gainXP(50 * count);
+      playSound('make potion');
       toast(`${match.icon} Brewed ${count}x ${match.name}!`, 'success');
       spawnFloatingText(`+${count} ${match.icon}`, 'float-xp');
     } else {

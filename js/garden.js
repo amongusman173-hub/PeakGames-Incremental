@@ -169,6 +169,7 @@ function harvestPlot(plotIndex) {
   const count = seed.yieldCount[0] + Math.floor(Math.random() * (seed.yieldCount[1] - seed.yieldCount[0] + 1)) + getGardenYieldBonus();
   addIngredient(seed.yields, count);
   const ing = ALCHEMY_INGREDIENTS.find(i => i.id === seed.yields);
+  gainXP(count * 20);
   toast(`🌾 Harvested ${count}x ${ing ? ing.name : seed.yields}!`, 'success');
   spawnFloatingText(`+${count} ${ing?.icon || '🌿'}`, 'float-xp');
   plots[plotIndex] = null;

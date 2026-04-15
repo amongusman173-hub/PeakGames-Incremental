@@ -782,19 +782,21 @@ function startStoryBattle(enemy, storyCallback) {
 function updateBattleUI() {
   const p = G.player;
   const pPct = Math.max(0, (combatPlayerHP / p.maxHp) * 100);
-  const ePct = Math.max(0, (combatEnemyHP / combatEnemy.maxHp) * 100);
+  const ePct = Math.max(0, (combatEnemyHP / (combatEnemy?.maxHp || 1)) * 100);
   const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
   const setW = (id, w) => { const el = document.getElementById(id); if (el) el.style.width = w + '%'; };
 
   set('bp-name', p.name);
   setW('bp-hp-bar', pPct);
   set('bp-hp-txt', `${Math.max(0,Math.floor(combatPlayerHP))}/${p.maxHp}`);
-  set('be-name', combatEnemy.name);
+  set('be-name', combatEnemy?.name || '');
   setW('be-hp-bar', ePct);
-  set('be-hp-txt', `${Math.max(0,Math.floor(combatEnemyHP))}/${combatEnemy.maxHp}`);
+  set('be-hp-txt', `${Math.max(0,Math.floor(combatEnemyHP))}/${combatEnemy?.maxHp || 0}`);
 
-  document.getElementById('bp-status').innerHTML = combatStatusPlayer.map(s=>`<span class="status-badge">${s.icon} ${s.name}(${s.turns})</span>`).join('');
-  document.getElementById('be-status').innerHTML = combatStatusEnemy.map(s=>`<span class="status-badge">${s.icon} ${s.name}(${s.turns})</span>`).join('');
+  const bpStatus = document.getElementById('bp-status');
+  const beStatus = document.getElementById('be-status');
+  if (bpStatus) bpStatus.innerHTML = combatStatusPlayer.map(s=>`<span class="status-badge">${s.icon} ${s.name}(${s.turns})</span>`).join('');
+  if (beStatus) beStatus.innerHTML = combatStatusEnemy.map(s=>`<span class="status-badge">${s.icon} ${s.name}(${s.turns})</span>`).join('');
 }
 
 // Track vessel switch charges — declared here so renderTechniqueActions can reference them

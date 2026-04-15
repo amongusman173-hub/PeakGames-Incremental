@@ -152,6 +152,45 @@ function spawnFloatingText(text, cls, anchorId) {
   setTimeout(() => el.remove(), 1400);
 }
 
+// ===== SOUND SYSTEM =====
+const _audioCache = {};
+function playSound(name, volume = 0.6) {
+  try {
+    const s = getSettings();
+    if (s.sfxVolume === 0) return;
+    const key = name.toLowerCase();
+    if (!_audioCache[key]) {
+      _audioCache[key] = new Audio(`sound/${name}.mp3`);
+    }
+    const a = _audioCache[key].cloneNode();
+    a.volume = Math.min(1, (s.sfxVolume ?? 0.7) * volume);
+    a.play().catch(() => {});
+  } catch(e) {}
+}
+
+let _bgMusic = null;
+function playBgMusic() {
+  try {
+    const s = getSettings();
+    if (!_bgMusic) {
+      _bgMusic = new Audio('sound/backroundmusic.mp3');
+      _bgMusic.loop = true;
+    }
+    _bgMusic.volume = s.musicVolume ?? 0.5;
+    if (s.musicVolume > 0) _bgMusic.play().catch(() => {});
+    else _bgMusic.pause();
+  } catch(e) {}
+}
+
+function updateMusicVolume() {
+  if (_bgMusic) {
+    const s = getSettings();
+    _bgMusic.volume = s.musicVolume ?? 0.5;
+    if (s.musicVolume > 0) _bgMusic.play().catch(() => {});
+    else _bgMusic.pause();
+  }
+}
+
 // ===== TOAST =====
 function toast(msg, type = 'info') {
   const container = document.getElementById('toast-container');
