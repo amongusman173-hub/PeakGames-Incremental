@@ -60,6 +60,39 @@ function stopStudying() {
   renderLibrary();
 }
 
+// Live progress update — called every tick when library tab is open
+function updateLibraryProgress() {
+  if (!G.activeStudy) return;
+  const spell = MAGIC_SPELLS.find(s => s.id === G.activeStudy);
+  if (!spell) return;
+  const progress = getStudyProgress(G.activeStudy);
+  const pct = Math.floor((progress / spell.studyTime) * 100);
+
+  // Update banner bar
+  const bannerBar = document.querySelector('#library-container .xp-bar');
+  if (bannerBar) bannerBar.style.width = pct + '%';
+
+  // Update banner text
+  const bannerTexts = document.querySelectorAll('#library-container .active-banner span');
+  bannerTexts.forEach(el => {
+    if (el.style.color === 'var(--dim)' || el.textContent.includes('/')) {
+      el.textContent = `${progress}/${spell.studyTime}`;
+    }
+  });
+
+  // Update the in-card progress bar for the active spell
+  const cardBars = document.querySelectorAll('#library-container .mastery-bar .xp-bar');
+  cardBars.forEach(bar => {
+    // Find the parent card and check if it's the active spell
+    const card = bar.closest('.card');
+    if (card && card.classList.contains('card-active')) {
+      bar.style.width = pct + '%';
+      const label = card.querySelector('.mastery-label');
+      if (label) label.textContent = `${progress}/${spell.studyTime}`;
+    }
+  });
+}
+
 function renderLibrary() {
   const container = document.getElementById('library-container');
   if (!container) return;

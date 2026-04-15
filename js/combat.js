@@ -339,7 +339,10 @@ function applyTechniqueEffect(tech, mult, afterCb) {
     setTimeout(() => flash.remove(), 700);
     renderVesselTechniqueActions();
     updateBattleUI();
-    setTimeout(enemyTurn, 500);
+    // Enemy takes a turn, then re-enable the new vessel buttons
+    setTimeout(() => {
+      enemyTurn();
+    }, 500);
     return;
   }
 
@@ -577,6 +580,11 @@ function setBattleActionsEnabled(enabled, context) {
     const el = document.getElementById(id);
     if (el) el.disabled = !enabled;
   });
+  // If enabling story buttons while vessel switch is active, re-render vessel buttons first
+  // so the fresh DOM elements exist before we try to enable them
+  if (enabled && context === 'story' && vesselSwitchActive) {
+    renderVesselTechniqueActions();
+  }
   const techContainer = context === 'raid' ? '#raid-technique-actions' : '#technique-actions';
   document.querySelectorAll(`${techContainer} .btn-action`).forEach(btn => { btn.disabled = !enabled; });
 }

@@ -40,7 +40,7 @@ function resolveMinigame(mult) {
 
 // ── TIMING GAME — single moving bar ──
 function buildTimingGame(el, difficulty, label) {
-  const zoneW = [38, 24, 14][Math.min(2, difficulty - 1)];
+  const zoneW = [50, 28, 14][Math.min(2, difficulty - 1)]; // diff 1 = very wide zone
   const zoneStart = 10 + Math.random() * (80 - zoneW);
   const speed = 0.9 + difficulty * 0.5;
   let pos = 0, dir = 1, raf;

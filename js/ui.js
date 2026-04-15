@@ -93,6 +93,7 @@ function updateActiveTabUI() {
     }
   }
   if (activeTab === 'garden') updateGardenTimers();
+  if (activeTab === 'library') updateLibraryProgress();
 
   // Training: update both the banner bar AND the in-card session bar live
   if (G.activeTraining) {
