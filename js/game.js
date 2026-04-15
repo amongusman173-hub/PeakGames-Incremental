@@ -296,10 +296,15 @@ function gameTick() {
 function initGame() {
   loadGame();
   // Re-register Gojo techniques into TECHNIQUES array if player has them
-  // (they're added at runtime and lost on page refresh)
   if (typeof GOJO_TECHNIQUES !== 'undefined') {
     GOJO_TECHNIQUES.forEach(t => {
       if (!TECHNIQUES.find(x => x.id === t.id)) TECHNIQUES.push(t);
+    });
+  }
+  // Re-register all library spells into TECHNIQUES (they're added at runtime and lost on refresh)
+  if (typeof MAGIC_SPELLS !== 'undefined') {
+    MAGIC_SPELLS.forEach(s => {
+      if (!TECHNIQUES.find(x => x.id === s.id)) TECHNIQUES.push(s);
     });
   }
   applyRebirthMultipliers(); // calls recalcStats() internally

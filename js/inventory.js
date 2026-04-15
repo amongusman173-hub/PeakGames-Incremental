@@ -172,7 +172,16 @@ function renderTechniqueList() {
         <div class="card-desc">${tech.desc}</div>
         ${isVessel ? `<div style="font-size:11px;color:#ff4444;margin:4px 0">⚠️ Equip this — using it in battle unlocks Sukuna's full moveset</div>` : ''}
         <div class="card-stats">
-          <span>${tech.effect === 'damage' ? `⚔️ ${Math.floor(tech.multiplier * 100)}% ATK` : tech.effect === 'heal' ? `💚 Heal ${Math.floor(tech.healPct*100)}% HP` : tech.effect === 'vessel' ? '🩸 Swaps moveset in battle' : `🔁 ${tech.hits}x hits`}</span>
+          <span>${
+            tech.effect === 'damage' ? `⚔️ ${Math.floor((tech.multiplier||1) * 100)}% ATK` :
+            tech.effect === 'heal'   ? `💚 Heal ${Math.floor((tech.healPct||0)*100)}% HP` :
+            tech.effect === 'vessel' ? '🩸 Swaps moveset in battle' :
+            tech.effect === 'stun'   ? `⚡ Stun + ${Math.floor((tech.multiplier||1)*100)}% ATK` :
+            tech.effect === 'multi'  ? `🔁 ${tech.hits||2}x hits` :
+            tech.effect === 'shield' ? `🛡️ Immune ${tech.shieldTurns||2} turns` :
+            tech.effect === 'domain_slash' ? `🏯 ${tech.slashTurns} turn slashes` :
+            `⚔️ ${Math.floor((tech.multiplier||1)*100)}% ATK`
+          }</span>
           ${bonusStr ? `<span class="highlight">${bonusStr}</span>` : ''}
         </div>
         ${isEquipped
