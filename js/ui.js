@@ -8,12 +8,20 @@ function initUI() {
     btn.addEventListener('click', () => switchTab(btn.dataset.tab));
   });
 
+  // Global button click sound
+  document.addEventListener('click', e => {
+    const btn = e.target.closest('button, .btn-primary, .btn-small, .btn-action, .tab-btn');
+    if (btn && !btn.disabled) {
+      playSound('buttonpress', 0.35);
+    }
+  });
+
   // Ripple effect on all btn-primary clicks
   document.addEventListener('click', e => {
     const btn = e.target.closest('.btn-primary');
     if (!btn || btn.disabled) return;
     btn.classList.remove('ripple');
-    void btn.offsetWidth; // reflow
+    void btn.offsetWidth;
     btn.classList.add('ripple');
     setTimeout(() => btn.classList.remove('ripple'), 400);
   });

@@ -51,20 +51,30 @@ function renderSettings() {
 
       <div class="settings-section">
         <h3>🔊 Audio</h3>
-        <p class="tab-desc">Music and sound effects will be added in a future update.</p>
         <div class="setting-row">
           <label>🎵 Music Volume</label>
-          <input type="range" min="0" max="1" step="0.05" value="${s.musicVolume}"
-            oninput="updateSetting('musicVolume', parseFloat(this.value)); document.getElementById('music-vol-val').textContent = Math.round(this.value*100)+'%'"
-            class="setting-slider">
-          <span id="music-vol-val">${Math.round(s.musicVolume*100)}%</span>
+          <div style="display:flex;align-items:center;gap:8px;flex:1">
+            <input type="range" min="0" max="1" step="0.05" value="${s.musicVolume}"
+              oninput="updateSetting('musicVolume', parseFloat(this.value)); document.getElementById('music-vol-val').textContent = Math.round(this.value*100)+'%'"
+              class="setting-slider" style="flex:1">
+            <span id="music-vol-val" style="min-width:36px;text-align:right">${Math.round(s.musicVolume*100)}%</span>
+            <button class="btn-small" onclick="updateSetting('musicVolume',0);document.getElementById('music-vol-val').textContent='0%';document.querySelector('.setting-slider').value=0" title="Mute">🔇</button>
+          </div>
         </div>
         <div class="setting-row">
           <label>🔔 SFX Volume</label>
-          <input type="range" min="0" max="1" step="0.05" value="${s.sfxVolume}"
-            oninput="updateSetting('sfxVolume', parseFloat(this.value)); document.getElementById('sfx-vol-val').textContent = Math.round(this.value*100)+'%'"
-            class="setting-slider">
-          <span id="sfx-vol-val">${Math.round(s.sfxVolume*100)}%</span>
+          <div style="display:flex;align-items:center;gap:8px;flex:1">
+            <input type="range" min="0" max="1" step="0.05" value="${s.sfxVolume}"
+              oninput="updateSetting('sfxVolume', parseFloat(this.value)); document.getElementById('sfx-vol-val').textContent = Math.round(this.value*100)+'%'"
+              class="setting-slider" style="flex:1">
+            <span id="sfx-vol-val" style="min-width:36px;text-align:right">${Math.round(s.sfxVolume*100)}%</span>
+            <button class="btn-small" onclick="playSound('buttonpress',1.0)" title="Test SFX">▶ Test</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+          <button class="btn-small" onclick="updateSetting('musicVolume',0.5);renderSettings()">🎵 Reset Music</button>
+          <button class="btn-small" onclick="updateSetting('sfxVolume',0.7);renderSettings()">🔔 Reset SFX</button>
+          <button class="btn-small" onclick="updateSetting('musicVolume',0);updateSetting('sfxVolume',0);renderSettings()">🔇 Mute All</button>
         </div>
       </div>
 
