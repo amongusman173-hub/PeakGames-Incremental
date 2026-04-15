@@ -1,75 +1,20 @@
 // ===== REBIRTH SYSTEM =====
 
 const REBIRTH_UPGRADES = [
-  {
-    id: 'xp_boost_1',
-    name: 'Scholar\'s Mind I',
-    desc: 'Gain 25% more XP permanently.',
-    icon: '📚',
-    cost: 1,
-    maxLevel: 5,
-    effect: (level) => ({ xpMult: 1 + level * 0.25 }),
-  },
-  {
-    id: 'gold_boost_1',
-    name: 'Merchant\'s Eye I',
-    desc: 'Earn 25% more gold permanently.',
-    icon: '💰',
-    cost: 1,
-    maxLevel: 5,
-    effect: (level) => ({ goldMult: 1 + level * 0.25 }),
-  },
-  {
-    id: 'stat_boost_1',
-    name: 'Warrior\'s Legacy I',
-    desc: 'All stats 20% stronger permanently.',
-    icon: '⚔️',
-    cost: 2,
-    maxLevel: 5,
-    effect: (level) => ({ statMult: 1 + level * 0.2 }),
-  },
-  {
-    id: 'dig_charges',
-    name: 'Excavator\'s Instinct',
-    desc: 'Start with +1 dig charge per rebirth level.',
-    icon: '⛏️',
-    cost: 1,
-    maxLevel: 3,
-    effect: () => ({}),
-  },
-  {
-    id: 'xp_boost_2',
-    name: 'Scholar\'s Mind II',
-    desc: 'Gain 50% more XP permanently.',
-    icon: '🎓',
-    cost: 3,
-    maxLevel: 3,
-    effect: (level) => ({ xpMult: 1 + level * 0.5 }),
-    requires: 'xp_boost_1',
-    requiresLevel: 3,
-  },
-  {
-    id: 'gold_boost_2',
-    name: 'Merchant\'s Eye II',
-    desc: 'Earn 50% more gold permanently.',
-    icon: '🏦',
-    cost: 3,
-    maxLevel: 3,
-    effect: (level) => ({ goldMult: 1 + level * 0.5 }),
-    requires: 'gold_boost_1',
-    requiresLevel: 3,
-  },
-  {
-    id: 'stat_boost_2',
-    name: 'Warrior\'s Legacy II',
-    desc: 'All stats 50% stronger permanently.',
-    icon: '🗡️',
-    cost: 4,
-    maxLevel: 3,
-    effect: (level) => ({ statMult: 1 + level * 0.5 }),
-    requires: 'stat_boost_1',
-    requiresLevel: 3,
-  },
+  // Tier 1 — cheap, immediate value
+  { id: 'xp_boost_1',   name: 'Scholar\'s Mind I',    desc: '+50% XP per level.',              icon: '📚', cost: 1, maxLevel: 5, effect: (l) => ({ xpMult:   1 + l * 0.50 }) },
+  { id: 'gold_boost_1', name: 'Merchant\'s Eye I',    desc: '+50% gold per level.',             icon: '💰', cost: 1, maxLevel: 5, effect: (l) => ({ goldMult: 1 + l * 0.50 }) },
+  { id: 'stat_boost_1', name: 'Warrior\'s Legacy I',  desc: '+30% all stats per level.',        icon: '⚔️', cost: 2, maxLevel: 5, effect: (l) => ({ statMult: 1 + l * 0.30 }) },
+  { id: 'dig_charges',  name: 'Excavator\'s Instinct',desc: '+1 starting dig charge per level.',icon: '⛏️', cost: 1, maxLevel: 5, effect: () => ({}) },
+  // Tier 2 — requires tier 1 at level 3
+  { id: 'xp_boost_2',   name: 'Scholar\'s Mind II',   desc: '+100% XP per level.',             icon: '🎓', cost: 3, maxLevel: 4, effect: (l) => ({ xpMult:   1 + l * 1.0  }), requires: 'xp_boost_1',   requiresLevel: 3 },
+  { id: 'gold_boost_2', name: 'Merchant\'s Eye II',   desc: '+100% gold per level.',            icon: '🏦', cost: 3, maxLevel: 4, effect: (l) => ({ goldMult: 1 + l * 1.0  }), requires: 'gold_boost_1', requiresLevel: 3 },
+  { id: 'stat_boost_2', name: 'Warrior\'s Legacy II', desc: '+75% all stats per level.',        icon: '🗡️', cost: 4, maxLevel: 4, effect: (l) => ({ statMult: 1 + l * 0.75 }), requires: 'stat_boost_1', requiresLevel: 3 },
+  { id: 'stamina_boost',name: 'Iron Lungs',           desc: '+50% max stamina per level.',      icon: '⚡', cost: 2, maxLevel: 4, effect: () => ({}), requires: 'stat_boost_1', requiresLevel: 2 },
+  // Tier 3 — endgame
+  { id: 'xp_boost_3',   name: 'Omniscient Mind',      desc: '+200% XP per level.',             icon: '🌟', cost: 6, maxLevel: 3, effect: (l) => ({ xpMult:   1 + l * 2.0  }), requires: 'xp_boost_2',   requiresLevel: 3 },
+  { id: 'gold_boost_3', name: 'Golden Touch',         desc: '+200% gold per level.',            icon: '👑', cost: 6, maxLevel: 3, effect: (l) => ({ goldMult: 1 + l * 2.0  }), requires: 'gold_boost_2', requiresLevel: 3 },
+  { id: 'stat_boost_3', name: 'Transcendent Power',   desc: '+150% all stats per level.',       icon: '🔱', cost: 8, maxLevel: 3, effect: (l) => ({ statMult: 1 + l * 1.5  }), requires: 'stat_boost_2', requiresLevel: 3 },
 ];
 
 function canAffordUpgrade(upgrade) {
@@ -121,27 +66,28 @@ function recalcRebirthMultipliers() {
 
 function performRebirth() {
   const p = G.player;
-  if (p.level < 50) {
-    toast('Requires level 50 to rebirth!', 'warn');
+  if (p.level < 30) {
+    toast('Requires level 30 to rebirth!', 'warn');
     return;
   }
 
-  const pointsEarned = Math.floor(1 + p.rebirthCount * 0.5);
+  // Points scale with level — higher level = more points
+  const levelBonus = Math.floor(p.level / 10);
+  const pointsEarned = 3 + p.rebirthCount + levelBonus;
   p.rebirthCount++;
   p.rebirthPoints += pointsEarned;
 
-  // Bonus dig charges from upgrade
   const digUpgrade = p.rebirthUpgrades['dig_charges'] || 0;
 
   resetGame();
 
-  // Restore rebirth state (resetGame preserves it, but re-apply)
   G.player.digCharges = 3 + digUpgrade;
 
   recalcRebirthMultipliers();
   applyRebirthMultipliers();
 
-  toast(`Rebirth ${G.player.rebirthCount}! +${pointsEarned} rebirth points`, 'rare');
+  toast(`✨ Rebirth ${G.player.rebirthCount}! +${pointsEarned} rebirth points`, 'rare');
+  spawnFloatingText(`+${pointsEarned} RP`, 'float-xp');
   renderRebirthPanel();
   renderTraining();
   renderJobs();
@@ -161,7 +107,10 @@ function renderRebirthPanel() {
   setTxt('rb-stat-mult', p.statMult.toFixed(2) + 'x');
 
   const btn = document.getElementById('btn-rebirth');
-  if (btn) btn.disabled = p.level < 50;
+  if (btn) {
+    btn.disabled = p.level < 30;
+    btn.textContent = p.level < 30 ? `🔄 Rebirth (Requires Lv.30)` : `🔄 Perform Rebirth (Lv.${p.level} → +${3 + p.rebirthCount + Math.floor(p.level/10)} RP)`;
+  }
 
   const container = document.getElementById('rebirth-upgrades');
   if (!container) return;
@@ -192,7 +141,9 @@ function renderRebirthPanel() {
 
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-rebirth')?.addEventListener('click', () => {
-    if (confirm('Rebirth? You will lose all progress except rebirth upgrades and multipliers.')) {
+    const p = G.player;
+    const pts = 3 + p.rebirthCount + Math.floor(p.level / 10);
+    if (confirm(`Rebirth at level ${p.level}?\n\nYou will earn +${pts} Rebirth Points.\nAll progress resets except rebirth upgrades and multipliers.\n\nThis is worth it — multipliers stack!`)) {
       performRebirth();
     }
   });

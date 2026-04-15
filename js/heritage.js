@@ -144,6 +144,9 @@ function _doHeritageRoll(category) {
   if (!result) return;
 
   p.heritage[category] = result.id;
+  // Track rerolls so cost scales up
+  if (!p.heritageRerolls) p.heritageRerolls = {};
+  p.heritageRerolls[category] = (p.heritageRerolls[category] || 0) + 1;
   invalidateStatCache();
   recalcStats();
   p.hp = Math.min(p.hp + (result.bonus?.maxHp || 0), p.maxHp);
