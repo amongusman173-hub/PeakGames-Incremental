@@ -8,8 +8,9 @@ function initUI() {
     btn.addEventListener('click', () => switchTab(btn.dataset.tab));
   });
 
-  // Global button click sound
+  // Global button click sound — skip during active minigames to avoid interference
   document.addEventListener('click', e => {
+    if (typeof mgActive !== 'undefined' && mgActive) return;
     const btn = e.target.closest('button, .btn-primary, .btn-small, .btn-action, .tab-btn');
     if (btn && !btn.disabled) {
       playSound('buttonpress', 0.35);
@@ -117,10 +118,12 @@ function updateActiveTabUI() {
   }
 }
 
-// Cache header DOM elements once
+// Cache header DOM elements once — cleared if DOM rebuilds
 const _hdrEls = {};
 function _hdrEl(id) {
-  if (!_hdrEls[id]) _hdrEls[id] = document.getElementById(id);
+  if (!_hdrEls[id] || !_hdrEls[id].isConnected) {
+    _hdrEls[id] = document.getElementById(id);
+  }
   return _hdrEls[id];
 }
 

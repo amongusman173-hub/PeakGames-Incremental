@@ -1663,4 +1663,9 @@ function techniqueMinigame(tech, callback) {
 function resetMgCounts() {
   Object.keys(mgUseCounts).forEach(k => delete mgUseCounts[k]);
   basicAttackUseCount = 0;
+  // Safety: always reset mgActive when a new battle starts
+  mgActive = false;
+  mgResolve = null;
+  const overlay = MG_CONTAINER();
+  if (overlay) overlay.classList.add('hidden');
 }
