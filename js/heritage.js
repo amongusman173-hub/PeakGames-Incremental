@@ -84,6 +84,23 @@ function rollHeritage(category) {
   const cost = getHeritageCost(category);
   if (!spendGold(cost)) { toast('Not enough gold!', 'warn'); return; }
 
+  // ── Confirm before rolling over legendary/secret ──
+  const currentId = p.heritage[category];
+  if (currentId) {
+    const current = getHeritageItem(category, currentId);
+    if (current && (current.rarity === 'legendary' || current.rarity === 'secret')) {
+      const rarityLabel = current.rarity === 'secret' ? '🔴 SECRET' : '🌟 LEGENDARY';
+      const confirmed = window.confirm(
+        `⚠️ You currently have ${rarityLabel}: ${current.icon} ${current.name}\n\nRe-rolling will permanently replace it. Are you sure?`
+      );
+      if (!confirmed) {
+        // Refund the gold since we already spent it
+        p.gold += cost;
+        return;
+      }
+    }
+  }
+
   // ── Slot machine animation ──
   const cardEl = document.querySelector(`.heritage-card[data-cat="${category}"]`);
   const resultArea = cardEl ? cardEl.querySelector('.heritage-result, .heritage-empty') : null;

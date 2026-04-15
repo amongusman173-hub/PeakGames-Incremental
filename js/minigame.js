@@ -36,6 +36,11 @@ function showMinigame(type, difficulty, label, callback, forcedPhrase) {
     case 'pull_hold':      buildPullHoldGame(overlay, difficulty, label); break;
     case 'gravity_crush':  buildGravityCrushGame(overlay, difficulty, label); break;
     case 'color_merge':    buildColorMergeGame(overlay, difficulty, label); break;
+    case 'dodge_tap':      buildDodgeTapGame(overlay, difficulty, label); break;
+    case 'rhythm':         buildRhythmGame(overlay, difficulty, label); break;
+    case 'balance':        buildBalanceGame(overlay, difficulty, label); break;
+    case 'countdown':      buildCountdownGame(overlay, difficulty, label); break;
+    case 'multi_mash':     buildMultiMashGame(overlay, difficulty, label); break;
     default:          resolveMinigame(1);
   }
 }
@@ -632,22 +637,20 @@ function buildQuickTapGame(el, difficulty, label) {
   }, 8000);
 }
 
-// ── QUICK JOB MINIGAME — 7 unique medium-difficulty games, rotates ──
+// ── QUICK JOB MINIGAME — 12 unique medium-difficulty games, rotates ──
 const QUICK_JOB_GAMES = [
-  // 1. Timing — hit the zone
-  (job, cb) => showMinigame('timing', 2, `⚡ ${job.icon} Quick Work — hit the zone!`, cb),
-  // 2. Mash — rapid clicks
-  (job, cb) => showMinigame('mash', 2, `⚡ ${job.icon} Quick Work — mash it!`, cb),
-  // 3. Reaction — instant click
-  (job, cb) => showMinigame('reaction', 2, `⚡ ${job.icon} Quick Work — react fast!`, cb),
-  // 4. Sequence — arrow pattern
-  (job, cb) => showMinigame('sequence', 2, `⚡ ${job.icon} Quick Work — follow the pattern!`, cb),
-  // 5. Hold — charge and release
-  (job, cb) => showMinigame('hold', 2, `⚡ ${job.icon} Quick Work — hold and release!`, cb),
-  // 6. Draw line — slash straight
-  (job, cb) => showMinigame('draw_line', 2, `⚡ ${job.icon} Quick Work — slash straight!`, cb),
-  // 7. Dual zone — hit both zones
-  (job, cb) => showMinigame('dual_zone', 2, `⚡ ${job.icon} Quick Work — hit both zones!`, cb),
+  (job, cb) => showMinigame('timing',    2, `⚡ ${job.icon} Quick Work — hit the zone!`,       cb),
+  (job, cb) => showMinigame('mash',      2, `⚡ ${job.icon} Quick Work — mash it!`,            cb),
+  (job, cb) => showMinigame('reaction',  2, `⚡ ${job.icon} Quick Work — react fast!`,         cb),
+  (job, cb) => showMinigame('sequence',  2, `⚡ ${job.icon} Quick Work — follow the pattern!`, cb),
+  (job, cb) => showMinigame('hold',      2, `⚡ ${job.icon} Quick Work — hold and release!`,   cb),
+  (job, cb) => showMinigame('draw_line', 2, `⚡ ${job.icon} Quick Work — slash straight!`,     cb),
+  (job, cb) => showMinigame('dual_zone', 2, `⚡ ${job.icon} Quick Work — hit both zones!`,     cb),
+  (job, cb) => showMinigame('dodge_tap', 2, `⚡ ${job.icon} Quick Work — dodge and strike!`,   cb),
+  (job, cb) => showMinigame('rhythm',    2, `⚡ ${job.icon} Quick Work — keep the rhythm!`,    cb),
+  (job, cb) => showMinigame('balance',   2, `⚡ ${job.icon} Quick Work — keep balance!`,       cb),
+  (job, cb) => showMinigame('countdown', 2, `⚡ ${job.icon} Quick Work — hit on zero!`,        cb),
+  (job, cb) => showMinigame('multi_mash',2, `⚡ ${job.icon} Quick Work — multi-mash!`,         cb),
 ];
 let quickJobIndex = 0;
 
@@ -1229,6 +1232,314 @@ function buildColorMergeGame(el, difficulty, label) {
   el.querySelector('#mg-merge-btn').addEventListener('click', fire);
 }
 
+// ── DODGE TAP — enemy attacks appear, click to dodge then counter ──
+function buildDodgeTapGame(el, difficulty, label) {
+  const rounds = 3 + difficulty;
+  const windowMs = [700, 500, 350][Math.min(2, difficulty - 1)];
+  let round = 0, hits = 0, done = false;
+
+  el.innerHTML = `<div class="mg-box">
+    <div class="mg-label">${label}</div>
+    <div class="mg-hint">Click <span style="color:var(--ok)">⚔️ COUNTER</span> when it appears — dodge the ❌!</div>
+    <div id="mg-dodge-area" style="height:80px;display:flex;align-items:center;justify-content:center;font-size:48px;background:rgba(0,0,0,0.2);border-radius:8px;margin:10px 0;cursor:pointer;user-select:none" id="mg-dodge-btn">⏳</div>
+    <div id="mg-dodge-score" style="text-align:center;font-size:13px;color:var(--dim)">Round 1 / ${rounds}</div>
+  </div>`;
+
+  const area = el.querySelector('#mg-dodge-area');
+  const score = el.querySelector('#mg-dodge-score');
+
+  function nextRound() {
+    if (done) return;
+    round++;
+    if (round > rounds) {
+      done = true;
+      const ratio = hits / rounds;
+      const mult = ratio >= 1 ? 2.0 : ratio >= 0.6 ? 1.4 : 0.6;
+      showMgResult(el, mult, ratio >= 1 ? '💥 PERFECT COUNTER!' : ratio >= 0.6 ? '✅ Good!' : '❌ Too slow!', () => resolveMinigame(mult));
+      return;
+    }
+    score.textContent = `Round ${round} / ${rounds}`;
+    // Random delay then show attack or counter
+    const isCounter = Math.random() > 0.3; // 70% counter, 30% feint
+    const delay = 400 + Math.random() * 600;
+    area.textContent = '⏳';
+    area.style.background = 'rgba(0,0,0,0.2)';
+    let clicked = false;
+
+    const t = setTimeout(() => {
+      if (done) return;
+      area.textContent = isCounter ? '⚔️' : '❌';
+      area.style.background = isCounter ? 'rgba(39,174,96,0.2)' : 'rgba(229,57,53,0.2)';
+      const autoFail = setTimeout(() => {
+        if (!clicked && !done) {
+          if (isCounter) { /* missed counter — no hit */ }
+          nextRound();
+        }
+      }, windowMs);
+      area._autoFail = autoFail;
+    }, delay);
+
+    area._pending = t;
+    area._isCounter = isCounter;
+    area._clicked = () => { clicked = true; };
+  }
+
+  area.addEventListener('click', () => {
+    if (done) return;
+    const isCounter = area._isCounter;
+    clearTimeout(area._autoFail);
+    if (area.textContent === '⚔️' && isCounter) {
+      hits++;
+      area.textContent = '💥';
+      area.style.background = 'rgba(245,197,66,0.2)';
+    } else if (area.textContent === '❌') {
+      area.textContent = '😵';
+      area.style.background = 'rgba(229,57,53,0.3)';
+    }
+    setTimeout(nextRound, 200);
+  });
+
+  function onKey(e) { if (e.code === 'Space') { e.preventDefault(); area.click(); } }
+  document.addEventListener('keydown', onKey);
+  // Clean up listener when done
+  const origResolve = mgResolve;
+  mgResolve = (m) => { document.removeEventListener('keydown', onKey); if (origResolve) origResolve(m); };
+
+  nextRound();
+}
+
+// ── RHYTHM GAME — hit the beat as bars cross the line ──
+function buildRhythmGame(el, difficulty, label) {
+  const beats = 5 + difficulty;
+  const interval = [700, 550, 420][Math.min(2, difficulty - 1)];
+  const hitWindow = [200, 150, 100][Math.min(2, difficulty - 1)];
+  let beatCount = 0, hits = 0, done = false;
+
+  el.innerHTML = `<div class="mg-box">
+    <div class="mg-label">${label}</div>
+    <div class="mg-hint">Press <kbd>Space</kbd> or click when the bar hits the <span style="color:var(--gold)">⚡ line</span>!</div>
+    <div style="position:relative;height:50px;background:rgba(0,0,0,0.3);border-radius:8px;overflow:hidden;margin:10px 0">
+      <div style="position:absolute;left:50%;top:0;width:3px;height:100%;background:var(--gold);z-index:2"></div>
+      <div id="mg-rhythm-bar" style="position:absolute;left:-8%;top:10%;width:8%;height:80%;background:linear-gradient(90deg,transparent,var(--accent),transparent);border-radius:4px;transition:none"></div>
+    </div>
+    <div id="mg-rhythm-score" style="text-align:center;font-size:13px;color:var(--dim)">0 / ${beats} hits</div>
+    <button class="btn-primary mg-btn" id="mg-rhythm-btn">🥁 Hit! [Space]</button>
+  </div>`;
+
+  const bar = el.querySelector('#mg-rhythm-bar');
+  const scoreEl = el.querySelector('#mg-rhythm-score');
+  let barPos = -8, barDir = 1, raf;
+  const speed = 100 / (interval * 0.6); // crosses in ~60% of interval
+
+  function animate() {
+    barPos += speed * barDir;
+    if (barPos >= 100) { barPos = -8; beatCount++; if (beatCount > beats && !done) { done = true; cancelAnimationFrame(raf); finish(); return; } }
+    bar.style.left = barPos + '%';
+    raf = requestAnimationFrame(animate);
+  }
+  raf = requestAnimationFrame(animate);
+
+  function hit() {
+    if (done) return;
+    // Check if bar is near center (50%)
+    const dist = Math.abs(barPos + 4 - 50); // center of bar vs center line
+    if (dist < hitWindow / 10) {
+      hits++;
+      scoreEl.textContent = `${hits} / ${beats} hits`;
+      scoreEl.style.color = 'var(--ok)';
+      setTimeout(() => { scoreEl.style.color = 'var(--dim)'; }, 200);
+    } else {
+      scoreEl.style.color = 'var(--danger)';
+      setTimeout(() => { scoreEl.style.color = 'var(--dim)'; }, 200);
+    }
+  }
+
+  function finish() {
+    document.removeEventListener('keydown', onKey);
+    const ratio = hits / beats;
+    const mult = ratio >= 0.8 ? 2.0 : ratio >= 0.5 ? 1.4 : 0.6;
+    showMgResult(el, mult, ratio >= 0.8 ? '💥 PERFECT RHYTHM!' : ratio >= 0.5 ? '✅ Good beat!' : '❌ Off beat!', () => resolveMinigame(mult));
+  }
+
+  function onKey(e) { if (e.code === 'Space') { e.preventDefault(); hit(); } }
+  document.addEventListener('keydown', onKey);
+  el.querySelector('#mg-rhythm-btn').addEventListener('click', hit);
+  setTimeout(() => { if (!done) { done = true; cancelAnimationFrame(raf); document.removeEventListener('keydown', onKey); finish(); } }, beats * interval + 2000);
+}
+
+// ── BALANCE GAME — keep a bar centered by clicking left/right ──
+function buildBalanceGame(el, difficulty, label) {
+  const timeMs = [3000, 2500, 2000][Math.min(2, difficulty - 1)];
+  let pos = 50, drift = 0, done = false, raf;
+  const driftSpeed = 0.3 + difficulty * 0.15;
+  let totalFrames = 0, inZoneFrames = 0;
+
+  el.innerHTML = `<div class="mg-box">
+    <div class="mg-label">${label}</div>
+    <div class="mg-hint">Keep the ⚡ centered! Click <strong>← Left</strong> or <strong>→ Right</strong> to balance!</div>
+    <div style="position:relative;height:50px;background:rgba(0,0,0,0.3);border-radius:8px;overflow:hidden;margin:10px 0">
+      <div style="position:absolute;left:40%;width:20%;height:100%;background:rgba(39,174,96,0.2);border-left:1px solid var(--ok);border-right:1px solid var(--ok)"></div>
+      <div id="mg-bal-ind" style="position:absolute;top:50%;transform:translate(-50%,-50%);font-size:22px;transition:none">⚡</div>
+    </div>
+    <div class="mg-timer-bar"><div class="mg-timer-fill" id="mg-bal-fill"></div></div>
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:8px">
+      <button class="btn-primary mg-btn" id="mg-bal-left" style="flex:1">← Left [A/←]</button>
+      <button class="btn-primary mg-btn" id="mg-bal-right" style="flex:1">Right → [D/→]</button>
+    </div>
+  </div>`;
+
+  const ind = el.querySelector('#mg-bal-ind');
+  const fill = el.querySelector('#mg-bal-fill');
+  const start = Date.now();
+
+  function animate() {
+    const elapsed = Date.now() - start;
+    fill.style.width = Math.max(0, 100 - (elapsed/timeMs)*100) + '%';
+    // Random drift changes
+    if (Math.random() < 0.02) drift = (Math.random() - 0.5) * driftSpeed * 2;
+    pos = Math.max(5, Math.min(95, pos + drift));
+    ind.style.left = pos + '%';
+    totalFrames++;
+    if (pos >= 40 && pos <= 60) inZoneFrames++;
+    if (elapsed >= timeMs && !done) { done = true; cancelAnimationFrame(raf); finish(); return; }
+    raf = requestAnimationFrame(animate);
+  }
+  raf = requestAnimationFrame(animate);
+
+  function nudge(dir) { if (!done) { drift = dir * driftSpeed; pos = Math.max(5, Math.min(95, pos + dir * 3)); } }
+  function finish() {
+    document.removeEventListener('keydown', onKey);
+    const ratio = inZoneFrames / Math.max(1, totalFrames);
+    const mult = ratio >= 0.7 ? 2.0 : ratio >= 0.4 ? 1.4 : 0.6;
+    showMgResult(el, mult, ratio >= 0.7 ? '💥 PERFECT BALANCE!' : ratio >= 0.4 ? '✅ Balanced!' : '❌ Too wobbly!', () => resolveMinigame(mult));
+  }
+
+  function onKey(e) {
+    if (e.code === 'ArrowLeft' || e.key === 'a' || e.key === 'A') { e.preventDefault(); nudge(-1); }
+    if (e.code === 'ArrowRight' || e.key === 'd' || e.key === 'D') { e.preventDefault(); nudge(1); }
+  }
+  document.addEventListener('keydown', onKey);
+  el.querySelector('#mg-bal-left').addEventListener('click', () => nudge(-1));
+  el.querySelector('#mg-bal-right').addEventListener('click', () => nudge(1));
+}
+
+// ── COUNTDOWN GAME — hit exactly when counter reaches 0 ──
+function buildCountdownGame(el, difficulty, label) {
+  const start = 5 + difficulty;
+  const speed = [800, 650, 500][Math.min(2, difficulty - 1)]; // ms per count
+  let count = start, done = false;
+
+  el.innerHTML = `<div class="mg-box">
+    <div class="mg-label">${label}</div>
+    <div class="mg-hint">Press <kbd>Space</kbd> or click exactly when it hits <span style="color:var(--gold)">0</span>!</div>
+    <div id="mg-count-num" style="font-size:72px;font-weight:900;text-align:center;color:var(--gold);line-height:1;margin:10px 0;text-shadow:0 0 20px var(--gold)">${start}</div>
+    <div id="mg-count-hint" style="text-align:center;font-size:12px;color:var(--dim)">Counting down…</div>
+    <button class="btn-primary mg-btn" id="mg-count-btn">⚡ NOW! [Space]</button>
+  </div>`;
+
+  const numEl = el.querySelector('#mg-count-num');
+  const hint = el.querySelector('#mg-count-hint');
+
+  const interval = setInterval(() => {
+    if (done) return;
+    count--;
+    numEl.textContent = count;
+    numEl.style.color = count <= 2 ? 'var(--danger)' : count <= 3 ? 'var(--warn)' : 'var(--gold)';
+    numEl.style.textShadow = count <= 2 ? '0 0 20px var(--danger)' : '0 0 20px var(--gold)';
+    if (count <= 0) {
+      clearInterval(interval);
+      if (!done) {
+        done = true;
+        document.removeEventListener('keydown', onKey);
+        numEl.textContent = '💥';
+        showMgResult(el, 0.3, '⏰ Too late!', () => resolveMinigame(0.3));
+      }
+    }
+  }, speed);
+
+  function fire() {
+    if (done) return;
+    done = true;
+    clearInterval(interval);
+    document.removeEventListener('keydown', onKey);
+    const diff = Math.abs(count);
+    let mult, msg;
+    if (count === 0)      { mult = 2.2; msg = '💥 PERFECT ZERO!'; }
+    else if (count === 1) { mult = 1.8; msg = '✅ Almost perfect!'; }
+    else if (count === 2) { mult = 1.3; msg = '👍 Close enough!'; }
+    else                  { mult = 0.5; msg = `⚠️ Too early! (${count} left)`; }
+    numEl.textContent = count === 0 ? '💥' : count;
+    showMgResult(el, mult, msg, () => resolveMinigame(mult));
+  }
+
+  function onKey(e) { if (e.code === 'Space') { e.preventDefault(); fire(); } }
+  document.addEventListener('keydown', onKey);
+  el.querySelector('#mg-count-btn').addEventListener('click', fire);
+}
+
+// ── MULTI MASH — mash multiple buttons in sequence ──
+function buildMultiMashGame(el, difficulty, label) {
+  const buttons = ['🔴', '🔵', '🟡', '🟢'];
+  const seq = Array.from({length: 4 + difficulty}, () => Math.floor(Math.random() * 4));
+  let idx = 0, errors = 0, done = false;
+  const timeMs = 4000 + difficulty * 500;
+
+  el.innerHTML = `<div class="mg-box">
+    <div class="mg-label">${label}</div>
+    <div class="mg-hint">Hit the colored buttons in order — fast!</div>
+    <div class="mg-seq" style="font-size:28px">${seq.map((b,i) => `<span class="mg-arrow" id="mg-mb${i}" style="font-size:24px">${buttons[b]}</span>`).join('')}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
+      ${buttons.map((b,i) => `<button class="btn-primary mg-btn" data-k="${i}" style="font-size:20px;padding:10px">${b}</button>`).join('')}
+    </div>
+    <div class="mg-timer-bar" style="margin-top:8px"><div class="mg-timer-fill" id="mg-mm-fill"></div></div>
+  </div>`;
+
+  const fill = el.querySelector('#mg-mm-fill');
+  const start = Date.now();
+
+  function highlight() {
+    el.querySelectorAll('.mg-arrow').forEach((a,i) => {
+      a.classList.toggle('mg-arrow-active', i === idx);
+      a.classList.toggle('mg-arrow-done', i < idx);
+    });
+  }
+  highlight();
+
+  const timer = setInterval(() => {
+    const elapsed = Date.now() - start;
+    fill.style.width = Math.max(0, 100 - (elapsed/timeMs)*100) + '%';
+    if (elapsed >= timeMs && !done) {
+      done = true; clearInterval(timer); document.removeEventListener('keydown', onKey);
+      const mult = idx / seq.length >= 0.6 ? 1.0 : 0.4;
+      showMgResult(el, mult, '⏰ Too slow!', () => resolveMinigame(mult));
+    }
+  }, 50);
+
+  function attempt(k) {
+    if (done) return;
+    if (k === seq[idx]) {
+      idx++; highlight();
+      if (idx >= seq.length) {
+        done = true; clearInterval(timer); document.removeEventListener('keydown', onKey);
+        const mult = errors === 0 ? 2.0 : errors <= 2 ? 1.5 : 1.0;
+        showMgResult(el, mult, errors === 0 ? '💥 FLAWLESS!' : '✅ Complete!', () => resolveMinigame(mult));
+      }
+    } else {
+      errors++;
+      el.querySelector(`#mg-mb${idx}`)?.classList.add('mg-arrow-wrong');
+      setTimeout(() => el.querySelector(`#mg-mb${idx}`)?.classList.remove('mg-arrow-wrong'), 250);
+    }
+  }
+
+  function onKey(e) {
+    const map = {'1':0,'2':1,'3':2,'4':3,'q':0,'w':1,'e':2,'r':3};
+    const k = map[e.key?.toLowerCase()];
+    if (k !== undefined) { e.preventDefault(); attempt(k); }
+  }
+  document.addEventListener('keydown', onKey);
+  el.querySelectorAll('[data-k]').forEach(btn => btn.addEventListener('click', () => attempt(parseInt(btn.dataset.k))));
+}
+
 function showMgResult(el, mult, msg, cb) {
   const color = mult >= 1.8 ? 'var(--gold)' : mult >= 1.4 ? 'var(--ok)' : mult >= 0.9 ? 'var(--accent)' : 'var(--danger)';
   const resultDiv = document.createElement('div');
@@ -1250,14 +1561,20 @@ function fleeMinigame(callback) {
   });
 }
 
-// ── BASIC ATTACK — harder timing (difficulty 2) ──
+// ── BASIC ATTACK — cycles through 5 different minigames ──
 let basicAttackUseCount = 0;
+const BASIC_ATK_TYPES  = ['timing', 'mash', 'dodge_tap', 'rhythm', 'countdown'];
+const BASIC_ATK_LABELS = [
+  '⚔️ Basic Attack — hit the zone!',
+  '⚔️ Basic Attack — mash it!',
+  '⚔️ Basic Attack — dodge and strike!',
+  '⚔️ Basic Attack — keep the rhythm!',
+  '⚔️ Basic Attack — hit on zero!',
+];
 function basicAttackMinigame(callback) {
+  const idx = basicAttackUseCount % BASIC_ATK_TYPES.length;
   basicAttackUseCount++;
-  // Alternates between hard timing and mash
-  const type = basicAttackUseCount % 2 === 1 ? 'timing' : 'mash';
-  const label = type === 'timing' ? '⚔️ Basic Attack — hit the zone!' : '⚔️ Basic Attack — mash it!';
-  showMinigame(type, 2, label, callback);
+  showMinigame(BASIC_ATK_TYPES[idx], 2, BASIC_ATK_LABELS[idx], callback);
 }
 
 // ── TECHNIQUE MINIGAMES — each has 2 alternating types ──
