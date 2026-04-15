@@ -23,6 +23,7 @@ function updateSetting(key, value) {
   s[key] = value;
   saveSettings(s);
   applySettings(s);
+  if (key === 'musicVolume') updateMusicVolume();
 }
 
 function applySettings(s) {
@@ -55,17 +56,15 @@ function renderSettings() {
           <label>🎵 Music Volume</label>
           <input type="range" min="0" max="1" step="0.05" value="${s.musicVolume}"
             oninput="updateSetting('musicVolume', parseFloat(this.value)); document.getElementById('music-vol-val').textContent = Math.round(this.value*100)+'%'"
-            class="setting-slider" disabled>
+            class="setting-slider">
           <span id="music-vol-val">${Math.round(s.musicVolume*100)}%</span>
-          <span class="setting-note">Coming soon</span>
         </div>
         <div class="setting-row">
           <label>🔔 SFX Volume</label>
           <input type="range" min="0" max="1" step="0.05" value="${s.sfxVolume}"
             oninput="updateSetting('sfxVolume', parseFloat(this.value)); document.getElementById('sfx-vol-val').textContent = Math.round(this.value*100)+'%'"
-            class="setting-slider" disabled>
+            class="setting-slider">
           <span id="sfx-vol-val">${Math.round(s.sfxVolume*100)}%</span>
-          <span class="setting-note">Coming soon</span>
         </div>
       </div>
 

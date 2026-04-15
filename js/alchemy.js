@@ -85,6 +85,7 @@ function drinkPotion(recipeId) {
   if (getPotionCount(recipeId) <= 0) { toast('No potions left!', 'warn'); return; }
   G.player.potionInv[recipeId]--;
   recipe.effect(G.player);
+  playSound('drink potion');
   spawnFloatingText(recipe.icon, 'float-xp');
   renderAlchemy();
 }

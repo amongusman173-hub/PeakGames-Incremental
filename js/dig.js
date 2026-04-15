@@ -258,6 +258,7 @@ function activateSonarPulse() {
   });
 
   toast(`📡 Sonar Pulse! Revealed ${toReveal.length} tiles.`, 'info');
+  playSound('sonar');
   updateSonarButton();
 }
 
@@ -335,6 +336,7 @@ function digTile(index) {
   // Get the tile element for VFX
   const tileEl = document.querySelector(`[data-dig-idx="${index}"]`);
   digDirtSpray(tileEl);
+  playSound('dig', 0.5);
 
   // ── SECRET: 0.5% chance to find Sukuna's Finger on any tile ──
   if (Math.random() < 0.005 && !G.player.techniques.includes('vessel_switch')) {

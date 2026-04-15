@@ -71,6 +71,7 @@ function onLevelUp() {
   recalcStats();
   p.hp = p.maxHp;
   toast(`⬆️ Level Up! Now level ${p.level}`, 'success');
+  playSound('levelup', 0.8);
   spawnFloatingText(`Lv.${p.level}!`, 'float-xp');
   // Flash the header
   const hdr = document.getElementById('header');

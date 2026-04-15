@@ -641,6 +641,7 @@ function raidBasicAttack() {
     const crit = Math.random() < 0.1 + techBonus.critChance + getSpdCritBonus();
     const final = crit ? Math.floor(dmg * 1.8) : dmg;
     playAttackVFX('basic', crit);
+    playSound('basicattack', 0.7);
     combatEnemyHP -= final;
     appendLog(combatLog, `${crit?'💥 CRIT! ':''}Basic Attack: ${final} dmg (${mult.toFixed(1)}x)`, crit?'log-crit':'log-player');
     updateRaidBattleUI();
@@ -891,6 +892,23 @@ function renderVesselTechniqueActions() {
 function applyTechniqueEffect(tech, mult, afterCb) {
   const p = G.player;
 
+  // ── Play technique sound ──
+  const TECH_SOUNDS = {
+    'dismantle': 'dismantle', 'cleave': 'sukuna cleave', 'fuga': 'sukuna fuga',
+    'domain_expansion': 'sukuna domain', 'domain_infinite_void': 'gojo domain',
+    'reversal_red': 'reversal red', 'reversal_red_max': 'reversal red MAX',
+    'lapse_blue': 'lapse blue', 'lapse_blue_max': 'lapse blue MAX',
+    'hollow_purple': 'hollow purple',
+    'heal': 'healingmagic', 'divine_heal': 'healingmagic', 'mana_shield': 'healingmagic',
+    'spark': 'basicspell', 'frost_bolt': 'basicspell', 'arcane_bolt': 'basicspell',
+    'chain_lightning': 'basicspell', 'flame_burst': 'basicspell',
+    'earth_crush': 'basiccrushattack', 'drag_crush': 'basiccrushattack',
+    'slash': 'basicslashattack', 'holy_slash': 'basicslashattack',
+    'fang_strike': 'basicslashattack', 'shadow_clone': 'basicslashattack',
+  };
+  const snd = TECH_SOUNDS[tech.id] || (tech.effect === 'heal' ? 'healingmagic' : tech.effect === 'damage' ? 'basicattack' : null);
+  if (snd) playSound(snd, 0.8);
+
   // Set cooldown for this technique
   const cd = getTechCooldown(tech.id);
   if (cd > 0) techCooldowns[tech.id] = cd;
@@ -1022,6 +1040,7 @@ function basicAttack() {
     const crit = Math.random() < 0.1 + techBonus.critChance + getSpdCritBonus();
     const final = crit ? Math.floor(dmg * 1.8) : dmg;
     playAttackVFX('basic', crit);
+    playSound('basicattack', 0.7);
     combatEnemyHP -= final;
     appendLog(combatLog, `${crit?'💥 CRIT! ':''}Basic Attack: ${final} dmg (${mult.toFixed(1)}x)`, crit?'log-crit':'log-player');
     updateBattleUI();

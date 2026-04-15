@@ -261,10 +261,10 @@ function buySkillNode(nodeId) {
   if (!spendGold(cost)) { toast('Not enough gold!', 'warn'); return; }
   if (!G.player.skillNodes) G.player.skillNodes = {};
   G.player.skillNodes[nodeId] = (G.player.skillNodes[nodeId] || 0) + 1;
-  // Recalculate all stats from scratch so bonuses stack correctly and persist through level-ups
   recalcStats();
   G.player.hp = Math.min(G.player.hp, G.player.maxHp);
   G.player.stamina = Math.min(G.player.stamina, G.player.maxStamina);
+  playSound('skill tree upgrade');
   toast(`Upgraded: ${node.name} (Lv.${G.player.skillNodes[nodeId]})`, 'success');
   spawnFloatingText(`-${cost}g`, 'float-dmg');
   renderSkillTree();

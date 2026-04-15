@@ -154,16 +154,18 @@ function spawnFloatingText(text, cls, anchorId) {
 
 // ===== SOUND SYSTEM =====
 const _audioCache = {};
+let _musicStarted = false;
+
 function playSound(name, volume = 0.6) {
   try {
-    const s = getSettings();
-    if (s.sfxVolume === 0) return;
-    const key = name.toLowerCase();
-    if (!_audioCache[key]) {
-      _audioCache[key] = new Audio(`sound/${name}.mp3`);
-    }
-    const a = _audioCache[key].cloneNode();
-    a.volume = Math.min(1, (s.sfxVolume ?? 0.7) * volume);
+    const s = typeof getSettings === 'function' ? getSettings() : { sfxVolume: 0.7 };
+    const vol = s.sfxVolume ?? 0.7;
+    if (vol === 0) return;
+    // Encode spaces and special chars in filename
+    const encoded = encodeURIComponent(name + '.mp3').replace(/%20/g, '%20');
+    const url = `sound/${encoded}`;
+    const a = new Audio(url);
+    a.volume = Math.min(1, vol * volume);
     a.play().catch(() => {});
   } catch(e) {}
 }
@@ -171,22 +173,39 @@ function playSound(name, volume = 0.6) {
 let _bgMusic = null;
 function playBgMusic() {
   try {
-    const s = getSettings();
+    const s = typeof getSettings === 'function' ? getSettings() : { musicVolume: 0.5 };
+    const vol = s.musicVolume ?? 0.5;
     if (!_bgMusic) {
       _bgMusic = new Audio('sound/backroundmusic.mp3');
       _bgMusic.loop = true;
     }
-    _bgMusic.volume = s.musicVolume ?? 0.5;
-    if (s.musicVolume > 0) _bgMusic.play().catch(() => {});
-    else _bgMusic.pause();
+    _bgMusic.volume = Math.min(1, vol);
+    if (vol > 0) {
+      _bgMusic.play().catch(() => {
+        // Autoplay blocked — start on first interaction
+        if (!_musicStarted) {
+          const startOnClick = () => {
+            _bgMusic.play().catch(() => {});
+            _musicStarted = true;
+            document.removeEventListener('click', startOnClick);
+            document.removeEventListener('keydown', startOnClick);
+          };
+          document.addEventListener('click', startOnClick, { once: true });
+          document.addEventListener('keydown', startOnClick, { once: true });
+        }
+      });
+    } else {
+      _bgMusic.pause();
+    }
   } catch(e) {}
 }
 
 function updateMusicVolume() {
   if (_bgMusic) {
-    const s = getSettings();
-    _bgMusic.volume = s.musicVolume ?? 0.5;
-    if (s.musicVolume > 0) _bgMusic.play().catch(() => {});
+    const s = typeof getSettings === 'function' ? getSettings() : { musicVolume: 0.5 };
+    const vol = s.musicVolume ?? 0.5;
+    _bgMusic.volume = Math.min(1, vol);
+    if (vol > 0) _bgMusic.play().catch(() => {});
     else _bgMusic.pause();
   }
 }
