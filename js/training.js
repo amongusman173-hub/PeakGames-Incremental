@@ -7,22 +7,18 @@
 // 160  = 40s (hard, big gains)
 
 const TRAINING_ACTIONS = [
-  // Easy — fast cycle, small gains per session but adds up
-  { id: 'pushups',       name: 'Push-Ups',        desc: 'Basic strength training.',               icon: '💪', staminaCost: 3,  xpGain: 4,   statGain: { atk: 1 },                       levelReq: 1,  ticksNeeded: 8,   maxProgress: 200 },
-  { id: 'running',       name: 'Running',          desc: 'Improves speed and endurance.',          icon: '🏃', staminaCost: 3,  xpGain: 4,   statGain: { spd: 1 },                       levelReq: 1,  ticksNeeded: 8,   maxProgress: 200 },
-  { id: 'stretching',    name: 'Stretching',       desc: 'Gentle flexibility work. Tiny HP gain.', icon: '🤸', staminaCost: 2,  xpGain: 3,   statGain: { hp: 3 },                        levelReq: 1,  ticksNeeded: 8,   maxProgress: 200 },
-  // Medium
-  { id: 'meditation',    name: 'Meditation',       desc: 'Increases max stamina.',                 icon: '🧘', staminaCost: 4,  xpGain: 8,   statGain: { stamina: 4 },                   levelReq: 3,  ticksNeeded: 20,  maxProgress: 150 },
-  { id: 'sparring',      name: 'Sparring',         desc: 'Combat practice. Boosts ATK and DEF.',  icon: '🥊', staminaCost: 8,  xpGain: 18,  statGain: { atk: 2, def: 1 },               levelReq: 5,  ticksNeeded: 32,  maxProgress: 150 },
-  { id: 'weightlifting', name: 'Weight Lifting',   desc: 'Heavy training. Solid ATK gains.',       icon: '🏋️', staminaCost: 12, xpGain: 28,  statGain: { atk: 4 },                       levelReq: 10, ticksNeeded: 48,  maxProgress: 120 },
-  { id: 'ironbody',      name: 'Iron Body',        desc: 'Harden your body. DEF and HP.',          icon: '🛡️', staminaCost: 12, xpGain: 26,  statGain: { def: 3, hp: 8 },                levelReq: 10, ticksNeeded: 48,  maxProgress: 120 },
-  // Hard
-  { id: 'endurance_run', name: 'Endurance Run',    desc: 'Long-distance run. SPD and stamina.',    icon: '🏅', staminaCost: 15, xpGain: 40,  statGain: { spd: 4, stamina: 6 },           levelReq: 15, ticksNeeded: 72,  maxProgress: 100 },
-  { id: 'shadowstep',    name: 'Shadow Step',      desc: 'Extreme agility training.',              icon: '👤', staminaCost: 18, xpGain: 55,  statGain: { spd: 6 },                       levelReq: 20, ticksNeeded: 96,  maxProgress: 100 },
-  { id: 'battle_form',   name: 'Battle Form',      desc: 'Advanced combat stance. All stats.',     icon: '⚔️', staminaCost: 22, xpGain: 75,  statGain: { atk: 5, def: 3, spd: 2 },       levelReq: 28, ticksNeeded: 120, maxProgress: 80  },
-  // Very Hard
-  { id: 'deathspar',     name: 'Death Sparring',   desc: 'Near-death training. Massive gains.',    icon: '💀', staminaCost: 30, xpGain: 120, statGain: { atk: 8, def: 5, spd: 3 },       levelReq: 35, ticksNeeded: 160, maxProgress: 60  },
-  { id: 'void_training', name: 'Void Training',    desc: 'Train in the void. Transcendent gains.', icon: '🌀', staminaCost: 40, xpGain: 200, statGain: { atk: 14, def: 8, hp: 20 },      levelReq: 45, ticksNeeded: 240, maxProgress: 40  },
+  { id: 'pushups',       name: 'Push-Ups',        desc: 'Basic strength training.',               icon: '💪', staminaCost: 3,  xpGain: 15,   statGain: { atk: 1 },                       levelReq: 1,  ticksNeeded: 8,   maxProgress: 200 },
+  { id: 'running',       name: 'Running',          desc: 'Improves speed and endurance.',          icon: '🏃', staminaCost: 3,  xpGain: 15,   statGain: { spd: 1 },                       levelReq: 1,  ticksNeeded: 8,   maxProgress: 200 },
+  { id: 'stretching',    name: 'Stretching',       desc: 'Gentle flexibility work. Tiny HP gain.', icon: '🤸', staminaCost: 2,  xpGain: 10,   statGain: { hp: 3 },                        levelReq: 1,  ticksNeeded: 8,   maxProgress: 200 },
+  { id: 'meditation',    name: 'Meditation',       desc: 'Increases max stamina.',                 icon: '🧘', staminaCost: 4,  xpGain: 25,   statGain: { stamina: 4 },                   levelReq: 3,  ticksNeeded: 20,  maxProgress: 150 },
+  { id: 'sparring',      name: 'Sparring',         desc: 'Combat practice. Boosts ATK and DEF.',  icon: '🥊', staminaCost: 8,  xpGain: 55,   statGain: { atk: 2, def: 1 },               levelReq: 5,  ticksNeeded: 32,  maxProgress: 150 },
+  { id: 'weightlifting', name: 'Weight Lifting',   desc: 'Heavy training. Solid ATK gains.',       icon: '🏋️', staminaCost: 12, xpGain: 85,   statGain: { atk: 4 },                       levelReq: 10, ticksNeeded: 48,  maxProgress: 120 },
+  { id: 'ironbody',      name: 'Iron Body',        desc: 'Harden your body. DEF and HP.',          icon: '🛡️', staminaCost: 12, xpGain: 80,   statGain: { def: 3, hp: 8 },                levelReq: 10, ticksNeeded: 48,  maxProgress: 120 },
+  { id: 'endurance_run', name: 'Endurance Run',    desc: 'Long-distance run. SPD and stamina.',    icon: '🏅', staminaCost: 15, xpGain: 120,  statGain: { spd: 4, stamina: 6 },           levelReq: 15, ticksNeeded: 72,  maxProgress: 100 },
+  { id: 'shadowstep',    name: 'Shadow Step',      desc: 'Extreme agility training.',              icon: '👤', staminaCost: 18, xpGain: 165,  statGain: { spd: 6 },                       levelReq: 20, ticksNeeded: 96,  maxProgress: 100 },
+  { id: 'battle_form',   name: 'Battle Form',      desc: 'Advanced combat stance. All stats.',     icon: '⚔️', staminaCost: 22, xpGain: 225,  statGain: { atk: 5, def: 3, spd: 2 },       levelReq: 28, ticksNeeded: 120, maxProgress: 80  },
+  { id: 'deathspar',     name: 'Death Sparring',   desc: 'Near-death training. Massive gains.',    icon: '💀', staminaCost: 30, xpGain: 360,  statGain: { atk: 8, def: 5, spd: 3 },       levelReq: 35, ticksNeeded: 160, maxProgress: 60  },
+  { id: 'void_training', name: 'Void Training',    desc: 'Train in the void. Transcendent gains.', icon: '🌀', staminaCost: 40, xpGain: 600,  statGain: { atk: 14, def: 8, hp: 20 },      levelReq: 45, ticksNeeded: 240, maxProgress: 40  },
 ];
 
 // Called from game loop each time trainingTick reaches ticksNeeded

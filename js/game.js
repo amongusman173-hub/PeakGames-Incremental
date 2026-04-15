@@ -189,6 +189,15 @@ function resetGame() {
 }
 
 // ===== GAME LOOP =====
+// Cache skill tree bonuses — only recalculate when nodes change
+let _cachedSkillBonuses = null;
+let _cachedHeritageBonuses = null;
+
+function invalidateStatCache() {
+  _cachedSkillBonuses = null;
+  _cachedHeritageBonuses = null;
+}
+
 function gameTick() {
   G.tickCount++;
   const p = G.player;
@@ -200,8 +209,7 @@ function gameTick() {
     }
   }
 
-  // HP regen out of combat: base 1% of maxHp every 4 ticks (1s), boosted by Tough Skin skill
-  // Does NOT regen during active combat
+  // HP regen out of combat — every 4 ticks
   if (G.tickCount % 4 === 0 && !combatActive) {
     if (Math.floor(p.hp) < p.maxHp) {
       const regenRate = 0.01 + (p.regenBonus || 0);
@@ -210,19 +218,20 @@ function gameTick() {
     }
   }
 
-  // Dig charge regen — base 60 ticks (15s), reduced by shop upgrades
+  // Dig charge regen
   const digRegenRate = getDigRegenRate();
-  if (p.digCharges < getMaxDigCharges()) {
+  const maxDig = getMaxDigCharges();
+  if (p.digCharges < maxDig) {
     p.digRegenTick = (p.digRegenTick || 0) + 1;
     if (p.digRegenTick >= digRegenRate) {
       p.digRegenTick = 0;
-      p.digCharges = Math.min(getMaxDigCharges(), p.digCharges + 1);
+      p.digCharges = Math.min(maxDig, p.digCharges + 1);
     }
   } else {
     p.digRegenTick = 0;
   }
 
-  // Auto-training tick
+  // Training tick
   if (G.activeTraining) {
     G.trainingTick++;
     const action = TRAINING_ACTIONS.find(a => a.id === G.activeTraining);
@@ -233,7 +242,7 @@ function gameTick() {
     }
   }
 
-  // Library study tick (every 4 ticks = 1 study tick)
+  // Library study tick (every 4 ticks)
   if (G.activeStudy) {
     G.studyTick++;
     if (G.studyTick >= 4) {
@@ -248,34 +257,39 @@ function gameTick() {
     tickJob(G.activeJob);
   }
 
-  // Garden tick (every 4 ticks)
-  if (G.tickCount % 4 === 0) {
+  // Garden tick — every 8 ticks (2s) instead of every 4
+  if (G.tickCount % 8 === 0) {
     tickGarden();
   }
-  // Sonar charge regen — 3× slower than dig charges
-  const sonarLevel = (G.player.shopPurchases && G.player.shopPurchases['dig_reveal']) || 0;
+
+  // Sonar charge regen
+  const sonarLevel = (p.shopPurchases && p.shopPurchases['dig_reveal']) || 0;
   if (sonarLevel > 0) {
     const maxSonar = sonarLevel;
-    if ((G.player.sonarCharges || 0) < maxSonar) {
-      G.player.sonarRegenTick = (G.player.sonarRegenTick || 0) + 1;
-      if (G.player.sonarRegenTick >= getDigRegenRate() * 3) {
-        G.player.sonarRegenTick = 0;
-        G.player.sonarCharges = Math.min(maxSonar, (G.player.sonarCharges || 0) + 1);
+    if ((p.sonarCharges || 0) < maxSonar) {
+      p.sonarRegenTick = (p.sonarRegenTick || 0) + 1;
+      if (p.sonarRegenTick >= getDigRegenRate() * 3) {
+        p.sonarRegenTick = 0;
+        p.sonarCharges = Math.min(maxSonar, (p.sonarCharges || 0) + 1);
         if (activeTab === 'dig') updateSonarButton();
       }
     } else {
-      G.player.sonarRegenTick = 0;
+      p.sonarRegenTick = 0;
     }
   }
+
+  // Save every 10 seconds (40 ticks)
   if (G.tickCount % 40 === 0) {
     saveGame();
   }
 
-  // Update UI every tick
+  // UI updates — header every tick, active tab every 2 ticks, banners every 4
   updateHeader();
-  updateActiveTabUI();
-  updateJobBanner();
-  updateTrainingBanner();
+  if (G.tickCount % 2 === 0) updateActiveTabUI();
+  if (G.tickCount % 4 === 0) {
+    updateJobBanner();
+    updateTrainingBanner();
+  }
 }
 
 // ===== INIT =====

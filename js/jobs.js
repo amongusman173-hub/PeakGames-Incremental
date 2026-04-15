@@ -9,37 +9,37 @@
 // goldPerCycle = what you earn each full cycle
 const JOBS = [
   // Tier 1 — Beginner (Lv 1-9)
-  { id: 'beggar',      name: 'Beggar',           desc: 'Ask for coins on the street.',        icon: '🪣',  levelReq: 1,  atkReq: 0,   goldPerCycle: 1,    xpPerCycle: 2,   ticksNeeded: 6   },
-  { id: 'laborer',     name: 'Laborer',           desc: 'Haul goods at the docks.',            icon: '⚒️',  levelReq: 1,  atkReq: 0,   goldPerCycle: 3,    xpPerCycle: 4,   ticksNeeded: 8   },
-  { id: 'farmhand',    name: 'Farmhand',           desc: 'Tend crops and livestock.',           icon: '🌾',  levelReq: 2,  atkReq: 0,   goldPerCycle: 6,    xpPerCycle: 7,   ticksNeeded: 12  },
-  { id: 'fisherman',   name: 'Fisherman',          desc: 'Cast nets at the river.',             icon: '🎣',  levelReq: 3,  atkReq: 0,   goldPerCycle: 9,    xpPerCycle: 9,   ticksNeeded: 14  },
-  { id: 'woodcutter',  name: 'Woodcutter',         desc: 'Chop timber in the forest.',          icon: '🪓',  levelReq: 4,  atkReq: 0,   goldPerCycle: 12,   xpPerCycle: 11,  ticksNeeded: 16  },
+  { id: 'beggar',      name: 'Beggar',           desc: 'Ask for coins on the street.',        icon: '🪣',  levelReq: 1,  atkReq: 0,   goldPerCycle: 1,    xpPerCycle: 8,    ticksNeeded: 6   },
+  { id: 'laborer',     name: 'Laborer',           desc: 'Haul goods at the docks.',            icon: '⚒️',  levelReq: 1,  atkReq: 0,   goldPerCycle: 3,    xpPerCycle: 15,   ticksNeeded: 8   },
+  { id: 'farmhand',    name: 'Farmhand',           desc: 'Tend crops and livestock.',           icon: '🌾',  levelReq: 2,  atkReq: 0,   goldPerCycle: 6,    xpPerCycle: 25,   ticksNeeded: 12  },
+  { id: 'fisherman',   name: 'Fisherman',          desc: 'Cast nets at the river.',             icon: '🎣',  levelReq: 3,  atkReq: 0,   goldPerCycle: 9,    xpPerCycle: 35,   ticksNeeded: 14  },
+  { id: 'woodcutter',  name: 'Woodcutter',         desc: 'Chop timber in the forest.',          icon: '🪓',  levelReq: 4,  atkReq: 0,   goldPerCycle: 12,   xpPerCycle: 45,   ticksNeeded: 16  },
   // Tier 2 — Common (Lv 5-14)
-  { id: 'guard',       name: 'Town Guard',         desc: 'Patrol the city streets.',            icon: '🛡️',  levelReq: 5,  atkReq: 12,  goldPerCycle: 18,   xpPerCycle: 15,  ticksNeeded: 20  },
-  { id: 'courier',     name: 'Courier',            desc: 'Deliver parcels across the city.',    icon: '📦',  levelReq: 7,  atkReq: 0,   goldPerCycle: 22,   xpPerCycle: 18,  ticksNeeded: 24  },
-  { id: 'miner',       name: 'Miner',              desc: 'Extract ore from the mines.',         icon: '⛏️',  levelReq: 8,  atkReq: 0,   goldPerCycle: 28,   xpPerCycle: 22,  ticksNeeded: 28  },
-  { id: 'cook',        name: 'Cook',               desc: 'Prepare meals at the tavern.',        icon: '🍳',  levelReq: 9,  atkReq: 0,   goldPerCycle: 32,   xpPerCycle: 25,  ticksNeeded: 30  },
+  { id: 'guard',       name: 'Town Guard',         desc: 'Patrol the city streets.',            icon: '🛡️',  levelReq: 5,  atkReq: 12,  goldPerCycle: 18,   xpPerCycle: 60,   ticksNeeded: 20  },
+  { id: 'courier',     name: 'Courier',            desc: 'Deliver parcels across the city.',    icon: '📦',  levelReq: 7,  atkReq: 0,   goldPerCycle: 22,   xpPerCycle: 75,   ticksNeeded: 24  },
+  { id: 'miner',       name: 'Miner',              desc: 'Extract ore from the mines.',         icon: '⛏️',  levelReq: 8,  atkReq: 0,   goldPerCycle: 28,   xpPerCycle: 90,   ticksNeeded: 28  },
+  { id: 'cook',        name: 'Cook',               desc: 'Prepare meals at the tavern.',        icon: '🍳',  levelReq: 9,  atkReq: 0,   goldPerCycle: 32,   xpPerCycle: 100,  ticksNeeded: 30  },
   // Tier 3 — Skilled (Lv 10-19)
-  { id: 'hunter',      name: 'Monster Hunter',     desc: 'Hunt beasts in the wilds.',           icon: '🏹',  levelReq: 10, atkReq: 25,  goldPerCycle: 55,   xpPerCycle: 40,  ticksNeeded: 40  },
-  { id: 'blacksmith',  name: 'Blacksmith',         desc: 'Forge weapons and armor.',            icon: '🔨',  levelReq: 14, atkReq: 0,   goldPerCycle: 70,   xpPerCycle: 50,  ticksNeeded: 48  },
-  { id: 'herbalist',   name: 'Herbalist',          desc: 'Gather and sell rare herbs.',         icon: '🌿',  levelReq: 12, atkReq: 0,   goldPerCycle: 60,   xpPerCycle: 45,  ticksNeeded: 44  },
-  { id: 'sailor',      name: 'Sailor',             desc: 'Navigate trade routes at sea.',       icon: '⚓',  levelReq: 13, atkReq: 0,   goldPerCycle: 65,   xpPerCycle: 48,  ticksNeeded: 46  },
+  { id: 'hunter',      name: 'Monster Hunter',     desc: 'Hunt beasts in the wilds.',           icon: '🏹',  levelReq: 10, atkReq: 25,  goldPerCycle: 55,   xpPerCycle: 160,  ticksNeeded: 40  },
+  { id: 'blacksmith',  name: 'Blacksmith',         desc: 'Forge weapons and armor.',            icon: '🔨',  levelReq: 14, atkReq: 0,   goldPerCycle: 70,   xpPerCycle: 200,  ticksNeeded: 48  },
+  { id: 'herbalist',   name: 'Herbalist',          desc: 'Gather and sell rare herbs.',         icon: '🌿',  levelReq: 12, atkReq: 0,   goldPerCycle: 60,   xpPerCycle: 180,  ticksNeeded: 44  },
+  { id: 'sailor',      name: 'Sailor',             desc: 'Navigate trade routes at sea.',       icon: '⚓',  levelReq: 13, atkReq: 0,   goldPerCycle: 65,   xpPerCycle: 190,  ticksNeeded: 46  },
   // Tier 4 — Expert (Lv 20-34)
-  { id: 'mercenary',   name: 'Mercenary',          desc: 'Take dangerous contracts.',           icon: '⚔️',  levelReq: 20, atkReq: 50,  goldPerCycle: 140,  xpPerCycle: 90,  ticksNeeded: 60  },
-  { id: 'alchemist',   name: 'Alchemist\'s Aid',   desc: 'Assist a master alchemist.',          icon: '⚗️',  levelReq: 25, atkReq: 0,   goldPerCycle: 180,  xpPerCycle: 110, ticksNeeded: 72  },
-  { id: 'arena_fighter',name:'Arena Fighter',      desc: 'Fight in the gladiator arena.',       icon: '🏟️',  levelReq: 22, atkReq: 60,  goldPerCycle: 160,  xpPerCycle: 100, ticksNeeded: 66  },
-  { id: 'scholar',     name: 'Scholar',            desc: 'Teach at the academy.',               icon: '📜',  levelReq: 28, atkReq: 0,   goldPerCycle: 200,  xpPerCycle: 130, ticksNeeded: 80  },
-  { id: 'enchanter',   name: 'Enchanter',          desc: 'Imbue items with magic.',             icon: '✨',  levelReq: 30, atkReq: 0,   goldPerCycle: 240,  xpPerCycle: 150, ticksNeeded: 88  },
+  { id: 'mercenary',   name: 'Mercenary',          desc: 'Take dangerous contracts.',           icon: '⚔️',  levelReq: 20, atkReq: 50,  goldPerCycle: 140,  xpPerCycle: 360,  ticksNeeded: 60  },
+  { id: 'alchemist',   name: 'Alchemist\'s Aid',   desc: 'Assist a master alchemist.',          icon: '⚗️',  levelReq: 25, atkReq: 0,   goldPerCycle: 180,  xpPerCycle: 440,  ticksNeeded: 72  },
+  { id: 'arena_fighter',name:'Arena Fighter',      desc: 'Fight in the gladiator arena.',       icon: '🏟️',  levelReq: 22, atkReq: 60,  goldPerCycle: 160,  xpPerCycle: 400,  ticksNeeded: 66  },
+  { id: 'scholar',     name: 'Scholar',            desc: 'Teach at the academy.',               icon: '📜',  levelReq: 28, atkReq: 0,   goldPerCycle: 200,  xpPerCycle: 520,  ticksNeeded: 80  },
+  { id: 'enchanter',   name: 'Enchanter',          desc: 'Imbue items with magic.',             icon: '✨',  levelReq: 30, atkReq: 0,   goldPerCycle: 240,  xpPerCycle: 600,  ticksNeeded: 88  },
   // Tier 5 — Elite (Lv 35-49)
-  { id: 'assassin',    name: 'Assassin',           desc: 'High-risk, high-reward shadow work.', icon: '🗡️',  levelReq: 30, atkReq: 80,  goldPerCycle: 320,  xpPerCycle: 180, ticksNeeded: 100 },
-  { id: 'spymaster',   name: 'Spymaster',          desc: 'Run an intelligence network.',        icon: '🕵️',  levelReq: 38, atkReq: 0,   goldPerCycle: 450,  xpPerCycle: 240, ticksNeeded: 120 },
-  { id: 'dungeon_lord', name:'Dungeon Lord',        desc: 'Command a dungeon of monsters.',      icon: '🏰',  levelReq: 40, atkReq: 100, goldPerCycle: 520,  xpPerCycle: 280, ticksNeeded: 130 },
-  { id: 'runesmith',   name: 'Runesmith',          desc: 'Carve ancient runes for power.',      icon: '🔮',  levelReq: 42, atkReq: 0,   goldPerCycle: 580,  xpPerCycle: 300, ticksNeeded: 140 },
+  { id: 'assassin',    name: 'Assassin',           desc: 'High-risk, high-reward shadow work.', icon: '🗡️',  levelReq: 30, atkReq: 80,  goldPerCycle: 320,  xpPerCycle: 720,  ticksNeeded: 100 },
+  { id: 'spymaster',   name: 'Spymaster',          desc: 'Run an intelligence network.',        icon: '🕵️',  levelReq: 38, atkReq: 0,   goldPerCycle: 450,  xpPerCycle: 960,  ticksNeeded: 120 },
+  { id: 'dungeon_lord', name:'Dungeon Lord',        desc: 'Command a dungeon of monsters.',      icon: '🏰',  levelReq: 40, atkReq: 100, goldPerCycle: 520,  xpPerCycle: 1120, ticksNeeded: 130 },
+  { id: 'runesmith',   name: 'Runesmith',          desc: 'Carve ancient runes for power.',      icon: '🔮',  levelReq: 42, atkReq: 0,   goldPerCycle: 580,  xpPerCycle: 1200, ticksNeeded: 140 },
   // Tier 6 — Legendary (Lv 50+)
-  { id: 'warlord',     name: 'Warlord',            desc: 'Lead armies into battle.',            icon: '👑',  levelReq: 45, atkReq: 150, goldPerCycle: 700,  xpPerCycle: 350, ticksNeeded: 160 },
-  { id: 'archmage',    name: 'Archmage',           desc: 'Advise kings and shape destiny.',     icon: '🔮',  levelReq: 50, atkReq: 0,   goldPerCycle: 1200, xpPerCycle: 500, ticksNeeded: 200 },
-  { id: 'god_slayer',  name: 'God Slayer',         desc: 'Hunt divine beings for sport.',       icon: '⚡',  levelReq: 55, atkReq: 200, goldPerCycle: 2000, xpPerCycle: 800, ticksNeeded: 240 },
-  { id: 'void_walker', name: 'Void Walker',        desc: 'Traverse dimensions for profit.',     icon: '🌀',  levelReq: 60, atkReq: 0,   goldPerCycle: 3000, xpPerCycle: 1200,ticksNeeded: 280 },
+  { id: 'warlord',     name: 'Warlord',            desc: 'Lead armies into battle.',            icon: '👑',  levelReq: 45, atkReq: 150, goldPerCycle: 700,  xpPerCycle: 1400, ticksNeeded: 160 },
+  { id: 'archmage',    name: 'Archmage',           desc: 'Advise kings and shape destiny.',     icon: '🔮',  levelReq: 50, atkReq: 0,   goldPerCycle: 1200, xpPerCycle: 2000, ticksNeeded: 200 },
+  { id: 'god_slayer',  name: 'God Slayer',         desc: 'Hunt divine beings for sport.',       icon: '⚡',  levelReq: 55, atkReq: 200, goldPerCycle: 2000, xpPerCycle: 3200, ticksNeeded: 240 },
+  { id: 'void_walker', name: 'Void Walker',        desc: 'Traverse dimensions for profit.',     icon: '🌀',  levelReq: 60, atkReq: 0,   goldPerCycle: 3000, xpPerCycle: 4800, ticksNeeded: 280 },
 ];
 
 function canDoJob(job) {

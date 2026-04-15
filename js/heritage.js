@@ -144,6 +144,7 @@ function _doHeritageRoll(category) {
   if (!result) return;
 
   p.heritage[category] = result.id;
+  invalidateStatCache();
   recalcStats();
   p.hp = Math.min(p.hp + (result.bonus?.maxHp || 0), p.maxHp);
 

@@ -5,9 +5,11 @@ function xpForLevel(level) {
 }
 
 // Compute the total stat bonuses from all purchased skill tree nodes
+// Cached — call invalidateStatCache() after buying a node
 function getSkillTreeBonuses() {
+  if (_cachedSkillBonuses) return _cachedSkillBonuses;
   const bonus = { atk: 0, def: 0, spd: 0, maxHp: 0, maxStamina: 0, regenBonus: 0 };
-  if (!G.player.skillNodes) return bonus;
+  if (!G.player.skillNodes) { _cachedSkillBonuses = bonus; return bonus; }
   SKILL_TREE.forEach(node => {
     const lvl = G.player.skillNodes[node.id] || 0;
     if (lvl <= 0) return;
@@ -15,14 +17,17 @@ function getSkillTreeBonuses() {
     for (let i = 0; i < lvl; i++) node.effect(tmp, i + 1);
     for (const k in bonus) bonus[k] += (tmp[k] || 0);
   });
+  _cachedSkillBonuses = bonus;
   return bonus;
 }
 
 // Compute stat bonuses from heritage (clan/weapon/style)
+// Cached — call invalidateStatCache() after rolling heritage
 function getHeritageBonuses() {
+  if (_cachedHeritageBonuses) return _cachedHeritageBonuses;
   const bonus = { atk: 0, def: 0, spd: 0, maxHp: 0 };
   const p = G.player;
-  if (!p.heritage) return bonus;
+  if (!p.heritage) { _cachedHeritageBonuses = bonus; return bonus; }
   const items = [
     p.heritage.clan   ? (typeof CLANS !== 'undefined'          ? CLANS.find(x=>x.id===p.heritage.clan)           : null) : null,
     p.heritage.weapon ? (typeof WEAPONS !== 'undefined'        ? WEAPONS.find(x=>x.id===p.heritage.weapon)       : null) : null,
@@ -35,6 +40,7 @@ function getHeritageBonuses() {
     if (item.bonus.spd)   bonus.spd   += item.bonus.spd;
     if (item.bonus.maxHp) bonus.maxHp += item.bonus.maxHp;
   });
+  _cachedHeritageBonuses = bonus;
   return bonus;
 }
 
@@ -73,13 +79,15 @@ function onLevelUp() {
   toast(`⬆️ Level Up! Now level ${p.level}`, 'success');
   playSound('levelup', 0.8);
   spawnFloatingText(`Lv.${p.level}!`, 'float-xp');
-  // Flash the header
   const hdr = document.getElementById('header');
   if (hdr) { hdr.classList.add('level-up-flash'); setTimeout(() => hdr.classList.remove('level-up-flash'), 700); }
-  renderTraining();
-  renderJobs();
-  renderRaids();
-  renderStoryChapters();
+  // Only re-render the currently visible tab to avoid 4 full DOM rebuilds
+  if (typeof activeTab !== 'undefined') {
+    if (activeTab === 'training') renderTraining();
+    else if (activeTab === 'jobs') renderJobs();
+    else if (activeTab === 'raids') renderRaids();
+    else if (activeTab === 'story') renderStoryChapters();
+  }
 }
 
 function applyRebirthMultipliers() {

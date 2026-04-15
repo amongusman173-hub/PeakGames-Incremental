@@ -117,10 +117,17 @@ function updateActiveTabUI() {
   }
 }
 
+// Cache header DOM elements once
+const _hdrEls = {};
+function _hdrEl(id) {
+  if (!_hdrEls[id]) _hdrEls[id] = document.getElementById(id);
+  return _hdrEls[id];
+}
+
 function updateHeader() {
   const p = G.player;
-  const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-  const setW = (id, pct) => { const el = document.getElementById(id); if (el) el.style.width = Math.max(0, Math.min(100, pct)) + '%'; };
+  const set = (id, val) => { const el = _hdrEl(id); if (el) el.textContent = val; };
+  const setW = (id, pct) => { const el = _hdrEl(id); if (el) el.style.width = Math.max(0, Math.min(100, pct)) + '%'; };
 
   set('hdr-name', p.name);
   set('hdr-level', `Lv.${p.level}`);
@@ -137,13 +144,6 @@ function updateHeader() {
   set('res-atk', Math.floor(p.atk));
   set('res-def', Math.floor(p.def));
   set('res-spd', Math.floor(p.spd));
-  // Show dodge % as tooltip on SPD stat
-  const spdEl = document.getElementById('res-spd');
-  if (spdEl) {
-    const dodge = Math.floor(getSpdDodgeChance() * 100);
-    const crit  = Math.floor(getSpdCritBonus() * 100);
-    spdEl.title = `SPD: ${Math.floor(p.spd)} — ${dodge}% dodge | +${crit}% crit`;
-  }
 }
 
 // ===== FLOATING TEXT VFX =====
@@ -161,19 +161,28 @@ function spawnFloatingText(text, cls, anchorId) {
 }
 
 // ===== SOUND SYSTEM =====
-const _audioCache = {};
+// Pre-load audio pool to avoid creating new Audio objects on every click
+const _audioPool = {};
 let _musicStarted = false;
+
+function _getAudioPool(url, poolSize = 4) {
+  if (!_audioPool[url]) {
+    _audioPool[url] = { pool: Array.from({length: poolSize}, () => new Audio(url)), idx: 0 };
+  }
+  return _audioPool[url];
+}
 
 function playSound(name, volume = 0.6) {
   try {
     const s = typeof getSettings === 'function' ? getSettings() : { sfxVolume: 0.7 };
-    const vol = s.sfxVolume ?? 0.7;
-    if (vol === 0) return;
-    // Encode spaces and special chars in filename
-    const encoded = encodeURIComponent(name + '.mp3').replace(/%20/g, '%20');
-    const url = `sound/${encoded}`;
-    const a = new Audio(url);
-    a.volume = Math.min(1, vol * volume);
+    const vol = (s.sfxVolume ?? 0.7) * volume;
+    if (vol <= 0) return;
+    const url = `sound/${encodeURIComponent(name + '.mp3')}`;
+    const entry = _getAudioPool(url);
+    const a = entry.pool[entry.idx % entry.pool.length];
+    entry.idx++;
+    a.volume = Math.min(1, vol);
+    a.currentTime = 0;
     a.play().catch(() => {});
   } catch(e) {}
 }
@@ -190,16 +199,13 @@ function playBgMusic() {
     _bgMusic.volume = Math.min(1, vol);
     if (vol > 0) {
       _bgMusic.play().catch(() => {
-        // Autoplay blocked — start on first interaction
         if (!_musicStarted) {
-          const startOnClick = () => {
+          const start = () => {
             _bgMusic.play().catch(() => {});
             _musicStarted = true;
-            document.removeEventListener('click', startOnClick);
-            document.removeEventListener('keydown', startOnClick);
           };
-          document.addEventListener('click', startOnClick, { once: true });
-          document.addEventListener('keydown', startOnClick, { once: true });
+          document.addEventListener('click', start, { once: true });
+          document.addEventListener('keydown', start, { once: true });
         }
       });
     } else {
