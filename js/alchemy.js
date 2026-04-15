@@ -128,11 +128,40 @@ function toggleBrewSlot(ingredientId) {
 
 function clearBrewSlots() { brewSlots = [null, null, null, null]; renderAlchemy(); }
 
-// ── BREWING MINIGAME — stir the cauldron ──
-function brewMinigame(callback) {
-  showMinigame('hold', 2, '⚗️ Brewing — hold and release at the right moment!', (mult) => {
-    callback(mult);
-  });
+// ── BREWING MINIGAME — rarity determines difficulty and type ──
+// common: 1 easy hold
+// uncommon: 1 medium hold + timing
+// rare: 2 rounds (hold + mash)
+// legendary: 3 rounds (hold + mash + sequence)
+function brewMinigame(rarity, callback) {
+  const configs = {
+    common:    { rounds: [['hold', 1]], label: '⚗️ Brewing — stir gently!' },
+    uncommon:  { rounds: [['hold', 2], ['timing', 2]], label: '⚗️ Brewing — careful concentration!' },
+    rare:      { rounds: [['hold', 2], ['mash', 2], ['timing', 3]], label: '⚗️ Rare Brew — intense focus required!' },
+    legendary: { rounds: [['hold', 3], ['mash', 3], ['sequence', 3], ['timing', 3]], label: '⚗️ LEGENDARY BREW — master the cauldron!' },
+  };
+  const cfg = configs[rarity] || configs.common;
+  let roundIdx = 0;
+  let totalMult = 1;
+
+  function runRound() {
+    if (roundIdx >= cfg.rounds.length) {
+      callback(Math.min(2.2, totalMult / cfg.rounds.length));
+      return;
+    }
+    const [type, diff] = cfg.rounds[roundIdx];
+    const roundLabel = cfg.rounds.length > 1
+      ? `${cfg.label} (${roundIdx + 1}/${cfg.rounds.length})`
+      : cfg.label;
+    showMinigame(type, diff, roundLabel, (mult) => {
+      totalMult += mult;
+      roundIdx++;
+      // Small delay between rounds so player can see result
+      setTimeout(runRound, 900);
+    });
+  }
+
+  runRound();
 }
 
 function attemptBrew() {
@@ -142,8 +171,15 @@ function attemptBrew() {
     if (getIngredientCount(id) < 1) { toast(`Missing: ${id}`, 'warn'); return; }
   }
 
-  // Run brewing minigame first
-  brewMinigame((mult) => {
+  // Run brewing minigame — difficulty based on matched recipe rarity (or uncommon for unknown)
+  const sorted = [...selected].sort();
+  const matchPreview = ALCHEMY_RECIPES.find(r => {
+    const rs = [...r.ingredients].sort();
+    return rs.length === sorted.length && rs.every((v, i) => v === sorted[i]);
+  });
+  const brewRarity = matchPreview ? matchPreview.rarity : 'common';
+
+  brewMinigame(brewRarity, (mult) => {
     const sorted = [...selected].sort();
     const match = ALCHEMY_RECIPES.find(r => {
       const rs = [...r.ingredients].sort();
@@ -191,7 +227,7 @@ function useKnownRecipe(recipeId) {
     }
   }
 
-  brewMinigame((mult) => {
+  brewMinigame(recipe.rarity, (mult) => {
     for (const [id, count] of Object.entries(needed)) {
       G.player.alchemyInv[id] = (G.player.alchemyInv[id] || 0) - count;
     }
@@ -273,7 +309,7 @@ function renderAlchemy() {
           <div class="recipe-ingredients" style="font-size:11px;margin:6px 0">${ingList}</div>
           <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
             <button class="btn-primary" onclick="useKnownRecipe('${r.id}')" ${canBrew ? '' : 'disabled'}>
-              ${canBrew ? '🧪 Brew' : '❌ Missing'}
+              ${canBrew ? `🧪 Brew ${r.rarity === 'legendary' ? '(4 rounds)' : r.rarity === 'rare' ? '(3 rounds)' : r.rarity === 'uncommon' ? '(2 rounds)' : '(1 round)'}` : '❌ Missing'}
             </button>
             ${potionCount > 0
               ? `<button class="btn-small" onclick="drinkPotion('${r.id}')" style="background:rgba(39,174,96,0.15);border-color:var(--ok)">🍶 Drink (${potionCount})</button>`
