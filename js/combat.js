@@ -1,3 +1,496 @@
+// ===== COMBAT VFX =====
+
+// Get the enemy HP bar element (works for both story and raid)
+function getEnemyEl() {
+  return document.getElementById('be-hp-bar') || document.getElementById('rbe-hp-bar');
+}
+function getPlayerEl() {
+  return document.getElementById('bp-hp-bar') || document.getElementById('rbp-hp-bar');
+}
+
+// Core: spawn particles from a screen element
+function vfxBurst(anchorEl, colors, count, spread, duration) {
+  if (!anchorEl) return;
+  const rect = anchorEl.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement('div');
+    const angle = (Math.PI * 2 * i / count) + Math.random() * 0.8;
+    const dist = spread * (0.5 + Math.random() * 0.8);
+    const size = 4 + Math.random() * 6;
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    p.style.cssText = `position:fixed;z-index:9998;pointer-events:none;border-radius:50%;
+      width:${size}px;height:${size}px;background:${color};
+      left:${cx}px;top:${cy}px;
+      --dx:${Math.cos(angle)*dist}px;--dy:${Math.sin(angle)*dist}px;
+      animation:digBurst ${duration}ms ease-out forwards;`;
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), duration + 100);
+  }
+}
+
+// Screen flash overlay
+function vfxFlash(color, duration) {
+  const f = document.createElement('div');
+  f.style.cssText = `position:fixed;inset:0;z-index:9997;pointer-events:none;
+    background:${color};animation:digFlash ${duration}ms ease-out forwards;`;
+  document.body.appendChild(f);
+  setTimeout(() => f.remove(), duration + 100);
+}
+
+// Shake the battle scene
+function vfxShake(intensity) {
+  const scene = document.getElementById('battle-scene') || document.getElementById('raid-battle-scene');
+  if (!scene) return;
+  scene.style.animation = 'none';
+  scene.style.transform = `translateX(${intensity}px)`;
+  setTimeout(() => { scene.style.transform = 'translateX(0)'; }, 60);
+  setTimeout(() => { scene.style.transform = `translateX(-${intensity}px)`; }, 120);
+  setTimeout(() => { scene.style.transform = 'translateX(0)'; scene.style.animation = ''; }, 180);
+}
+
+// Floating emoji that rises from the enemy
+function vfxEmoji(emoji, anchorEl, color) {
+  if (!anchorEl) return;
+  const rect = anchorEl.getBoundingClientRect();
+  const el = document.createElement('div');
+  el.textContent = emoji;
+  el.style.cssText = `position:fixed;z-index:9999;pointer-events:none;font-size:28px;
+    left:${rect.left + rect.width/2 - 14}px;top:${rect.top - 10}px;
+    color:${color || '#fff'};
+    animation:floatUp 0.9s ease-out forwards;`;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1000);
+}
+
+// Slash lines across the enemy
+function vfxSlash(anchorEl, color, count) {
+  if (!anchorEl) return;
+  const rect = anchorEl.getBoundingClientRect();
+  for (let i = 0; i < (count || 1); i++) {
+    setTimeout(() => {
+      const s = document.createElement('div');
+      const angle = -35 + Math.random() * 20;
+      const w = 60 + Math.random() * 60;
+      s.style.cssText = `position:fixed;z-index:9998;pointer-events:none;
+        width:${w}px;height:3px;background:${color || '#fff'};border-radius:2px;
+        left:${rect.left + Math.random() * rect.width - w/2}px;
+        top:${rect.top + Math.random() * rect.height}px;
+        transform:rotate(${angle}deg);opacity:0.9;
+        animation:digFlash 300ms ease-out forwards;`;
+      document.body.appendChild(s);
+      setTimeout(() => s.remove(), 400);
+    }, i * 80);
+  }
+}
+
+// Lightning bolt effect
+function vfxLightning(anchorEl) {
+  if (!anchorEl) return;
+  const rect = anchorEl.getBoundingClientRect();
+  const el = document.createElement('canvas');
+  el.width = 120; el.height = 160;
+  el.style.cssText = `position:fixed;z-index:9998;pointer-events:none;
+    left:${rect.left + rect.width/2 - 60}px;top:${rect.top - 80}px;
+    animation:digFlash 400ms ease-out forwards;`;
+  document.body.appendChild(el);
+  const ctx = el.getContext('2d');
+  ctx.strokeStyle = '#ffe066'; ctx.lineWidth = 3; ctx.shadowColor = '#ffe066'; ctx.shadowBlur = 12;
+  ctx.beginPath();
+  let x = 60, y = 0;
+  ctx.moveTo(x, y);
+  while (y < 160) {
+    x += (Math.random() - 0.5) * 40;
+    y += 20 + Math.random() * 20;
+    ctx.lineTo(Math.max(10, Math.min(110, x)), y);
+  }
+  ctx.stroke();
+  setTimeout(() => el.remove(), 500);
+}
+
+// The main VFX dispatcher — called with techId before damage is applied
+function playAttackVFX(techId, crit) {
+  const eEl = getEnemyEl();
+  const pEl = getPlayerEl();
+
+  switch (techId) {
+    // ── Basic ──
+    case 'basic':
+      vfxBurst(eEl, ['#fff','#aaa','#ddd'], crit ? 14 : 8, crit ? 55 : 35, 400);
+      if (crit) { vfxFlash('rgba(255,255,255,0.18)', 250); vfxShake(6); }
+      else vfxShake(3);
+      vfxEmoji(crit ? '💥' : '⚔️', eEl);
+      break;
+
+    // ── Common techniques ──
+    case 'slash':
+      vfxSlash(eEl, '#88ccff', 2);
+      vfxBurst(eEl, ['#88ccff','#fff','#4499ff'], 10, 45, 350);
+      vfxShake(4);
+      break;
+    case 'block':
+      vfxBurst(pEl, ['#4fc3f7','#81d4fa','#fff'], 12, 40, 400);
+      vfxEmoji('🛡️', pEl, '#4fc3f7');
+      break;
+    case 'quick_step':
+      vfxBurst(eEl, ['#b2ff59','#69f0ae','#fff'], 10, 50, 300);
+      vfxEmoji('💨', eEl, '#b2ff59');
+      vfxShake(3);
+      break;
+
+    // ── Uncommon ──
+    case 'earth_crush':
+      vfxBurst(eEl, ['#8d6e63','#a1887f','#ffcc80','#fff'], 18, 65, 500);
+      vfxFlash('rgba(141,110,99,0.25)', 300);
+      vfxShake(8);
+      vfxEmoji('🪨', eEl);
+      break;
+    case 'fang_strike':
+      vfxSlash(eEl, '#ef9a9a', 3);
+      vfxBurst(eEl, ['#ef9a9a','#fff','#e53935'], 14, 50, 400);
+      vfxShake(5);
+      break;
+    case 'war_cry':
+      vfxBurst(pEl, ['#ffe082','#ffca28','#fff'], 16, 60, 500);
+      vfxFlash('rgba(255,202,40,0.15)', 300);
+      vfxEmoji('📣', pEl, '#ffca28');
+      break;
+
+    // ── Rare ──
+    case 'holy_slash':
+      vfxSlash(eEl, '#fffde7', 3);
+      vfxBurst(eEl, ['#fff9c4','#fffde7','#ffee58','#fff'], 20, 70, 500);
+      vfxFlash('rgba(255,253,231,0.3)', 350);
+      vfxShake(6);
+      vfxEmoji('✨', eEl, '#ffee58');
+      break;
+    case 'tidal_wave':
+      vfxBurst(eEl, ['#29b6f6','#0288d1','#b3e5fc','#fff'], 22, 75, 550);
+      vfxFlash('rgba(41,182,246,0.2)', 400);
+      vfxShake(7);
+      vfxEmoji('🌊', eEl, '#29b6f6');
+      break;
+    case 'shadow_clone':
+      for (let i = 0; i < 5; i++) setTimeout(() => {
+        vfxBurst(eEl, ['#7e57c2','#b39ddb','#fff'], 6, 35, 300);
+        vfxSlash(eEl, '#b39ddb', 1);
+      }, i * 100);
+      vfxShake(5);
+      break;
+
+    // ── Legendary ──
+    case 'hellfire':
+      vfxBurst(eEl, ['#ff6f00','#ff8f00','#ffca28','#fff','#e53935'], 28, 90, 600);
+      vfxFlash('rgba(255,111,0,0.35)', 400);
+      vfxShake(10);
+      vfxEmoji('🔥', eEl, '#ff6f00');
+      break;
+    case 'void_rend':
+      for (let i = 0; i < 7; i++) setTimeout(() => {
+        vfxSlash(eEl, '#ce93d8', 1);
+        vfxBurst(eEl, ['#7b1fa2','#ce93d8','#fff'], 5, 40, 350);
+      }, i * 70);
+      vfxFlash('rgba(123,31,162,0.3)', 500);
+      vfxShake(9);
+      break;
+    case 'divine_heal':
+      vfxBurst(pEl, ['#f8bbd0','#f48fb1','#fff','#fffde7'], 20, 65, 600);
+      vfxFlash('rgba(248,187,208,0.25)', 400);
+      vfxEmoji('💫', pEl, '#f48fb1');
+      break;
+
+    // ── Dojo techniques ──
+    case 'iron_fist':
+      vfxBurst(eEl, ['#90a4ae','#cfd8dc','#fff'], 12, 45, 350);
+      vfxShake(5);
+      vfxEmoji('👊', eEl);
+      break;
+    case 'leg_sweep':
+      vfxBurst(eEl, ['#a5d6a7','#66bb6a','#fff'], 10, 40, 300);
+      vfxShake(4);
+      vfxEmoji('🦵', eEl);
+      break;
+    case 'power_strike':
+      vfxBurst(eEl, ['#ff7043','#ff8a65','#fff'], 16, 60, 450);
+      vfxFlash('rgba(255,112,67,0.2)', 300);
+      vfxShake(7);
+      vfxEmoji('💢', eEl, '#ff7043');
+      break;
+    case 'counter':
+      vfxBurst(eEl, ['#26c6da','#80deea','#fff'], 14, 55, 400);
+      vfxSlash(eEl, '#80deea', 2);
+      vfxShake(5);
+      break;
+    case 'berserker_rush':
+      for (let i = 0; i < 5; i++) setTimeout(() => {
+        vfxBurst(eEl, ['#ef5350','#ff8a80','#fff'], 6, 35, 300);
+        vfxShake(4);
+      }, i * 90);
+      vfxFlash('rgba(239,83,80,0.2)', 500);
+      break;
+    case 'death_blow':
+      vfxBurst(eEl, ['#212121','#616161','#fff','#b71c1c'], 24, 80, 600);
+      vfxFlash('rgba(0,0,0,0.5)', 400);
+      vfxShake(12);
+      vfxEmoji('💀', eEl, '#e53935');
+      break;
+    case 'thousand_fists':
+      for (let i = 0; i < 8; i++) setTimeout(() => {
+        vfxBurst(eEl, ['#ffa726','#ffcc02','#fff'], 5, 30, 250);
+        vfxShake(3);
+      }, i * 60);
+      vfxFlash('rgba(255,167,38,0.2)', 600);
+      break;
+
+    // ── Magic spells ──
+    case 'spark':
+      vfxLightning(eEl);
+      vfxBurst(eEl, ['#ffe066','#fff176','#fff'], 10, 45, 350);
+      vfxShake(3);
+      break;
+    case 'frost_bolt':
+      vfxBurst(eEl, ['#b3e5fc','#81d4fa','#e1f5fe','#fff'], 14, 55, 450);
+      vfxFlash('rgba(179,229,252,0.2)', 300);
+      vfxEmoji('❄️', eEl, '#81d4fa');
+      break;
+    case 'flame_burst':
+      vfxBurst(eEl, ['#ff6f00','#ffa000','#ffca28','#fff'], 18, 65, 500);
+      vfxFlash('rgba(255,111,0,0.25)', 350);
+      vfxShake(6);
+      vfxEmoji('🔥', eEl, '#ffa000');
+      break;
+    case 'arcane_bolt':
+      vfxBurst(eEl, ['#7c4dff','#b388ff','#ea80fc','#fff'], 16, 60, 450);
+      vfxFlash('rgba(124,77,255,0.2)', 300);
+      vfxShake(5);
+      vfxEmoji('🔮', eEl, '#b388ff');
+      break;
+    case 'mana_shield':
+      vfxBurst(pEl, ['#7c4dff','#b388ff','#fff'], 14, 50, 450);
+      vfxFlash('rgba(124,77,255,0.15)', 300);
+      vfxEmoji('🛡️', pEl, '#b388ff');
+      break;
+    case 'chain_lightning':
+      for (let i = 0; i < 4; i++) setTimeout(() => {
+        vfxLightning(eEl);
+        vfxBurst(eEl, ['#ffe066','#fff176','#fff'], 6, 35, 300);
+      }, i * 120);
+      vfxShake(6);
+      break;
+    case 'meteor':
+      vfxBurst(eEl, ['#ff3d00','#ff6d00','#ffab40','#fff','#212121'], 30, 100, 700);
+      vfxFlash('rgba(255,61,0,0.4)', 500);
+      vfxShake(14);
+      vfxEmoji('☄️', eEl, '#ff6d00');
+      break;
+    case 'time_stop':
+      vfxFlash('rgba(255,255,255,0.6)', 200);
+      setTimeout(() => vfxFlash('rgba(100,100,255,0.2)', 600), 200);
+      vfxBurst(eEl, ['#e8eaf6','#9fa8da','#fff'], 18, 70, 600);
+      vfxEmoji('⏰', eEl, '#9fa8da');
+      break;
+    case 'void_blast':
+      vfxBurst(eEl, ['#1a237e','#283593','#7986cb','#fff'], 28, 90, 700);
+      vfxFlash('rgba(26,35,126,0.5)', 500);
+      vfxShake(12);
+      for (let i = 0; i < 6; i++) setTimeout(() => vfxSlash(eEl, '#7986cb', 1), i * 80);
+      vfxEmoji('🌀', eEl, '#7986cb');
+      break;
+
+    // ── Dig techniques ──
+    case 'ancient_strike':
+      vfxBurst(eEl, ['#d4a017','#f5c542','#fff8e1','#fff'], 16, 60, 500);
+      vfxFlash('rgba(212,160,23,0.2)', 350);
+      vfxShake(6);
+      vfxEmoji('🏺', eEl, '#f5c542');
+      break;
+    case 'crystal_shard':
+      for (let i = 0; i < 4; i++) setTimeout(() => {
+        vfxBurst(eEl, ['#80deea','#b2ebf2','#e0f7fa','#fff'], 6, 40, 350);
+        vfxSlash(eEl, '#80deea', 1);
+      }, i * 80);
+      vfxShake(5);
+      break;
+
+    // ══════════════════════════════════════════
+    // 🩸 JJK EASTER EGG TECHNIQUES — special VFX
+    // ══════════════════════════════════════════
+
+    case 'vessel_switch':
+      // Blood-red full screen takeover
+      vfxFlash('rgba(180,0,0,0.55)', 700);
+      setTimeout(() => vfxFlash('rgba(180,0,0,0.3)', 500), 300);
+      vfxBurst(eEl, ['#b71c1c','#e53935','#ff1744','#fff'], 20, 70, 600);
+      vfxEmoji('🩸', eEl, '#ff1744');
+      vfxShake(8);
+      break;
+
+    case 'dismantle':
+      // Fast diagonal slashes — Sukuna's signature
+      for (let i = 0; i < 4; i++) setTimeout(() => {
+        vfxSlash(eEl, '#ff1744', 2);
+        vfxBurst(eEl, ['#b71c1c','#ff1744','#fff'], 8, 50, 350);
+      }, i * 60);
+      vfxFlash('rgba(183,28,28,0.35)', 400);
+      vfxShake(10);
+      vfxEmoji('✂️', eEl, '#ff1744');
+      break;
+
+    case 'cleave':
+      // Three heavy slashes with shockwave
+      for (let i = 0; i < 3; i++) setTimeout(() => {
+        vfxSlash(eEl, '#ff6d00', 3);
+        vfxBurst(eEl, ['#e65100','#ff6d00','#ffab40','#fff'], 10, 55, 400);
+        vfxShake(7);
+      }, i * 120);
+      vfxFlash('rgba(230,81,0,0.3)', 500);
+      vfxEmoji('🔪', eEl, '#ff6d00');
+      break;
+
+    case 'fuga':
+      // Giant fire arrow — massive single impact
+      vfxFlash('rgba(255,87,34,0.5)', 300);
+      setTimeout(() => {
+        vfxBurst(eEl, ['#bf360c','#e64a19','#ff7043','#ffab40','#fff9c4','#fff'], 40, 120, 800);
+        vfxFlash('rgba(255,87,34,0.4)', 500);
+        vfxShake(16);
+        vfxEmoji('🏹', eEl, '#ff7043');
+        // Secondary explosion
+        setTimeout(() => {
+          vfxBurst(eEl, ['#ff6f00','#ffa000','#ffca28','#fff'], 20, 80, 600);
+          vfxShake(10);
+        }, 200);
+      }, 150);
+      break;
+
+    case 'domain_expansion':
+      // Malevolent Shrine — dark red domain with continuous slash waves
+      vfxFlash('rgba(0,0,0,0.7)', 400);
+      setTimeout(() => vfxFlash('rgba(120,0,0,0.5)', 600), 200);
+      setTimeout(() => {
+        for (let i = 0; i < 6; i++) setTimeout(() => {
+          vfxSlash(eEl, '#ff1744', 3);
+          vfxBurst(eEl, ['#7f0000','#b71c1c','#ff1744','#fff'], 12, 65, 500);
+          vfxShake(8);
+        }, i * 150);
+      }, 300);
+      vfxEmoji('🏯', eEl, '#ff1744');
+      break;
+
+    // ── Gojo techniques ──
+    case 'infinity':
+      // Blue-white barrier shimmer on player
+      vfxBurst(pEl, ['#e3f2fd','#90caf9','#42a5f5','#fff'], 24, 80, 700);
+      vfxFlash('rgba(66,165,245,0.25)', 500);
+      vfxEmoji('♾️', pEl, '#42a5f5');
+      break;
+
+    case 'reversal_red':
+      // Explosive red repulsion
+      vfxBurst(eEl, ['#b71c1c','#e53935','#ff5252','#fff'], 22, 85, 600);
+      vfxFlash('rgba(229,57,53,0.4)', 400);
+      vfxShake(10);
+      vfxEmoji('🔴', eEl, '#ff5252');
+      break;
+
+    case 'reversal_red_max':
+      // Amplified — bigger, redder, more shake
+      vfxBurst(eEl, ['#7f0000','#b71c1c','#ff1744','#ff8a80','#fff'], 35, 110, 700);
+      vfxFlash('rgba(183,28,28,0.55)', 500);
+      vfxShake(16);
+      vfxEmoji('🔴', eEl, '#ff1744');
+      setTimeout(() => vfxBurst(eEl, ['#ff1744','#fff'], 15, 60, 400), 200);
+      break;
+
+    case 'lapse_blue':
+      // Blue gravitational pull — imploding particles
+      vfxBurst(eEl, ['#0d47a1','#1565c0','#42a5f5','#90caf9','#fff'], 22, 85, 600);
+      vfxFlash('rgba(21,101,192,0.35)', 400);
+      vfxShake(10);
+      vfxEmoji('🔵', eEl, '#42a5f5');
+      break;
+
+    case 'lapse_blue_max':
+      vfxBurst(eEl, ['#0a237e','#0d47a1','#1976d2','#64b5f6','#fff'], 35, 110, 700);
+      vfxFlash('rgba(13,71,161,0.55)', 500);
+      vfxShake(16);
+      vfxEmoji('🔵', eEl, '#1976d2');
+      setTimeout(() => vfxBurst(eEl, ['#42a5f5','#fff'], 15, 60, 400), 200);
+      break;
+
+    case 'hollow_purple':
+      // Red + Blue merge = purple obliteration
+      vfxFlash('rgba(255,0,0,0.3)', 150);
+      setTimeout(() => vfxFlash('rgba(0,0,255,0.3)', 150), 150);
+      setTimeout(() => {
+        vfxFlash('rgba(128,0,128,0.6)', 600);
+        vfxBurst(eEl, ['#4a148c','#7b1fa2','#ce93d8','#ff80ab','#82b1ff','#fff'], 45, 130, 900);
+        vfxShake(18);
+        vfxEmoji('🟣', eEl, '#ce93d8');
+        for (let i = 0; i < 8; i++) setTimeout(() => vfxSlash(eEl, '#ce93d8', 2), i * 80);
+      }, 300);
+      break;
+
+    case 'domain_infinite_void':
+      // Infinite Void — white flash then total darkness then stars
+      vfxFlash('rgba(255,255,255,0.9)', 200);
+      setTimeout(() => vfxFlash('rgba(0,0,0,0.85)', 800), 200);
+      setTimeout(() => {
+        vfxBurst(eEl, ['#e8eaf6','#9fa8da','#5c6bc0','#fff'], 40, 120, 1000);
+        vfxShake(14);
+        vfxEmoji('🌌', eEl, '#9fa8da');
+        for (let i = 0; i < 10; i++) setTimeout(() => {
+          vfxBurst(eEl, ['#fff','#e8eaf6'], 4, 50, 400);
+        }, i * 100);
+      }, 400);
+      break;
+
+    default:
+      // Generic fallback for any unlisted technique
+      vfxBurst(eEl, ['#fff','#aaa'], 8, 40, 350);
+      vfxShake(3);
+      break;
+  }
+}
+
+// Enemy attack VFX — hits the player side
+function playEnemyAttackVFX(abilityId) {
+  const pEl = getPlayerEl();
+  switch (abilityId) {
+    case 'heavy_blow':
+      vfxBurst(pEl, ['#ef9a9a','#e53935','#fff'], 16, 60, 450);
+      vfxFlash('rgba(229,57,53,0.2)', 300);
+      vfxShake(8);
+      break;
+    case 'poison_bite':
+      vfxBurst(pEl, ['#a5d6a7','#388e3c','#fff'], 12, 45, 400);
+      vfxEmoji('🐍', pEl, '#66bb6a');
+      break;
+    case 'shield_bash':
+      vfxBurst(pEl, ['#90a4ae','#cfd8dc','#fff'], 10, 40, 350);
+      vfxShake(6);
+      vfxEmoji('🛡️', pEl);
+      break;
+    case 'double_strike':
+      setTimeout(() => { vfxBurst(pEl, ['#ef9a9a','#fff'], 8, 35, 300); vfxShake(4); }, 0);
+      setTimeout(() => { vfxBurst(pEl, ['#ef9a9a','#fff'], 8, 35, 300); vfxShake(4); }, 200);
+      break;
+    case 'life_drain':
+      vfxBurst(pEl, ['#880e4f','#e91e63','#f48fb1','#fff'], 14, 55, 500);
+      vfxEmoji('🩸', pEl, '#e91e63');
+      break;
+    case 'enrage':
+      vfxFlash('rgba(229,57,53,0.25)', 400);
+      vfxEmoji('😡', pEl, '#e53935');
+      break;
+    default:
+      vfxBurst(pEl, ['#ef9a9a','#fff'], 8, 35, 300);
+      vfxShake(3);
+      break;
+  }
+}
+
 // ===== TURN-BASED COMBAT ENGINE =====
 
 // ── SPD UTILITY — gives SPD real combat value ──
@@ -137,6 +630,7 @@ function raidBasicAttack() {
     const dmg = Math.max(1, base - combatEnemy.def);
     const crit = Math.random() < 0.1 + techBonus.critChance + getSpdCritBonus();
     const final = crit ? Math.floor(dmg * 1.8) : dmg;
+    playAttackVFX('basic', crit);
     combatEnemyHP -= final;
     appendLog(combatLog, `${crit?'💥 CRIT! ':''}Basic Attack: ${final} dmg (${mult.toFixed(1)}x)`, crit?'log-crit':'log-player');
     updateRaidBattleUI();
@@ -195,6 +689,7 @@ function enemyTurnRaid() {
 
   if (ability) {
     appendLog(combatLog, ability.msg(combatEnemy), 'log-enemy');
+    playEnemyAttackVFX(ability.id);
     if (ability.effect) ability.effect(combatStatusPlayer, combatEnemy);
     if (ability.dmgMult > 0) {
       const hits = ability.hits || 1;
@@ -209,6 +704,7 @@ function enemyTurnRaid() {
       appendLog(combatLog, `  → ${total} damage!`, 'log-enemy');
     }
   } else {
+    playEnemyAttackVFX('default');
     const eDmg = Math.max(Math.floor(baseAtk * 0.4), baseAtk - (p.def + techBonus.def));
     combatPlayerHP -= eDmg;
     appendLog(combatLog, `${combatEnemy.name} attacks for ${eDmg} damage!`, 'log-enemy');
@@ -348,6 +844,7 @@ function applyTechniqueEffect(tech, mult, afterCb) {
 
   // ── DOMAIN EXPANSION: MALEVOLENT SHRINE — continuous slashes for 4 turns ──
   if (tech.effect === 'domain_slash') {
+    playAttackVFX('domain_expansion', false);
     appendLog(combatLog, '🏯 DOMAIN EXPANSION: MALEVOLENT SHRINE!', 'log-crit');
     appendLog(combatLog, '"Shrine of Carnage — everything within range will be slashed."', 'log-story');
     // Apply domain slash status to enemy — deals damage each turn for 4 turns
@@ -371,6 +868,7 @@ function applyTechniqueEffect(tech, mult, afterCb) {
 
   // ── GOJO DOMAIN: INFINITE VOID — immobilize + spawn new enemy ──
   if (tech.id === 'domain_infinite_void') {
+    playAttackVFX('domain_infinite_void', false);
     appendLog(combatLog, '🌌 DOMAIN EXPANSION: INFINITE VOID!', 'log-crit');
     appendLog(combatLog, '"Trapped in infinite information. You cannot move."', 'log-story');
     // Immobilize enemy for 4 turns
@@ -393,19 +891,23 @@ function applyTechniqueEffect(tech, mult, afterCb) {
   }
 
   if (tech.effect === 'damage') {
+    playAttackVFX(tech.id, mult >= 1.8);
     const dmg = Math.max(1, Math.floor(p.atk * tech.multiplier * mult) - combatEnemy.def);
     combatEnemyHP -= dmg;
     appendLog(combatLog, `${tech.icon} ${tech.name}: ${dmg} dmg (${mult.toFixed(1)}x)!`, mult >= 1.5 ? 'log-crit' : 'log-player');
   } else if (tech.effect === 'heal') {
+    playAttackVFX(tech.id, false);
     const healAmt = Math.floor(p.maxHp * tech.healPct * mult);
     combatPlayerHP = Math.min(p.maxHp, combatPlayerHP + healAmt);
     appendLog(combatLog, `${tech.icon} ${tech.name}: Healed ${healAmt} HP!`, 'log-heal');
   } else if (tech.effect === 'stun') {
+    playAttackVFX(tech.id, mult >= 1.5);
     const dmg = Math.max(1, Math.floor(p.atk * tech.multiplier * mult) - combatEnemy.def);
     combatEnemyHP -= dmg;
     if (mult >= 1.0) combatStatusEnemy.push({ name: 'Stunned', icon: '⚡', turns: 2 });
     appendLog(combatLog, `${tech.icon} ${tech.name}: ${dmg} dmg${mult>=1?' + Stunned!':''}`, 'log-crit');
   } else if (tech.effect === 'multi') {
+    playAttackVFX(tech.id, false);
     let total = 0;
     for (let i = 0; i < tech.hits; i++) {
       const d = Math.max(1, Math.floor(p.atk * tech.multiplier * mult) - combatEnemy.def);
@@ -413,7 +915,7 @@ function applyTechniqueEffect(tech, mult, afterCb) {
     }
     appendLog(combatLog, `${tech.icon} ${tech.name}: ${tech.hits}x hits = ${total} total!`, 'log-crit');
   } else if (tech.effect === 'shield') {
-    // Infinity — immune for N turns
+    playAttackVFX(tech.id, false);
     combatStatusPlayer.push({ name: 'Infinity', icon: '♾️', turns: tech.shieldTurns || 2, shield: true });
     appendLog(combatLog, `♾️ Infinity activated! Immune for ${tech.shieldTurns} turns!`, 'log-heal');
   }
@@ -441,6 +943,7 @@ function basicAttack() {
     const dmg = Math.max(1, base - combatEnemy.def);
     const crit = Math.random() < 0.1 + techBonus.critChance + getSpdCritBonus();
     const final = crit ? Math.floor(dmg * 1.8) : dmg;
+    playAttackVFX('basic', crit);
     combatEnemyHP -= final;
     appendLog(combatLog, `${crit?'💥 CRIT! ':''}Basic Attack: ${final} dmg (${mult.toFixed(1)}x)`, crit?'log-crit':'log-player');
     updateBattleUI();
@@ -521,6 +1024,7 @@ function enemyTurn() {
 
   if (ability) {
     appendLog(combatLog, ability.msg(combatEnemy), 'log-enemy');
+    playEnemyAttackVFX(ability.id);
     if (ability.effect) ability.effect(combatStatusPlayer, combatEnemy);
     if (ability.dmgMult > 0) {
       const hits = ability.hits || 1;
@@ -534,6 +1038,7 @@ function enemyTurn() {
       appendLog(combatLog, `  → ${total} damage!`, 'log-enemy');
     }
   } else {
+    playEnemyAttackVFX('default');
     const eDmg = Math.max(Math.floor(baseAtk * 0.4), baseAtk - (p.def + techBonus.def));
     combatPlayerHP -= eDmg;
     appendLog(combatLog, `${combatEnemy.name} attacks for ${eDmg} damage!`, 'log-enemy');
