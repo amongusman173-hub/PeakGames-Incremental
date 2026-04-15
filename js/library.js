@@ -1,15 +1,30 @@
 // ===== LIBRARY — Magic Learning =====
 
 const MAGIC_SPELLS = [
-  { id: 'spark',        name: 'Spark',           icon: '⚡', desc: 'A basic lightning bolt.',                  cost: 100,  levelReq: 2,  effect: 'damage', multiplier: 1.2, bonus: { atk: 3 },  rarity: 'common',   studyTime: 30 },
-  { id: 'frost_bolt',   name: 'Frost Bolt',      icon: '❄️', desc: 'Slows the enemy with ice.',               cost: 150,  levelReq: 4,  effect: 'stun',   multiplier: 1.0, bonus: { spd: 4 },  rarity: 'common',   studyTime: 40 },
-  { id: 'flame_burst',  name: 'Flame Burst',     icon: '🔥', desc: 'A burst of fire. Burns for 2 turns.',     cost: 200,  levelReq: 6,  effect: 'damage', multiplier: 1.6, bonus: { atk: 6 },  rarity: 'uncommon', studyTime: 60 },
-  { id: 'arcane_bolt',  name: 'Arcane Bolt',     icon: '🔮', desc: 'Pure magical energy. Ignores DEF.',       cost: 300,  levelReq: 10, effect: 'damage', multiplier: 2.0, bonus: { atk: 8 },  rarity: 'uncommon', studyTime: 80 },
-  { id: 'mana_shield',  name: 'Mana Shield',     icon: '🛡️', desc: 'Conjure a shield. Heals 25% HP.',         cost: 350,  levelReq: 12, effect: 'heal',   healPct: 0.25,   bonus: { def: 8 },  rarity: 'uncommon', studyTime: 80 },
-  { id: 'chain_lightning',name:'Chain Lightning', icon: '🌩️', desc: 'Lightning that hits 4 times.',           cost: 500,  levelReq: 18, effect: 'multi',  multiplier: 0.65, hits: 4, bonus: { atk: 10, spd: 5 }, rarity: 'rare', studyTime: 120 },
-  { id: 'meteor',       name: 'Meteor Strike',   icon: '☄️', desc: 'Call down a meteor. Massive damage.',     cost: 800,  levelReq: 28, effect: 'damage', multiplier: 3.2, bonus: { atk: 18 }, rarity: 'rare',     studyTime: 160 },
-  { id: 'time_stop',    name: 'Time Stop',       icon: '⏰', desc: 'Freeze time. Stuns for 3 turns.',         cost: 1200, levelReq: 38, effect: 'stun',   multiplier: 1.5, bonus: { spd: 12, atk: 12 }, rarity: 'legendary', studyTime: 200 },
-  { id: 'void_blast',   name: 'Void Blast',      icon: '🌀', desc: 'Tear reality. 6× ATK damage.',            cost: 2000, levelReq: 45, effect: 'damage', multiplier: 6.0, bonus: { atk: 25, critChance: 0.2 }, rarity: 'legendary', studyTime: 240 },
+  // Common
+  { id: 'spark',          name: 'Spark',            icon: '⚡', desc: 'A basic lightning bolt.',                   cost: 100,  levelReq: 2,  effect: 'damage', multiplier: 1.2,  bonus: { atk: 3 },              rarity: 'common',    studyTime: 30  },
+  { id: 'frost_bolt',     name: 'Frost Bolt',        icon: '❄️', desc: 'Slows the enemy with ice.',                cost: 150,  levelReq: 4,  effect: 'stun',   multiplier: 1.0,  bonus: { spd: 4 },              rarity: 'common',    studyTime: 40  },
+  { id: 'wind_slash',     name: 'Wind Slash',        icon: '🌬️', desc: 'A razor-sharp gust. Fast and light.',      cost: 120,  levelReq: 3,  effect: 'damage', multiplier: 1.1,  bonus: { spd: 5 },              rarity: 'common',    studyTime: 35  },
+  { id: 'stone_spike',    name: 'Stone Spike',       icon: '🪨', desc: 'Summon a spike from the earth.',           cost: 130,  levelReq: 5,  effect: 'damage', multiplier: 1.4,  bonus: { def: 4 },              rarity: 'common',    studyTime: 40  },
+  // Uncommon
+  { id: 'flame_burst',    name: 'Flame Burst',       icon: '🔥', desc: 'A burst of fire. Burns for 2 turns.',      cost: 200,  levelReq: 6,  effect: 'damage', multiplier: 1.6,  bonus: { atk: 6 },              rarity: 'uncommon',  studyTime: 60  },
+  { id: 'arcane_bolt',    name: 'Arcane Bolt',       icon: '🔮', desc: 'Pure magical energy. Ignores DEF.',        cost: 300,  levelReq: 10, effect: 'damage', multiplier: 2.0,  bonus: { atk: 8 },              rarity: 'uncommon',  studyTime: 80  },
+  { id: 'mana_shield',    name: 'Mana Shield',       icon: '🛡️', desc: 'Conjure a shield. Heals 25% HP.',          cost: 350,  levelReq: 12, effect: 'heal',   healPct: 0.25,    bonus: { def: 8 },              rarity: 'uncommon',  studyTime: 80  },
+  { id: 'poison_cloud',   name: 'Poison Cloud',      icon: '☠️', desc: 'Toxic mist. Poisons for 3 turns.',         cost: 280,  levelReq: 8,  effect: 'stun',   multiplier: 0.8,  bonus: { atk: 5, spd: 3 },      rarity: 'uncommon',  studyTime: 70  },
+  { id: 'ice_lance',      name: 'Ice Lance',         icon: '🧊', desc: 'A piercing lance of ice. 3-hit.',          cost: 320,  levelReq: 14, effect: 'multi',  multiplier: 0.7,  hits: 3, bonus: { atk: 7 },      rarity: 'uncommon',  studyTime: 90  },
+  { id: 'thunder_clap',   name: 'Thunder Clap',      icon: '⚡', desc: 'Shockwave stuns and deals damage.',        cost: 400,  levelReq: 16, effect: 'stun',   multiplier: 1.4,  bonus: { atk: 8, spd: 4 },      rarity: 'uncommon',  studyTime: 100 },
+  // Rare
+  { id: 'chain_lightning',name: 'Chain Lightning',   icon: '🌩️', desc: 'Lightning that hits 4 times.',            cost: 500,  levelReq: 18, effect: 'multi',  multiplier: 0.65, hits: 4, bonus: { atk: 10, spd: 5 }, rarity: 'rare',    studyTime: 120 },
+  { id: 'blizzard',       name: 'Blizzard',          icon: '🌨️', desc: 'Frozen storm. 5-hit ice barrage.',         cost: 600,  levelReq: 22, effect: 'multi',  multiplier: 0.6,  hits: 5, bonus: { def: 10, spd: 8 }, rarity: 'rare',    studyTime: 140 },
+  { id: 'inferno',        name: 'Inferno',           icon: '🌋', desc: 'Volcanic eruption. Massive fire damage.',  cost: 700,  levelReq: 25, effect: 'damage', multiplier: 2.8,  bonus: { atk: 15 },             rarity: 'rare',      studyTime: 150 },
+  { id: 'gravity_well',   name: 'Gravity Well',      icon: '🌀', desc: 'Crush the enemy with gravity. Stuns.',     cost: 750,  levelReq: 30, effect: 'stun',   multiplier: 2.0,  bonus: { atk: 12, def: 8 },     rarity: 'rare',      studyTime: 160 },
+  { id: 'meteor',         name: 'Meteor Strike',     icon: '☄️', desc: 'Call down a meteor. Massive damage.',      cost: 800,  levelReq: 28, effect: 'damage', multiplier: 3.2,  bonus: { atk: 18 },             rarity: 'rare',      studyTime: 160 },
+  { id: 'soul_drain',     name: 'Soul Drain',        icon: '💀', desc: 'Drain life force. Heals you for 30%.',     cost: 900,  levelReq: 32, effect: 'heal',   healPct: 0.3,     bonus: { atk: 14, def: 6 },     rarity: 'rare',      studyTime: 170 },
+  // Legendary
+  { id: 'time_stop',      name: 'Time Stop',         icon: '⏰', desc: 'Freeze time. Stuns for 3 turns.',          cost: 1200, levelReq: 38, effect: 'stun',   multiplier: 1.5,  bonus: { spd: 12, atk: 12 },    rarity: 'legendary', studyTime: 200 },
+  { id: 'void_blast',     name: 'Void Blast',        icon: '🌀', desc: 'Tear reality. 6× ATK damage.',             cost: 2000, levelReq: 45, effect: 'damage', multiplier: 6.0,  bonus: { atk: 25, critChance: 0.2 }, rarity: 'legendary', studyTime: 240 },
+  { id: 'star_fall',      name: 'Star Fall',         icon: '🌟', desc: 'Rain of stars. 8-hit celestial barrage.',  cost: 2500, levelReq: 50, effect: 'multi',  multiplier: 0.8,  hits: 8, bonus: { atk: 20, spd: 15 }, rarity: 'legendary', studyTime: 280 },
+  { id: 'divine_wrath',   name: 'Divine Wrath',      icon: '⚡', desc: 'Godly lightning. 10× ATK. Stuns.',         cost: 3500, levelReq: 60, effect: 'stun',   multiplier: 10.0, bonus: { atk: 40, critChance: 0.3 }, rarity: 'legendary', studyTime: 320 },
 ];
 
 // Study progress: { spellId: ticksStudied }

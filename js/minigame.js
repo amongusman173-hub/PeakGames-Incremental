@@ -637,8 +637,8 @@ const QUICK_JOB_GAMES = [
   (job, cb) => showMinigame('sequence', 2, `⚡ ${job.icon} Quick Work — follow the pattern!`, cb),
   // 5. Hold — charge and release
   (job, cb) => showMinigame('hold', 2, `⚡ ${job.icon} Quick Work — hold and release!`, cb),
-  // 6. Quick tap — tap moving target
-  (job, cb) => showMinigame('quick_tap', 2, `⚡ ${job.icon} Quick Work — tap the target!`, cb),
+  // 6. Draw line — slash straight
+  (job, cb) => showMinigame('draw_line', 2, `⚡ ${job.icon} Quick Work — slash straight!`, cb),
   // 7. Dual zone — hit both zones
   (job, cb) => showMinigame('dual_zone', 2, `⚡ ${job.icon} Quick Work — hit both zones!`, cb),
 ];
@@ -850,10 +850,10 @@ function fleeMinigame(callback) {
 let basicAttackUseCount = 0;
 function basicAttackMinigame(callback) {
   basicAttackUseCount++;
-  // Alternates between hard timing and quick_tap
-  const type = basicAttackUseCount % 2 === 1 ? 'timing' : 'quick_tap';
-  const label = type === 'timing' ? '⚔️ Basic Attack — hit the zone!' : '⚔️ Basic Attack — tap fast!';
-  showMinigame(type, 2, label, callback); // difficulty 2 = harder
+  // Alternates between hard timing and mash
+  const type = basicAttackUseCount % 2 === 1 ? 'timing' : 'mash';
+  const label = type === 'timing' ? '⚔️ Basic Attack — hit the zone!' : '⚔️ Basic Attack — mash it!';
+  showMinigame(type, 2, label, callback);
 }
 
 // ── TECHNIQUE MINIGAMES — each has 2 alternating types ──
@@ -861,9 +861,9 @@ const TECHNIQUE_MINIGAMES = {
   // [type_odd, type_even, difficulty, label_odd, label_even]
   'slash':           ['draw_line', 'dual_zone',  1, '⚔️ Slash — draw the cut!',    '⚔️ Slash — double strike!'],
   'block':           ['hold',      'reaction',   1, '🛡️ Iron Block!',              '🛡️ Block — react fast!'],
-  'quick_step':      ['quick_tap', 'timing',     1, '💨 Quick Step — tap fast!',   '💨 Quick Step — dodge!'],
-  'earth_crush':     ['drag_crush','hold',        2, '🪨 Earth Crush — drag down!', '🪨 Earth Crush — charge!'],
-  'fang_strike':     ['draw_line', 'mash',        2, '🐺 Fang Strike — slash!',     '🐺 Fang Strike — frenzy!'],
+  'quick_step':      ['timing',    'mash',      1, '💨 Quick Step — dodge!',      '💨 Quick Step — frenzy!'],
+  'earth_crush':     ['drag_crush','hold',       2, '🪨 Earth Crush — drag down!', '🪨 Earth Crush — charge!'],
+  'fang_strike':     ['draw_line', 'mash',       2, '🐺 Fang Strike — slash!',     '🐺 Fang Strike — frenzy!'],
   'war_cry':         ['hold',      'sequence',  2, '📣 War Cry!',             '📣 War Cry — sequence!'],
   'holy_slash':      ['x_slash',   'dual_zone', 2, '✨ Holy Slash — draw the X!',  '✨ Holy Slash — divine!'],
   'tidal_wave':      ['mash',      'reaction',  3, '🌊 Tidal Wave!',          '🌊 Tidal Wave — react!'],
@@ -889,6 +889,18 @@ const TECHNIQUE_MINIGAMES = {
   'meteor':          ['hold',      'dual_zone', 3, '☄️ Meteor!',              '☄️ Meteor — double!'],
   'time_stop':       ['sequence',  'reaction',  3, '⏰ Time Stop!',           '⏰ Time Stop — react!'],
   'void_blast':      ['mash',      'dual_zone', 3, '🌀 Void Blast!',          '🌀 Void Blast — double!'],
+  // New library spells
+  'wind_slash':      ['draw_line', 'timing',    1, '🌬️ Wind Slash — cut!',    '🌬️ Wind Slash — precise!'],
+  'stone_spike':     ['hold',      'timing',    1, '🪨 Stone Spike!',         '🪨 Stone Spike — precise!'],
+  'poison_cloud':    ['mash',      'hold',      2, '☠️ Poison Cloud!',        '☠️ Poison Cloud — charge!'],
+  'ice_lance':       ['draw_line', 'mash',      2, '🧊 Ice Lance — pierce!',  '🧊 Ice Lance — frenzy!'],
+  'thunder_clap':    ['mash',      'dual_zone', 2, '⚡ Thunder Clap!',        '⚡ Thunder Clap — double!'],
+  'blizzard':        ['mash',      'sequence',  3, '🌨️ Blizzard!',            '🌨️ Blizzard — pattern!'],
+  'inferno':         ['hold',      'dual_zone', 3, '🌋 Inferno!',             '🌋 Inferno — double!'],
+  'gravity_well':    ['sequence',  'hold',      3, '🌀 Gravity Well!',        '🌀 Gravity Well — charge!'],
+  'soul_drain':      ['hold',      'reaction',  3, '💀 Soul Drain!',          '💀 Soul Drain — react!'],
+  'star_fall':       ['mash',      'dual_zone', 3, '🌟 Star Fall!',           '🌟 Star Fall — double!'],
+  'divine_wrath':    ['sequence',  'mash',      3, '⚡ Divine Wrath!',        '⚡ Divine Wrath — obliterate!'],
   // JJK secret techniques
   'vessel_switch':   ['reaction',  'dual_zone', 3, '🩸 Vessel Switch — react!', '🩸 Vessel Switch — double!'],
   'dismantle':       ['timing',    'dual_zone', 3, '✂️ Dismantle — precise cut!', '✂️ Dismantle — double slash!'],

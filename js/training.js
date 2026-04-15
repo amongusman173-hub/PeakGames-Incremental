@@ -101,6 +101,47 @@ function stopTraining() {
   renderTraining();
 }
 
+// ── QUICK TRAIN — instant one-shot training with a minigame ──
+const QUICK_TRAIN_GAMES = [
+  (a, cb) => showMinigame('timing',    2, `⚡ ${a.icon} Quick Train — hit the zone!`,    cb),
+  (a, cb) => showMinigame('mash',      2, `⚡ ${a.icon} Quick Train — mash it!`,         cb),
+  (a, cb) => showMinigame('hold',      2, `⚡ ${a.icon} Quick Train — hold and release!`, cb),
+  (a, cb) => showMinigame('sequence',  2, `⚡ ${a.icon} Quick Train — follow the pattern!`, cb),
+  (a, cb) => showMinigame('draw_line', 2, `⚡ ${a.icon} Quick Train — slash straight!`,  cb),
+  (a, cb) => showMinigame('dual_zone', 2, `⚡ ${a.icon} Quick Train — hit both zones!`,  cb),
+];
+let quickTrainIndex = 0;
+
+function quickTrain(actionId) {
+  const action = TRAINING_ACTIONS.find(a => a.id === actionId);
+  if (!action) return;
+  const p = G.player;
+  if (p.level < action.levelReq) { toast(`Requires level ${action.levelReq}`, 'warn'); return; }
+  if (!spendStamina(action.staminaCost)) { toast('Not enough stamina!', 'warn'); return; }
+
+  const game = QUICK_TRAIN_GAMES[quickTrainIndex % QUICK_TRAIN_GAMES.length];
+  quickTrainIndex++;
+
+  game(action, (mult) => {
+    const gainMult = getUpgradeValue('train_gain_mult') * mult;
+    const sm = p.statMult;
+    const gains = [];
+    for (const [stat, val] of Object.entries(action.statGain)) {
+      const add = Math.max(1, Math.round(val * sm * gainMult));
+      if (stat === 'hp')      { p.maxHp += add; p.hp = Math.min(p.hp + add, p.maxHp); gains.push(`+${add} HP`); }
+      else if (stat === 'stamina') { p.maxStamina += add; gains.push(`+${add} STA`); }
+      else if (stat === 'atk') { p.atk += add; gains.push(`+${add} ATK`); }
+      else if (stat === 'def') { p.def += add; gains.push(`+${add} DEF`); }
+      else if (stat === 'spd') { p.spd += add; gains.push(`+${add} SPD`); }
+    }
+    const xpMult = getUpgradeValue('train_xp_mult');
+    const xp = Math.floor(action.xpGain * xpMult * mult);
+    gainXP(xp);
+    spawnFloatingText(gains[0] || '+stat', 'float-xp', 'bar-stamina');
+    toast(`Quick Train: ${gains.join(', ')} +${xp}XP (${mult.toFixed(1)}x)`, 'success');
+  });
+}
+
 function updateTrainingBanner() {
   // In-tab banner (only visible on training tab)
   const banner = document.getElementById('training-banner');
@@ -180,7 +221,10 @@ function renderTraining() {
         ${active ? `<div class="bar-track session-bar"><div id="session-bar-${action.id}" class="bar stamina-bar" style="width:${tickPct}%"></div></div>` : ''}
         ${locked
           ? `<div class="card-locked">🔒 Level ${action.levelReq}</div>`
-          : `<button class="btn-primary${active ? ' btn-stop' : ''}" onclick="startTraining('${action.id}')">${active ? '■ Stop' : '▶ Start'}</button>`
+          : `<div style="display:flex;gap:6px;flex-wrap:wrap">
+               <button class="btn-primary${active ? ' btn-stop' : ''}" onclick="startTraining('${action.id}')">${active ? '■ Stop' : '▶ Start'}</button>
+               ${!active ? `<button class="btn-small" onclick="quickTrain('${action.id}')" title="Instant training with a minigame">⚡ Quick</button>` : ''}
+             </div>`
         }
       </div>
     `;

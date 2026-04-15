@@ -13,12 +13,12 @@ const DOJO_TECHNIQUES = [
 ];
 
 const DOJO_TRAINING = [
-  { id: 'bag_work',      name: 'Bag Work',         icon: '🥊', desc: 'Hit the heavy bag. Builds ATK.',          staminaCost: 5,  xpGain: 6,  statGain: { atk: 0.08 }, levelReq: 1,  ticksNeeded: 10, maxProgress: 200 },
-  { id: 'footwork',      name: 'Footwork Drills',  icon: '👟', desc: 'Agility drills. Builds SPD.',             staminaCost: 5,  xpGain: 6,  statGain: { spd: 0.08 }, levelReq: 1,  ticksNeeded: 10, maxProgress: 200 },
-  { id: 'kata',          name: 'Kata Practice',    icon: '🥋', desc: 'Formal forms. Builds ATK and DEF.',       staminaCost: 8,  xpGain: 12, statGain: { atk: 0.1, def: 0.06 }, levelReq: 4, ticksNeeded: 20, maxProgress: 150 },
-  { id: 'sparring_pro',  name: 'Pro Sparring',     icon: '🏆', desc: 'Spar with a partner. All combat stats.',  staminaCost: 15, xpGain: 25, statGain: { atk: 0.2, def: 0.12, spd: 0.08 }, levelReq: 10, ticksNeeded: 40, maxProgress: 120 },
-  { id: 'iron_training', name: 'Iron Body Dojo',   icon: '🔩', desc: 'Condition your body to take hits.',       staminaCost: 18, xpGain: 30, statGain: { def: 0.25, hp: 5 }, levelReq: 15, ticksNeeded: 56, maxProgress: 100 },
-  { id: 'master_form',   name: 'Master Form',      icon: '🌟', desc: 'The ultimate martial arts form.',         staminaCost: 25, xpGain: 50, statGain: { atk: 0.4, def: 0.2, spd: 0.15 }, levelReq: 30, ticksNeeded: 96, maxProgress: 60 },
+  { id: 'bag_work',      name: 'Bag Work',         icon: '🥊', desc: 'Hit the heavy bag. Builds ATK.',          staminaCost: 5,  xpGain: 10,  statGain: { atk: 0.5  }, levelReq: 1,  ticksNeeded: 10, maxProgress: 200 },
+  { id: 'footwork',      name: 'Footwork Drills',  icon: '👟', desc: 'Agility drills. Builds SPD.',             staminaCost: 5,  xpGain: 10,  statGain: { spd: 0.5  }, levelReq: 1,  ticksNeeded: 10, maxProgress: 200 },
+  { id: 'kata',          name: 'Kata Practice',    icon: '🥋', desc: 'Formal forms. Builds ATK and DEF.',       staminaCost: 8,  xpGain: 18,  statGain: { atk: 0.6, def: 0.4 }, levelReq: 4, ticksNeeded: 20, maxProgress: 150 },
+  { id: 'sparring_pro',  name: 'Pro Sparring',     icon: '🏆', desc: 'Spar with a partner. All combat stats.',  staminaCost: 15, xpGain: 35,  statGain: { atk: 1.0, def: 0.6, spd: 0.4 }, levelReq: 10, ticksNeeded: 40, maxProgress: 120 },
+  { id: 'iron_training', name: 'Iron Body Dojo',   icon: '🔩', desc: 'Condition your body to take hits.',       staminaCost: 18, xpGain: 45,  statGain: { def: 1.2, hp: 15 }, levelReq: 15, ticksNeeded: 56, maxProgress: 100 },
+  { id: 'master_form',   name: 'Master Form',      icon: '🌟', desc: 'The ultimate martial arts form.',         staminaCost: 25, xpGain: 80,  statGain: { atk: 2.0, def: 1.0, spd: 0.8 }, levelReq: 30, ticksNeeded: 96, maxProgress: 60 },
 ];
 
 // ── TRAINER AI COMBAT ──
@@ -284,7 +284,10 @@ function renderDojo() {
         ${active ? `<div class="session-bar"><div class="bar stamina-bar" style="width:${tickPct}%"></div></div>` : ''}
         ${locked
           ? `<div class="card-locked">🔒 Level ${action.levelReq}</div>`
-          : `<button class="btn-primary${active?' btn-stop':''}" onclick="doDojoTrain('${action.id}')">${active?'■ Stop':'▶ Train'}</button>`
+          : `<div style="display:flex;gap:6px;flex-wrap:wrap">
+               <button class="btn-primary${active?' btn-stop':''}" onclick="doDojoTrain('${action.id}')">${active?'■ Stop':'▶ Train'}</button>
+               ${!active ? `<button class="btn-small" onclick="quickTrain('${action.id}')" title="Instant training with a minigame">⚡ Quick</button>` : ''}
+             </div>`
         }
       </div>`;
   }).join('');
