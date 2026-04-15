@@ -163,7 +163,6 @@ function spawnFloatingText(text, cls, anchorId) {
 // ===== SOUND SYSTEM =====
 // Pre-load audio pool to avoid creating new Audio objects on every click
 const _audioPool = {};
-let _musicStarted = false;
 
 function _getAudioPool(url, poolSize = 4) {
   if (!_audioPool[url]) {
@@ -188,40 +187,55 @@ function playSound(name, volume = 0.6) {
 }
 
 let _bgMusic = null;
+let _musicStarted = false;
+
 function playBgMusic() {
   try {
-    const s = typeof getSettings === 'function' ? getSettings() : { musicVolume: 0.5 };
-    const vol = s.musicVolume ?? 0.5;
     if (!_bgMusic) {
       _bgMusic = new Audio('sound/backroundmusic.mp3');
       _bgMusic.loop = true;
+      _bgMusic.preload = 'auto';
     }
-    _bgMusic.volume = Math.min(1, vol);
-    if (vol > 0) {
-      _bgMusic.play().catch(() => {
-        if (!_musicStarted) {
-          const start = () => {
-            _bgMusic.play().catch(() => {});
-            _musicStarted = true;
-          };
-          document.addEventListener('click', start, { once: true });
-          document.addEventListener('keydown', start, { once: true });
-        }
-      });
-    } else {
-      _bgMusic.pause();
+    const s = typeof getSettings === 'function' ? getSettings() : { musicVolume: 0.5 };
+    _bgMusic.volume = Math.min(1, Math.max(0, s.musicVolume ?? 0.5));
+
+    if (_bgMusic.volume > 0) {
+      const tryPlay = () => {
+        _bgMusic.play().then(() => {
+          _musicStarted = true;
+        }).catch(() => {
+          // Autoplay blocked — wait for first user interaction
+          if (!_musicStarted) {
+            const onInteract = () => {
+              _bgMusic.play().catch(() => {});
+              _musicStarted = true;
+              document.removeEventListener('click', onInteract);
+              document.removeEventListener('keydown', onInteract);
+              document.removeEventListener('touchstart', onInteract);
+            };
+            document.addEventListener('click', onInteract, { once: true });
+            document.addEventListener('keydown', onInteract, { once: true });
+            document.addEventListener('touchstart', onInteract, { once: true });
+          }
+        });
+      };
+      tryPlay();
     }
   } catch(e) {}
 }
 
 function updateMusicVolume() {
-  if (_bgMusic) {
+  if (!_bgMusic) return;
+  try {
     const s = typeof getSettings === 'function' ? getSettings() : { musicVolume: 0.5 };
-    const vol = s.musicVolume ?? 0.5;
-    _bgMusic.volume = Math.min(1, vol);
-    if (vol > 0) _bgMusic.play().catch(() => {});
-    else _bgMusic.pause();
-  }
+    const vol = Math.min(1, Math.max(0, s.musicVolume ?? 0.5));
+    _bgMusic.volume = vol;
+    if (vol > 0) {
+      _bgMusic.play().catch(() => {});
+    } else {
+      _bgMusic.pause();
+    }
+  } catch(e) {}
 }
 
 // ===== TOAST =====
