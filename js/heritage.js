@@ -335,29 +335,41 @@ function renderHeritage() {
       </div>
     </div>` : '';
 
+  const autoRunning = _autoRollInterval !== null;
   container.innerHTML = `
-    <div class="heritage-options" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px;padding:10px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid var(--border)">
-      <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer">
-        <input type="checkbox" ${p.heritageSkipAnim ? 'checked' : ''} onchange="G.player.heritageSkipAnim=this.checked">
-        ⚡ Skip roll animation
-      </label>
-      <div style="display:flex;align-items:center;gap:6px;font-size:12px">
-        🎯 Auto-roll until:
-        <select id="heritage-auto-rarity" style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:2px 6px;color:var(--text);font-size:11px">
-          <option value="">— off —</option>
-          <option value="uncommon">Uncommon+</option>
-          <option value="rare">Rare+</option>
-          <option value="legendary">Legendary+</option>
-          <option value="secret">Secret only</option>
-        </select>
-        <select id="heritage-auto-cat" style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:2px 6px;color:var(--text);font-size:11px">
-          <option value="clan">Clan</option>
-          <option value="weapon">Weapon</option>
-          <option value="style">Style</option>
-        </select>
-        <button class="btn-small" onclick="startAutoRoll()">▶ Start</button>
-        <button class="btn-small" onclick="stopAutoRoll()" id="btn-stop-autoroll" style="display:none">■ Stop</button>
+    <div class="heritage-control-panel">
+      <div class="heritage-control-row">
+        <div class="heritage-control-group">
+          <span class="heritage-control-label">⚡ Animation</span>
+          <label class="toggle-switch" title="Skip the spin animation for instant rolls">
+            <input type="checkbox" ${p.heritageSkipAnim ? 'checked' : ''} onchange="G.player.heritageSkipAnim=this.checked">
+            <span class="toggle-slider"></span>
+          </label>
+          <span style="font-size:11px;color:var(--dim)">Skip spin</span>
+        </div>
+        <div class="heritage-control-group" style="flex:1">
+          <span class="heritage-control-label">🎯 Auto-Roll</span>
+          <select id="heritage-auto-cat" class="heritage-select">
+            <option value="clan">🏰 Clan</option>
+            <option value="weapon">⚔️ Weapon</option>
+            <option value="style">🥋 Style</option>
+          </select>
+          <span style="font-size:11px;color:var(--dim)">until</span>
+          <select id="heritage-auto-rarity" class="heritage-select">
+            <option value="">— select —</option>
+            <option value="uncommon">Uncommon+</option>
+            <option value="rare">Rare+</option>
+            <option value="legendary">Legendary+</option>
+            <option value="secret">Secret only</option>
+          </select>
+          ${autoRunning
+            ? `<button class="btn-small btn-stop" onclick="stopAutoRoll()" style="background:rgba(229,57,53,0.2);border-color:var(--danger)">■ Stop</button>
+               <span style="font-size:11px;color:var(--ok);animation:pulse 1s infinite">● Rolling…</span>`
+            : `<button class="btn-small" onclick="startAutoRoll()" style="background:rgba(39,174,96,0.15);border-color:var(--ok)">▶ Start</button>`
+          }
+        </div>
       </div>
+      ${autoRunning ? `<div style="font-size:11px;color:var(--dim);margin-top:6px;padding:6px;background:rgba(245,197,66,0.08);border-radius:4px">⚠️ Auto-rolling — gold is being spent automatically. Click Stop to cancel.</div>` : ''}
     </div>
     <div class="heritage-grid">${html}</div>
     ${gojoSection}

@@ -849,9 +849,6 @@ function buildXSlashGame(el, difficulty, label) {
   setTimeout(() => { if (!done) { done=true; showMgResult(el, 0.3, '⏰ Too slow!', () => resolveMinigame(0.3)); } }, timeLimit);
 }
 
-  setTimeout(() => { if (!done) { done=true; showMgResult(el, 0.3, '⏰ Too slow!', () => resolveMinigame(0.3)); } }, timeLimit);
-}
-
 // ── TRIPLE SLASH — draw 3 diagonal lines in sequence (Cleave) ──
 function buildTripleSlashGame(el, difficulty, label) {
   const timeLimit = 5000;

@@ -112,14 +112,15 @@ function renderEquipSlots() {
   const p = G.player;
   const maxSlots = getMaxEquipSlots();
 
-  // Expand equipped array to match unlocked slots
   while (p.equipped.length < maxSlots) p.equipped.push(null);
 
-  // Purge any vessel-only techs that snuck into equipped slots
+  // Purge vessel-only techs AND techs that don't exist in TECHNIQUES array
   p.equipped = p.equipped.map(id => {
     if (!id) return null;
     const t = TECHNIQUES.find(t => t.id === id);
-    return (t && t._vesselOnly) ? null : id;
+    if (!t) return null; // technique not found — remove from slot
+    if (t._vesselOnly) return null;
+    return id;
   });
 
   grid.innerHTML = p.equipped.slice(0, maxSlots).map((techId, i) => {
@@ -144,7 +145,7 @@ function renderTechniqueList() {
   if (!list) return;
   const p = G.player;
 
-  // Filter out vessel-only techniques — they only appear in battle via Vessel Switch
+  // Filter out vessel-only techniques AND techniques not found in TECHNIQUES array
   const visible = p.techniques.filter(id => {
     const t = TECHNIQUES.find(t => t.id === id);
     return t && !t._vesselOnly;

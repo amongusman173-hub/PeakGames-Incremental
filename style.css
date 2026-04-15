@@ -1458,6 +1458,28 @@ body.reduced-animations .tab-panel.active.slide-from-left {
 }
 
 /* ===== HERITAGE SYSTEM ===== */
+.heritage-control-panel {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+.heritage-control-row {
+  display: flex; gap: 16px; align-items: center; flex-wrap: wrap;
+}
+.heritage-control-group {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.heritage-control-label {
+  font-size: 12px; font-weight: 700; color: var(--text); white-space: nowrap;
+}
+.heritage-select {
+  background: var(--bg3); border: 1px solid var(--border); border-radius: 6px;
+  padding: 4px 8px; color: var(--text); font-size: 12px; cursor: pointer;
+}
+.heritage-select:focus { outline: none; border-color: var(--accent); }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
 .heritage-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-bottom: 24px; }
 .heritage-card {
   background: var(--card); border: 1px solid var(--border); border-radius: var(--r);
