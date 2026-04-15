@@ -1,0 +1,237 @@
+// ===== HERITAGE SYSTEM =====
+// Roll for Clan, Weapon, and Fighting Technique.
+// Each gives stat bonuses and unlocks special techniques.
+
+// ── CLANS ──
+const CLANS = [
+  // Common (60%)
+  { id: 'iron_clan',    name: 'Iron Clan',       icon: '⚙️', rarity: 'common',    weight: 20, desc: 'Sturdy warriors of the forge.',    bonus: { def: 15, maxHp: 50 },   techs: [] },
+  { id: 'swift_clan',   name: 'Swift Clan',       icon: '💨', rarity: 'common',    weight: 20, desc: 'Agile hunters of the plains.',     bonus: { spd: 12, atk: 8 },      techs: [] },
+  { id: 'stone_clan',   name: 'Stone Clan',       icon: '🪨', rarity: 'common',    weight: 20, desc: 'Enduring mountain dwellers.',      bonus: { maxHp: 80, def: 10 },   techs: [] },
+  // Uncommon (25%)
+  { id: 'shadow_clan',  name: 'Shadow Clan',      icon: '🌑', rarity: 'uncommon',  weight: 10, desc: 'Assassins who strike from darkness.',bonus: { atk: 25, spd: 15 },    techs: ['quick_step'] },
+  { id: 'flame_clan',   name: 'Flame Clan',       icon: '🔥', rarity: 'uncommon',  weight: 8,  desc: 'Fire wielders of the volcano.',    bonus: { atk: 30, def: 5 },      techs: ['flame_burst'] },
+  { id: 'storm_clan',   name: 'Storm Clan',       icon: '⚡', rarity: 'uncommon',  weight: 7,  desc: 'Lightning-fast warriors.',         bonus: { spd: 25, atk: 20 },     techs: ['spark'] },
+  // Rare (12%)
+  { id: 'dragon_clan',  name: 'Dragon Clan',      icon: '🐉', rarity: 'rare',      weight: 4,  desc: 'Descendants of ancient dragons.',  bonus: { atk: 40, def: 20, maxHp: 100 }, techs: ['hellfire'] },
+  { id: 'void_clan',    name: 'Void Clan',        icon: '🌀', rarity: 'rare',      weight: 3,  desc: 'Masters of dimensional magic.',    bonus: { atk: 35, spd: 20 },     techs: ['void_rend'] },
+  { id: 'celestial_clan',name:'Celestial Clan',   icon: '✨', rarity: 'rare',      weight: 3,  desc: 'Blessed by the heavens.',          bonus: { def: 30, maxHp: 150 },  techs: ['divine_heal'] },
+  // Legendary (2.5%)
+  { id: 'demon_clan',   name: 'Demon Clan',       icon: '😈', rarity: 'legendary', weight: 1,  desc: 'Cursed bloodline of the underworld.',bonus: { atk: 60, spd: 30 },   techs: ['hellfire', 'void_rend'] },
+  { id: 'god_clan',     name: 'God Clan',         icon: '🌟', rarity: 'legendary', weight: 0.5,desc: 'Divine blood flows through you.',  bonus: { atk: 50, def: 40, maxHp: 200 }, techs: ['holy_slash', 'divine_heal'] },
+  // SECRET (~0.8%) — Gojo Clan
+  { id: 'gojo_clan',    name: 'Gojo Clan',        icon: '🔵', rarity: 'secret',    weight: 0.8, desc: 'The honored one. Six Eyes. Infinity.',
+    bonus: { atk: 100, def: 80, spd: 60, maxHp: 500 },
+    techs: ['infinity', 'reversal_red', 'lapse_blue', 'hollow_purple', 'domain_infinite_void'],
+    _gojo: true },
+];
+
+// ── WEAPONS ──
+const WEAPONS = [
+  { id: 'fists',        name: 'Bare Fists',       icon: '👊', rarity: 'common',    weight: 20, desc: 'Raw power, no weapon needed.',     bonus: { atk: 5 },               techs: ['iron_fist'] },
+  { id: 'sword',        name: 'Iron Sword',        icon: '⚔️', rarity: 'common',    weight: 18, desc: 'A reliable blade.',                bonus: { atk: 12 },              techs: ['slash'] },
+  { id: 'bow',          name: 'Longbow',           icon: '🏹', rarity: 'common',    weight: 15, desc: 'Strike from a distance.',          bonus: { atk: 10, spd: 8 },      techs: [] },
+  { id: 'staff',        name: 'Magic Staff',       icon: '🪄', rarity: 'uncommon',  weight: 10, desc: 'Channel magical energy.',          bonus: { atk: 15 },              techs: ['arcane_bolt'] },
+  { id: 'dual_blades',  name: 'Dual Blades',       icon: '🗡️', rarity: 'uncommon',  weight: 8,  desc: 'Two blades, twice the cuts.',      bonus: { atk: 18, spd: 10 },     techs: ['fang_strike'] },
+  { id: 'greatsword',   name: 'Greatsword',        icon: '🔱', rarity: 'rare',      weight: 5,  desc: 'Massive blade, massive damage.',   bonus: { atk: 35, def: -5 },     techs: ['power_strike'] },
+  { id: 'void_blade',   name: 'Void Blade',        icon: '🌑', rarity: 'legendary', weight: 1,  desc: 'A blade forged from void energy.', bonus: { atk: 60, spd: 20 },     techs: ['void_rend', 'shadow_clone'] },
+  { id: 'six_eyes_staff',name:'Six Eyes Staff',    icon: '🔵', rarity: 'secret',    weight: 0.1,desc: 'Amplifies the Six Eyes technique.', bonus: { atk: 80, spd: 50 },    techs: [], _gojo: true },
+];
+
+// ── FIGHTING TECHNIQUES ──
+const FIGHTING_STYLES = [
+  { id: 'brawler',      name: 'Brawler',           icon: '🥊', rarity: 'common',    weight: 20, desc: 'Raw, unrefined fighting.',         bonus: { atk: 8 },               techs: ['iron_fist'] },
+  { id: 'swordsman',    name: 'Swordsman',         icon: '⚔️', rarity: 'common',    weight: 18, desc: 'Classical blade techniques.',      bonus: { atk: 10, def: 5 },      techs: ['slash'] },
+  { id: 'assassin_style',name:'Assassin Style',    icon: '🗡️', rarity: 'uncommon',  weight: 10, desc: 'Strike fast, strike true.',        bonus: { atk: 15, spd: 12 },     techs: ['leg_sweep', 'quick_step'] },
+  { id: 'berserker_style',name:'Berserker Style',  icon: '😤', rarity: 'uncommon',  weight: 8,  desc: 'Abandon defense, maximize offense.',bonus: { atk: 25, def: -8 },    techs: ['berserker_rush'] },
+  { id: 'guardian_style',name:'Guardian Style',    icon: '🛡️', rarity: 'uncommon',  weight: 8,  desc: 'Defense is the best offense.',     bonus: { def: 20, maxHp: 80 },   techs: ['counter'] },
+  { id: 'shadow_style', name: 'Shadow Style',      icon: '👤', rarity: 'rare',      weight: 5,  desc: 'Move like a ghost.',               bonus: { spd: 20, atk: 15 },     techs: ['shadow_clone', 'death_blow'] },
+  { id: 'void_style',   name: 'Void Style',        icon: '🌀', rarity: 'legendary', weight: 1,  desc: 'Harness the power of nothingness.', bonus: { atk: 40, spd: 25 },    techs: ['void_rend', 'thousand_fists'] },
+  { id: 'infinity_style',name:'Infinity Style',    icon: '♾️', rarity: 'secret',    weight: 0.1,desc: 'The pinnacle of jujutsu sorcery.',  bonus: { atk: 70, def: 60, spd: 40 }, techs: [], _gojo: true },
+];
+
+// ── GOJO TECHNIQUES ──
+// Added to TECHNIQUES array on grant
+const GOJO_TECHNIQUES = [
+  { id: 'infinity',          name: 'Infinity',              icon: '♾️', rarity: 'legendary', desc: 'Limitless — immune to all damage for 2 turns.',    effect: 'shield',  shieldTurns: 2,  bonus: { def: 50 }, _gojo: true },
+  { id: 'reversal_red',      name: 'Reversal Red',          icon: '🔴', rarity: 'legendary', desc: 'Repel — pushes enemy with explosive force.',        effect: 'damage',  multiplier: 3.5, bonus: { atk: 40 }, _gojo: true, _upgradable: true, _upgradeId: 'reversal_red_max' },
+  { id: 'reversal_red_max',  name: 'Reversal Red MAX',      icon: '🔴', rarity: 'legendary', desc: 'Amplified Red — triple the repulsion force.',       effect: 'damage',  multiplier: 6.0, bonus: { atk: 60 }, _gojo: true },
+  { id: 'lapse_blue',        name: 'Lapse Blue',            icon: '🔵', rarity: 'legendary', desc: 'Attraction — pulls enemy in and crushes them.',     effect: 'stun',    multiplier: 3.0, bonus: { atk: 35, spd: 20 }, _gojo: true, _upgradable: true, _upgradeId: 'lapse_blue_max' },
+  { id: 'lapse_blue_max',    name: 'Lapse Blue MAX',        icon: '🔵', rarity: 'legendary', desc: 'Amplified Blue — gravitational collapse.',          effect: 'multi',   hits: 4, multiplier: 2.0, bonus: { atk: 50, spd: 30 }, _gojo: true },
+  { id: 'hollow_purple',     name: 'Hollow Purple',         icon: '🟣', rarity: 'legendary', desc: 'Red + Blue = Purple. Erases everything in its path.',effect: 'damage', multiplier: 8.0, bonus: { atk: 80, critChance: 0.5 }, _gojo: true },
+  { id: 'domain_infinite_void', name: 'Domain Expansion: Infinite Void', icon: '🌌', rarity: 'legendary',
+    desc: 'Traps the enemy in infinite information. Stuns for 3 turns and deals massive damage.',
+    effect: 'stun', multiplier: 5.0, bonus: { atk: 100, def: 50, spd: 50, critChance: 0.5 }, _gojo: true },
+];
+
+// Track upgrade counts for Red/Blue
+const gojoUpgradeCounts = { reversal_red: 0, lapse_blue: 0 };
+
+// ── ROLL SYSTEM ──
+function weightedRoll(pool) {
+  const total = pool.reduce((s, x) => s + x.weight, 0);
+  let r = Math.random() * total;
+  for (const item of pool) {
+    r -= item.weight;
+    if (r <= 0) return item;
+  }
+  return pool[pool.length - 1];
+}
+
+function rollHeritage(category) {
+  const p = G.player;
+  if (!p.heritage) p.heritage = {};
+  const cost = getHeritageCost(category);
+  if (!spendGold(cost)) { toast('Not enough gold!', 'warn'); return; }
+
+  let result;
+  if (category === 'clan')    result = weightedRoll(CLANS);
+  if (category === 'weapon')  result = weightedRoll(WEAPONS);
+  if (category === 'style')   result = weightedRoll(FIGHTING_STYLES);
+
+  p.heritage[category] = result.id;
+
+  // Apply stat bonuses
+  if (result.bonus) {
+    if (result.bonus.atk)    p.atk    += result.bonus.atk;
+    if (result.bonus.def)    p.def    += result.bonus.def;
+    if (result.bonus.spd)    p.spd    += result.bonus.spd;
+    if (result.bonus.maxHp)  { p.maxHp += result.bonus.maxHp; p.hp = Math.min(p.hp + result.bonus.maxHp, p.maxHp); }
+  }
+
+  // Grant techniques
+  if (result.techs) {
+    result.techs.forEach(id => grantTechnique(id));
+  }
+
+  // Gojo clan special handling
+  if (result._gojo) {
+    // Register all Gojo techniques
+    GOJO_TECHNIQUES.forEach(t => {
+      if (!TECHNIQUES.find(x => x.id === t.id)) TECHNIQUES.push(t);
+    });
+    // Grant base Gojo techniques
+    ['infinity', 'reversal_red', 'lapse_blue', 'hollow_purple', 'domain_infinite_void'].forEach(id => grantTechnique(id));
+    // Dramatic reveal
+    setTimeout(() => {
+      toast('👁️ Six Eyes awakened...', 'rare');
+      setTimeout(() => toast('♾️ Infinity activated. You are the honored one.', 'rare'), 1500);
+      setTimeout(() => toast('🌌 Domain Expansion: Infinite Void unlocked!', 'rare'), 3000);
+    }, 500);
+  }
+
+  const rarityColor = { common:'var(--dim)', uncommon:'var(--accent)', rare:'var(--accent2)', legendary:'var(--gold)', secret:'#ff3333' };
+  toast(`${result.icon} ${result.name} — ${result.rarity.toUpperCase()}!`, result.rarity === 'secret' ? 'rare' : result.rarity === 'legendary' ? 'rare' : 'success');
+  spawnFloatingText(result.icon, 'float-xp');
+  renderHeritage();
+}
+
+function getHeritageCost(category) {
+  const p = G.player;
+  const rerolls = (p.heritageRerolls && p.heritageRerolls[category]) || 0;
+  const base = { clan: 200, weapon: 150, style: 150 };
+  return Math.floor((base[category] || 200) * Math.pow(2, rerolls));
+}
+
+function getHeritageItem(category, id) {
+  if (category === 'clan')   return CLANS.find(x => x.id === id);
+  if (category === 'weapon') return WEAPONS.find(x => x.id === id);
+  if (category === 'style')  return FIGHTING_STYLES.find(x => x.id === id);
+  return null;
+}
+
+// Called from combat when using Red/Blue — track upgrade count
+function useGojoTech(techId) {
+  if (techId === 'reversal_red' || techId === 'lapse_blue') {
+    gojoUpgradeCounts[techId] = (gojoUpgradeCounts[techId] || 0) + 1;
+    if (gojoUpgradeCounts[techId] >= 3) {
+      const maxId = techId + '_max';
+      if (!G.player.techniques.includes(maxId)) {
+        grantTechnique(maxId);
+        toast(`🔴 ${techId === 'reversal_red' ? 'Reversal Red MAX' : 'Lapse Blue MAX'} unlocked!`, 'rare');
+      }
+    }
+  }
+}
+
+function renderHeritage() {
+  const container = document.getElementById('heritage-container');
+  if (!container) return;
+  const p = G.player;
+  if (!p.heritage) p.heritage = {};
+  if (!p.heritageRerolls) p.heritageRerolls = {};
+
+  const categories = [
+    { key: 'clan',   label: '🏰 Clan',             pool: CLANS,          desc: 'Your bloodline. Grants stat bonuses and techniques.' },
+    { key: 'weapon', label: '⚔️ Weapon Style',      pool: WEAPONS,        desc: 'Your weapon mastery. Grants ATK bonuses and techniques.' },
+    { key: 'style',  label: '🥋 Fighting Technique',pool: FIGHTING_STYLES,desc: 'Your combat style. Grants unique fighting techniques.' },
+  ];
+
+  const html = categories.map(cat => {
+    const currentId = p.heritage[cat.key];
+    const current   = currentId ? getHeritageItem(cat.key, currentId) : null;
+    const cost      = getHeritageCost(cat.key);
+    const rerolls   = p.heritageRerolls[cat.key] || 0;
+    const rarityColors = { common:'var(--dim)', uncommon:'var(--accent)', rare:'var(--accent2)', legendary:'var(--gold)', secret:'#ff3333' };
+
+    return `<div class="heritage-card">
+      <div class="heritage-header">
+        <h3>${cat.label}</h3>
+        <p class="tab-desc" style="margin:0">${cat.desc}</p>
+      </div>
+      ${current ? `
+        <div class="heritage-result" style="border-color:${rarityColors[current.rarity] || 'var(--border)'}">
+          <div class="heritage-icon">${current.icon}</div>
+          <div class="heritage-info">
+            <div class="heritage-name" style="color:${rarityColors[current.rarity]}">${current.name}</div>
+            <div class="heritage-rarity">${current.rarity.toUpperCase()}</div>
+            <div class="heritage-desc">${current.desc}</div>
+            ${current.bonus ? `<div class="heritage-bonus">${Object.entries(current.bonus).map(([k,v])=>`${v>0?'+':''}${v} ${k.toUpperCase()}`).join(' · ')}</div>` : ''}
+            ${current.techs?.length ? `<div class="heritage-techs">🎁 ${current.techs.map(id=>{ const t=TECHNIQUES.find(x=>x.id===id); return t?`${t.icon}${t.name}`:id; }).join(', ')}</div>` : ''}
+          </div>
+        </div>
+        <button class="btn-small heritage-reroll-btn" onclick="rollHeritage('${cat.key}')">
+          🎲 Re-roll (💰${cost}${rerolls > 0 ? ` · ${rerolls} rerolls` : ''})
+        </button>
+      ` : `
+        <div class="heritage-empty">Not yet rolled</div>
+        <button class="btn-primary" onclick="rollHeritage('${cat.key}')" ${p.gold >= cost ? '' : 'disabled'}>
+          🎲 Roll (💰${cost})
+        </button>
+      `}
+    </div>`;
+  }).join('');
+
+  // Show Gojo techniques if unlocked
+  const hasGojo = p.techniques.includes('infinity');
+  const gojoSection = hasGojo ? `
+    <div class="heritage-gojo-section">
+      <h3>👁️ Six Eyes Techniques</h3>
+      <p class="tab-desc">Satoru Gojo's limitless cursed techniques. Red upgrades to MAX after 3 uses. Blue upgrades to MAX after 3 uses.</p>
+      <div class="card-grid">
+        ${GOJO_TECHNIQUES.map(t => {
+          const owned = p.techniques.includes(t.id);
+          return `<div class="card jjk-technique${owned ? '' : ' card-locked-dim'}">
+            <div class="tech-rarity" style="color:#ff3333">CURSED · ${t.rarity.toUpperCase()}</div>
+            <h3>${t.icon} ${t.name}</h3>
+            <div class="card-desc">${t.desc}</div>
+            ${owned ? '<span style="color:var(--ok);font-size:12px">✓ Unlocked</span>' : '<span style="color:var(--dim);font-size:12px">🔒 Locked</span>'}
+          </div>`;
+        }).join('')}
+      </div>
+    </div>` : '';
+
+  container.innerHTML = `
+    <div class="heritage-grid">${html}</div>
+    ${gojoSection}
+    <div class="heritage-odds">
+      <h3>📊 Roll Odds</h3>
+      <div class="odds-grid">
+        <span class="odds-common">Common — ~60%</span>
+        <span class="odds-uncommon">Uncommon — ~25%</span>
+        <span class="odds-rare">Rare — ~12%</span>
+        <span class="odds-legendary">Legendary — ~2.5%</span>
+        <span class="odds-secret">Secret — ~0.5%</span>
+      </div>
+    </div>`;
+}

@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ascendant — Incremental RPG</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- Animated background canvas -->
+    <canvas id="bg-canvas"></canvas>
+    <header id="header">
+      <div id="player-info">
+        <span id="hdr-name">Hero</span>
+        <span id="hdr-level">Lv.1</span>
+        <span id="hdr-rebirth" class="rebirth-badge">✦ R0</span>
+      </div>
+      <div id="hdr-bars">
+        <div class="hdr-bar">
+          <span class="hdr-bar-lbl">❤️</span>
+          <div class="bar-track"><div id="bar-hp" class="bar hp-bar" style="width:100%"></div></div>
+          <span id="txt-hp" class="hdr-bar-val">100/100</span>
+        </div>
+        <div class="hdr-bar">
+          <span class="hdr-bar-lbl">✨</span>
+          <div class="bar-track"><div id="bar-xp" class="bar xp-bar" style="width:0%"></div></div>
+          <span id="txt-xp" class="hdr-bar-val">0/100</span>
+        </div>
+        <div class="hdr-bar">
+          <span class="hdr-bar-lbl">⚡</span>
+          <div class="bar-track"><div id="bar-stamina" class="bar stamina-bar" style="width:100%"></div></div>
+          <span id="txt-stamina" class="hdr-bar-val">100/100</span>
+        </div>
+      </div>
+      <div id="hdr-resources">
+        <div class="hdr-res">💰 <span id="res-gold">0</span></div>
+        <div class="hdr-res">⚔️ <span id="res-atk">5</span></div>
+        <div class="hdr-res">🛡️ <span id="res-def">2</span></div>
+        <div class="hdr-res">💨 <span id="res-spd">3</span></div>
+      </div>
+    </header>
+
+    <!-- Nav Tabs -->
+    <nav id="tabs">
+      <button class="tab-btn active" data-tab="training">🏋️ Train</button>
+      <button class="tab-btn" data-tab="jobs">💼 Jobs</button>
+      <button class="tab-btn" data-tab="raids">⚔️ Raids</button>
+      <button class="tab-btn" data-tab="dig">⛏️ Dig</button>
+      <button class="tab-btn" data-tab="shop">🌳 Upgrades</button>
+      <button class="tab-btn" data-tab="dojo">🥋 Dojo</button>
+      <button class="tab-btn" data-tab="library">📚 Library</button>
+      <button class="tab-btn" data-tab="inventory">🎒 Gear</button>
+      <button class="tab-btn" data-tab="story">📖 Story</button>
+      <button class="tab-btn" data-tab="alchemy">⚗️ Alchemy</button>
+      <button class="tab-btn" data-tab="rebirth">🔄 Rebirth</button>
+      <button class="tab-btn" data-tab="garden">🌱 Garden</button>
+      <button class="tab-btn" data-tab="heritage">🏛️ Heritage</button>
+      <button class="tab-btn" data-tab="settings">⚙️ Settings</button>
+    </nav>
+
+    <!-- Persistent Job Banner (visible on all tabs) -->
+    <div id="job-banner" class="hidden">
+      <span id="job-banner-name">💼 Laborer</span>
+      <div class="banner-bar-wrap"><div class="bar-track banner-bar-bg"><div id="job-banner-bar" class="bar xp-bar"></div></div></div>
+      <span id="job-banner-earn">💰 0/s</span>
+      <button class="banner-stop-btn" onclick="stopActiveJob()">■ Stop</button>
+    </div>
+
+    <!-- Persistent Training Banner (visible on all tabs) -->
+    <div id="training-global-banner" class="hidden training-global-banner">
+      <span id="tgb-icon">💪</span>
+      <span id="tgb-name">Push-Ups</span>
+      <div class="banner-bar-wrap"><div class="bar-track banner-bar-bg"><div id="tgb-bar" class="bar stamina-bar"></div></div></div>
+      <span id="tgb-status"></span>
+      <button class="banner-stop-btn" onclick="stopTraining()">■ Stop</button>
+    </div>
+
+    <!-- Tab Panels -->
+    <main id="content">
+
+      <!-- TRAINING -->
+      <section id="tab-training" class="tab-panel active">
+        <h2>Training Grounds</h2>
+        <p class="tab-desc">Select a routine — it runs automatically every 4 seconds until you stop it or run out of stamina.</p>
+        <!-- Active training banner -->
+        <div id="training-banner" class="hidden active-banner">
+          <span id="training-banner-text">💪 Push-Ups</span>
+          <div class="banner-bar-wrap"><div class="bar-track banner-bar-bg"><div id="training-banner-bar" class="bar stamina-bar"></div></div></div>
+          <button class="banner-stop-btn" onclick="stopTraining()">■ Stop</button>
+        </div>
+        <div id="training-list" class="card-grid"></div>
+      </section>
+
+      <!-- JOBS -->
+      <section id="tab-jobs" class="tab-panel">
+        <h2>Jobs</h2>
+        <p class="tab-desc">Work to earn gold. Higher jobs require stats and level.</p>
+        <div id="jobs-mult-banner" class="hidden" style="background:rgba(245,197,66,0.08);border:1px solid rgba(245,197,66,0.25);border-radius:6px;padding:6px 12px;font-size:12px;color:var(--gold);margin-bottom:12px;"></div>
+        <div id="jobs-list" class="card-grid"></div>
+      </section>
+
+      <!-- RAIDS -->
+      <section id="tab-raids" class="tab-panel">
+        <h2>⚔️ Raids</h2>
+        <p class="tab-desc">Challenge powerful bosses in turn-based combat. Use minigames to maximize damage!</p>
+        <div id="raids-list" class="card-grid"></div>
+        <div id="raid-log-old" class="combat-log hidden"></div>
+        <div id="raid-battle" class="hidden">
+          <div id="raid-battle-scene" class="battle-scene-wrap">
+            <div class="battle-side">
+              <div class="battle-name" id="rbp-name">Hero</div>
+              <div class="battle-hp-wrap">
+                <div class="bar-track" style="flex:1;height:10px"><div id="rbp-hp-bar" class="bar hp-bar" style="width:100%"></div></div>
+                <span id="rbp-hp-txt" style="font-size:11px;min-width:80px;color:var(--dim)">30/30</span>
+              </div>
+              <div id="rbp-status" class="status-effects"></div>
+            </div>
+            <div style="font-size:22px;font-weight:900;color:var(--dim)">VS</div>
+            <div class="battle-side">
+              <div class="battle-name" id="rbe-name">Boss</div>
+              <div class="battle-hp-wrap">
+                <div class="bar-track" style="flex:1;height:10px"><div id="rbe-hp-bar" class="bar enemy-bar" style="width:100%"></div></div>
+                <span id="rbe-hp-txt" style="font-size:11px;min-width:80px;color:var(--dim)">100/100</span>
+              </div>
+              <div id="rbe-status" class="status-effects"></div>
+            </div>
+          </div>
+          <div id="raid-log" class="combat-log"></div>
+          <div id="raid-actions" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px">
+            <button class="btn-action" id="rbtn-basic-atk">⚔️ Attack</button>
+            <div id="raid-technique-actions" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+            <button class="btn-action btn-flee" id="rbtn-flee">🏃 Flee</button>
+          </div>
+          <div id="raid-result" class="hidden" style="background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:var(--r);padding:20px;text-align:center;margin-top:12px">
+            <div id="raid-result-text" style="font-size:18px;font-weight:700;margin-bottom:12px"></div>
+            <button class="btn-primary" onclick="closeRaidBattle()">← Back to Raids</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- DIG -->
+      <section id="tab-dig" class="tab-panel">
+        <h2>⛏️ Excavation</h2>
+        <p class="tab-desc">Click tiles to dig. Find ore, gems, and ancient relics. Upgrade tools in the Skill Tree.</p>
+        <div id="dig-main-wrap">
+          <div class="dig-layout">
+            <div class="dig-left">
+              <!-- Toolbar -->
+              <div class="dig-toolbar">
+                <div class="dig-charges-wrap">
+                  <span class="dig-charges-label">Charges</span>
+                  <div id="dig-charge-pips" class="dig-charge-pips"></div>
+                  <span id="dig-timer" class="dig-timer-txt"></span>
+                </div>
+                <div id="dig-session-stats" class="dig-session-stats"></div>
+                <button id="btn-new-dig" class="btn-primary">🗺️ New Site</button>
+                <button id="btn-sonar" class="btn-small hidden" onclick="activateSonarPulse()">📡 Sonar</button>
+              </div>
+              <!-- Grid -->
+              <div id="dig-grid" class="dig-grid-new"></div>
+            </div>
+            <div class="dig-right">
+              <h3>⬆️ Site Upgrades</h3>
+              <div id="dig-upgrades-list" class="dig-upgrades-list"></div>
+              <h3 style="margin-top:14px">📋 Find Log</h3>
+              <div id="dig-log" class="loot-log dig-log-panel"></div>
+              <h3 style="margin-top:14px">📖 Rarity Guide</h3>
+              <div class="dig-rarity-guide">
+                <div class="dig-rarity-row common-row">🪨 Common — materials, low gold</div>
+                <div class="dig-rarity-row uncommon-row">🥈 Uncommon — ores, alchemy ingredients</div>
+                <div class="dig-rarity-row rare-row">💎 Rare — gems, relics, techniques</div>
+                <div class="dig-rarity-row legendary-row">✨ Legendary — powerful items &amp; spells</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- UPGRADES (Skill Tree) -->
+      <section id="tab-shop" class="tab-panel">
+        <h2>🌳 Skill Tree</h2>
+        <p class="tab-desc">Spend gold to unlock permanent upgrades. Each branch has 4 tiers — unlock parents first.</p>
+        <div id="skill-branch-tabs" class="skill-branch-tabs"></div>
+        <div id="skill-tree-container"></div>
+      </section>
+
+      <!-- INVENTORY -->
+      <section id="tab-inventory" class="tab-panel">
+        <h2>Technique Inventory</h2>
+        <p class="tab-desc">Equip up to 4 techniques for battle. Techniques are found in raids and digs.</p>
+        <div id="equipped-slots">
+          <h3>Equipped (4 slots)</h3>
+          <div id="equip-grid" class="equip-grid"></div>
+        </div>
+        <div id="all-techniques">
+          <h3>All Techniques</h3>
+          <div id="technique-list" class="card-grid"></div>
+        </div>
+      </section>
+
+      <!-- STORY / ATTACK -->
+      <section id="tab-story" class="tab-panel">
+        <h2>Story Mode</h2>
+        <p class="tab-desc">Turn-based battles with a full narrative. Each chapter has 10 stages — the last is a boss fight.</p>
+        <div id="story-chapters" class="card-grid"></div>
+        <div id="story-battle" class="hidden">
+          <!-- Stage progress bar -->
+          <div id="stage-header">
+            <span id="stage-label" class="stage-label">Stage 1 / 10</span>
+            <div id="stage-pips" class="stage-pips"></div>
+          </div>
+          <div id="battle-scene">
+            <div id="battle-player-side" class="battle-side">
+              <div class="battle-name" id="bp-name">Hero</div>
+              <div class="battle-hp-wrap">
+                <div class="bar-track"><div id="bp-hp-bar" class="bar hp-bar"></div></div>
+                <span id="bp-hp-txt">100/100</span>
+              </div>
+              <div id="bp-status" class="status-effects"></div>
+            </div>
+            <div id="battle-vs">VS</div>
+            <div id="battle-enemy-side" class="battle-side">
+              <div class="battle-name" id="be-name">Enemy</div>
+              <div class="battle-hp-wrap">
+                <div class="bar-track"><div id="be-hp-bar" class="bar enemy-bar"></div></div>
+                <span id="be-hp-txt">100/100</span>
+              </div>
+              <div id="be-status" class="status-effects"></div>
+            </div>
+          </div>
+          <div id="battle-log" class="combat-log"></div>
+          <div id="battle-actions">
+            <button class="btn-action" id="btn-basic-atk">⚔️ Basic Attack</button>
+            <div id="technique-actions"></div>
+            <button class="btn-action btn-flee" id="btn-flee">🏃 Flee</button>
+          </div>
+          <div id="battle-result" class="hidden">
+            <div id="result-text"></div>
+            <button id="btn-continue-story" class="btn-primary">Continue</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- DOJO -->
+      <section id="tab-dojo" class="tab-panel">
+        <h2>🥋 Dojo</h2>
+        <p class="tab-desc">Train your body and learn fighting techniques. Buy techniques with gold, then equip them in Gear.</p>
+        <div id="dojo-container"></div>
+      </section>
+
+      <!-- LIBRARY -->
+      <section id="tab-library" class="tab-panel">
+        <h2>📚 Library</h2>
+        <p class="tab-desc">Study ancient tomes to learn magic spells. Pay gold to begin studying — spells unlock over time.</p>
+        <div id="library-container"></div>
+      </section>
+
+      <!-- ALCHEMY -->
+      <section id="tab-alchemy" class="tab-panel">
+        <h2>⚗️ Alchemy</h2>
+        <p class="tab-desc">Brew potions from ingredients. Discover recipes by experimenting. Ingredients drop from Story stages.</p>
+        <div id="alchemy-container"></div>
+      </section>
+
+      <!-- REBIRTH -->
+      <section id="tab-rebirth" class="tab-panel">
+        <h2>Rebirth</h2>
+        <p class="tab-desc">Reset your progress for permanent multipliers. Requires level 50+.</p>
+        <div id="rebirth-info" class="rebirth-panel">
+          <div class="rebirth-stat">Current Rebirth: <strong id="rb-count">0</strong></div>
+          <div class="rebirth-stat">Rebirth Points: <strong id="rb-points">0</strong></div>
+          <div class="rebirth-stat">XP Multiplier: <strong id="rb-xp-mult">1.0x</strong></div>
+          <div class="rebirth-stat">Gold Multiplier: <strong id="rb-gold-mult">1.0x</strong></div>
+          <div class="rebirth-stat">Stat Multiplier: <strong id="rb-stat-mult">1.0x</strong></div>
+        </div>
+        <div id="rebirth-upgrades" class="card-grid"></div>
+        <button id="btn-rebirth" class="btn-danger">🔄 Perform Rebirth (Requires Lv.50)</button>
+      </section>
+
+      <!-- SETTINGS -->
+      <section id="tab-settings" class="tab-panel">
+        <h2>⚙️ Settings</h2>
+        <p class="tab-desc">Configure your game experience.</p>
+        <div id="settings-container"></div>
+      </section>
+
+      <!-- HERITAGE -->
+      <section id="tab-heritage" class="tab-panel">
+        <h2>🏛️ Heritage</h2>
+        <p class="tab-desc">Roll for your Clan, Weapon, and Fighting Technique. Each gives unique bonuses and abilities. <strong>NEW!</strong></p>
+        <div id="heritage-container"></div>
+      </section>
+
+      <!-- GARDEN -->
+      <section id="tab-garden" class="tab-panel">
+        <h2>🌱 Garden</h2>
+        <p class="tab-desc">Grow plants to harvest alchemy ingredients. Each plot takes time to grow.</p>
+        <div id="garden-container"></div>
+      </section>
+
+    </main>
+
+    <!-- Admin Panel (Konami code) -->
+    <div id="admin-panel" class="hidden modal-overlay" style="z-index:3000">
+      <div class="modal-box admin-modal">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <h3 style="color:var(--gold)">🔧 Admin Panel</h3>
+          <button class="btn-small" onclick="document.getElementById('admin-panel').classList.add('hidden')">✕ Close</button>
+        </div>
+        <p style="color:var(--dim);font-size:11px;margin-bottom:12px">↑↑↓↓←→←→BA+Enter to open. Use responsibly.</p>
+        <div id="admin-panel-body"></div>
+      </div>
+    </div>
+
+    <div id="mg-overlay" class="hidden mg-overlay"></div>
+
+    <!-- Reset Confirm Modal -->
+    <div id="reset-modal" class="hidden modal-overlay">
+      <div class="modal-box">
+        <h3>⚠️ Reset All Data?</h3>
+        <p>This will permanently delete ALL your progress. This cannot be undone.</p>
+        <div style="display:flex;gap:10px;margin-top:16px;justify-content:center">
+          <button id="confirm-reset-btn" class="btn-danger">Yes, Delete Everything</button>
+          <button id="cancel-reset-btn" class="btn-small">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast notifications -->
+    <div id="toast-container"></div>
+  </div>
+
+  <script src="js/game.js"></script>
+  <script src="js/player.js"></script>
+  <script src="js/inventory.js"></script>
+  <script src="js/training.js"></script>
+  <script src="js/jobs.js"></script>
+  <script src="js/minigame.js"></script>
+  <script src="js/combat.js"></script>
+  <script src="js/raids.js"></script>
+  <script src="js/dig.js"></script>
+  <script src="js/shop.js"></script>
+  <script src="js/alchemy.js"></script>
+  <script src="js/dojo.js"></script>
+  <script src="js/library.js"></script>
+  <script src="js/settings.js"></script>
+  <script src="js/garden.js"></script>
+  <script src="js/heritage.js"></script>
+  <script src="js/story.js"></script>
+  <script src="js/rebirth.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/bgfx.js"></script>
+</body>
+</html>
