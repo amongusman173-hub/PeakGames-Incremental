@@ -172,6 +172,16 @@ const SKILL_TREE = [
   { id:'ar13', name:'Runic Titan',    icon:'🗿', branch:'arcane', row:4,col:2, cost:1200, maxLevel:2, requires:['ar10'],         desc:'+60 DEF, +40 ATK per level.',               effect:(p)=>{ p.def+=60; p.atk+=40; } },
   { id:'ar14', name:'Omnimancer',     icon:'👁️', branch:'arcane', row:5,col:1, cost:4000, maxLevel:2, requires:['ar11','ar12','ar13'], desc:'+200 ATK, +100 DEF, +50 SPD per level.', effect:(p)=>{ p.atk+=200; p.def+=100; p.spd+=50; } },
 
+  // ══════════════════════════════════════════
+  // 🎒  SLOTS  — Expand equip slots up to 10
+  // ══════════════════════════════════════════
+  { id:'sl1', name:'Extra Pocket',    icon:'🎒', branch:'slots', row:0,col:1, cost:300,  maxLevel:1, requires:[],           desc:'Unlock slot 5. Equip one more technique.',  effect:()=>{} },
+  { id:'sl2', name:'Technique Bag',   icon:'🗃️', branch:'slots', row:1,col:0, cost:600,  maxLevel:1, requires:['sl1'],      desc:'Unlock slot 6.',                            effect:()=>{} },
+  { id:'sl3', name:'Arsenal',         icon:'⚔️', branch:'slots', row:1,col:2, cost:600,  maxLevel:1, requires:['sl1'],      desc:'Unlock slot 7.',                            effect:()=>{} },
+  { id:'sl4', name:'War Chest',       icon:'📦', branch:'slots', row:2,col:0, cost:1200, maxLevel:1, requires:['sl2'],      desc:'Unlock slot 8.',                            effect:()=>{} },
+  { id:'sl5', name:'Technique Vault', icon:'🏛️', branch:'slots', row:2,col:2, cost:1200, maxLevel:1, requires:['sl3'],      desc:'Unlock slot 9.',                            effect:()=>{} },
+  { id:'sl6', name:'Infinite Arsenal',icon:'♾️', branch:'slots', row:3,col:1, cost:3000, maxLevel:1, requires:['sl4','sl5'],desc:'Unlock slot 10. Maximum capacity.',          effect:()=>{} },
+
 ];
 
 const BRANCH_META = {
@@ -184,6 +194,7 @@ const BRANCH_META = {
   craft:      { label: '⚗️ Craft',      color: '#e67e22' },
   resilience: { label: '🛡️ Resilience', color: '#1abc9c' },
   arcane:     { label: '🔮 Arcane',     color: '#9b59b6' },
+  slots:      { label: '🎒 Slots',      color: '#f39c12' },
 };
 
 // ── Computed upgrade values ──
@@ -261,6 +272,19 @@ function buySkillNode(nodeId) {
 // ── Dig helpers ──
 function getMaxDigCharges() {
   return 5 + ((G.player.shopPurchases && G.player.shopPurchases['dig_cap']) || 0) * 2;
+}
+
+// ── Equip slot helpers ──
+function getMaxEquipSlots() {
+  const n = G.player.skillNodes || {};
+  // Base 4 slots + 1 per slot upgrade purchased
+  return 4
+    + (n.sl1 ? 1 : 0)
+    + (n.sl2 ? 1 : 0)
+    + (n.sl3 ? 1 : 0)
+    + (n.sl4 ? 1 : 0)
+    + (n.sl5 ? 1 : 0)
+    + (n.sl6 ? 1 : 0);
 }
 function getDigRegenRate() {
   const base = 60;

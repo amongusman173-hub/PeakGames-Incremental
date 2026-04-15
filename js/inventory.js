@@ -73,6 +73,9 @@ function equipTechnique(techId, slot) {
   const tech = TECHNIQUES.find(t => t.id === techId);
   // Vessel-only techniques are never equippable — they appear only via Vessel Switch in battle
   if (tech && tech._vesselOnly) { toast('This technique only activates via Vessel Switch in battle.', 'warn'); return; }
+  // Expand equipped array if slots have been unlocked
+  const maxSlots = getMaxEquipSlots();
+  while (p.equipped.length < maxSlots) p.equipped.push(null);
   // Remove from other slots
   p.equipped = p.equipped.map(e => e === techId ? null : e);
   p.equipped[slot] = techId;
@@ -107,6 +110,10 @@ function renderEquipSlots() {
   const grid = document.getElementById('equip-grid');
   if (!grid) return;
   const p = G.player;
+  const maxSlots = getMaxEquipSlots();
+
+  // Expand equipped array to match unlocked slots
+  while (p.equipped.length < maxSlots) p.equipped.push(null);
 
   // Purge any vessel-only techs that snuck into equipped slots
   p.equipped = p.equipped.map(id => {
@@ -115,12 +122,12 @@ function renderEquipSlots() {
     return (t && t._vesselOnly) ? null : id;
   });
 
-  grid.innerHTML = p.equipped.map((techId, i) => {
+  grid.innerHTML = p.equipped.slice(0, maxSlots).map((techId, i) => {
     if (!techId) {
-      return `<div class="equip-slot"><span>Empty Slot ${i+1}</span></div>`;
+      return `<div class="equip-slot"><span>Slot ${i+1}</span></div>`;
     }
     const tech = TECHNIQUES.find(t => t.id === techId);
-    if (!tech) return `<div class="equip-slot"><span>Empty Slot ${i+1}</span></div>`;
+    if (!tech) return `<div class="equip-slot"><span>Slot ${i+1}</span></div>`;
     return `
       <div class="equip-slot filled">
         <button class="btn-small btn-unequip" onclick="unequipSlot(${i})">✕</button>
@@ -129,7 +136,7 @@ function renderEquipSlots() {
         <div style="font-size:11px;color:var(--text-dim);margin-top:4px">${tech.desc}</div>
       </div>
     `;
-  }).join('');
+  }).join('') + (maxSlots < 10 ? `<div class="equip-slot locked-slot" title="Unlock more slots in Skill Tree → Slots">🔒 +${10 - maxSlots} more in Skill Tree</div>` : '');
 }
 
 function renderTechniqueList() {
@@ -153,7 +160,8 @@ function renderTechniqueList() {
     if (!tech) return '';
     const isEquipped = p.equipped.includes(techId);
     const bonusStr = tech.bonus ? Object.entries(tech.bonus).map(([k,v]) => `+${v} ${k}`).join(', ') : '';
-    const emptySlot = p.equipped.findIndex(e => e === null);
+    const maxSlots = getMaxEquipSlots();
+    const emptySlot = p.equipped.slice(0, maxSlots).findIndex(e => e === null);
     // vessel_switch can be equipped but shows a special note
     const isVessel = tech._vesselSwitch;
 

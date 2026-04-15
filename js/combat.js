@@ -1129,6 +1129,8 @@ function endBattle(won) {
       vesselSwitchActive = false;
       vesselSwitchCharges = 0;
       appendLog(combatLog, '🩸 Sukuna recedes... Vessel Switch expired.', 'log-info');
+      // Swap buttons back to normal moveset immediately
+      renderTechniqueActions();
     }
   }
 

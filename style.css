@@ -316,7 +316,7 @@ button:disabled{cursor:not-allowed!important;pointer-events:auto}
 .loot-log .rare{color:var(--accent2)}.loot-log .uncommon{color:var(--accent)}.loot-log .common{color:var(--dim)}
 
 /* ===== INVENTORY ===== */
-.equip-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+.equip-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin-bottom:20px}
 .equip-slot{
   background:rgba(255,255,255,0.03);border:2px dashed var(--border);
   border-radius:var(--r);padding:12px;min-height:80px;
@@ -325,6 +325,7 @@ button:disabled{cursor:not-allowed!important;pointer-events:auto}
   transition:border-color var(--trans);
 }
 .equip-slot.filled{border-style:solid;border-color:var(--accent);background:rgba(108,159,255,0.06)}
+.equip-slot.locked-slot{border-color:rgba(255,255,255,0.06);opacity:0.5;cursor:default;font-size:10px}
 .equip-slot .slot-name{font-weight:700;color:var(--text);font-size:13px}
 .equip-slot .slot-type{font-size:10px;color:var(--accent)}
 .equip-slot .btn-unequip{position:absolute;top:4px;right:4px;font-size:10px;padding:2px 5px}
