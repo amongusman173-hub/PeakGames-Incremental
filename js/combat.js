@@ -1409,12 +1409,18 @@ function setBattleActionsEnabled(enabled, context) {
     if (el) el.disabled = !enabled;
   });
   // If enabling story buttons while vessel switch is active, re-render vessel buttons first
-  // so the fresh DOM elements exist before we try to enable them
   if (enabled && vesselSwitchActive && (context === 'story' || context === 'raid')) {
     renderVesselTechniqueActions();
   }
   const techContainer = context === 'raid' ? '#raid-technique-actions' : '#technique-actions';
-  document.querySelectorAll(`${techContainer} .btn-action`).forEach(btn => { btn.disabled = !enabled; });
+  document.querySelectorAll(`${techContainer} .btn-action`).forEach(btn => {
+    if (!enabled) {
+      btn.disabled = true;
+    } else {
+      // Don't re-enable buttons that are on cooldown (have a cd-badge)
+      if (!btn.querySelector('.cd-badge')) btn.disabled = false;
+    }
+  });
 }
 
 // Wire up story battle buttons

@@ -690,12 +690,15 @@ function buildTypingGame(el, difficulty, label, forcedPhrase) {
     <div class="mg-label">${label}</div>
     <div class="mg-hint">Type the phrase exactly! Press Enter when done.</div>
     <div class="mg-typing-phrase" id="mg-phrase">${phrase}</div>
-    <input id="mg-type-input" class="mg-type-input" type="text" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Type here…" maxlength="${phrase.length + 5}">
+    <input id="mg-type-input" class="mg-type-input" type="text" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Type here…" maxlength="${phrase.length + 5}"
+      oncopy="return false" onpaste="return false" oncut="return false">
     <div class="mg-timer-bar"><div class="mg-timer-fill" id="mg-tfill" style="width:100%"></div></div>
     <div id="mg-type-status" style="font-size:12px;color:var(--dim);margin-top:4px">Start typing…</div>
   </div>`;
 
   const input = el.querySelector('#mg-type-input');
+  // Block paste/copy/cut — must type manually
+  ['paste','copy','cut'].forEach(ev => input.addEventListener(ev, e => e.preventDefault()));
   const fill = el.querySelector('#mg-tfill');
   const status = el.querySelector('#mg-type-status');
   const start = Date.now();
