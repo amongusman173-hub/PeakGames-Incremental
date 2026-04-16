@@ -202,10 +202,12 @@ function gameTick() {
   G.tickCount++;
   const p = G.player;
 
-  // Stamina regen: 1 per 4 ticks (1/sec)
-  if (G.tickCount % 4 === 0) {
+  // Stamina regen: base 1 per 8 ticks (0.5/sec), SPD adds up to +0.5/sec
+  // Every 50 SPD = +1 regen per 8 ticks (so 50 SPD = 1/sec, 100 SPD = 1.5/sec)
+  if (G.tickCount % 8 === 0) {
     if (p.stamina < p.maxStamina) {
-      p.stamina = Math.min(p.maxStamina, p.stamina + 1);
+      const spdBonus = Math.floor(p.spd / 50); // +1 per 50 SPD
+      p.stamina = Math.min(p.maxStamina, p.stamina + 1 + spdBonus);
     }
   }
 

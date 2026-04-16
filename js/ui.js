@@ -287,6 +287,7 @@ function openAdminPanel() {
   renderAdminPanel();
   document.getElementById('admin-panel')?.classList.remove('hidden');
   toast('🔧 Admin panel opened', 'warn');
+  console.log('[Admin] Panel opened. Player level:', G.player.level, '| Gold:', G.player.gold);
 }
 
 function renderAdminPanel() {
