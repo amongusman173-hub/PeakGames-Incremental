@@ -288,15 +288,64 @@ document.addEventListener('keydown', function(e) {
 });
 
 function openAdminPanel() {
-  const pw = prompt('🔧 Admin Panel — Enter password:');
-  if (pw !== 'rah') {
-    toast('❌ Wrong password.', 'warn');
-    return;
+  // Show custom password modal instead of prompt()
+  const existing = document.getElementById('admin-pw-modal');
+  if (existing) existing.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'admin-pw-modal';
+  modal.style.cssText = `position:fixed;inset:0;z-index:4000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px)`;
+  modal.innerHTML = `
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:28px 32px;min-width:280px;box-shadow:0 8px 40px rgba(0,0,0,0.6)">
+      <div style="font-size:22px;font-weight:800;color:var(--gold);margin-bottom:6px">🔧 Admin Panel</div>
+      <div style="font-size:12px;color:var(--dim);margin-bottom:18px">Enter password to continue</div>
+      <div style="position:relative;margin-bottom:16px">
+        <input id="admin-pw-input" type="password"
+          style="width:100%;box-sizing:border-box;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 40px 10px 12px;color:var(--text);font-size:15px;outline:none;letter-spacing:3px"
+          placeholder="••••••" autocomplete="off" maxlength="32">
+        <button id="admin-pw-eye" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:var(--dim);padding:0">👁</button>
+      </div>
+      <div id="admin-pw-err" style="font-size:12px;color:var(--danger);margin-bottom:12px;min-height:16px"></div>
+      <div style="display:flex;gap:8px">
+        <button id="admin-pw-submit" class="btn-primary" style="flex:1">Unlock</button>
+        <button id="admin-pw-cancel" class="btn-small" style="flex:1">Cancel</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+
+  const input  = modal.querySelector('#admin-pw-input');
+  const errEl  = modal.querySelector('#admin-pw-err');
+  const eyeBtn = modal.querySelector('#admin-pw-eye');
+
+  setTimeout(() => input.focus(), 50);
+
+  // Toggle show/hide password
+  eyeBtn.addEventListener('click', () => {
+    input.type = input.type === 'password' ? 'text' : 'password';
+    eyeBtn.textContent = input.type === 'password' ? '👁' : '🙈';
+  });
+
+  function submit() {
+    if (input.value === 'rah') {
+      modal.remove();
+      renderAdminPanel();
+      document.getElementById('admin-panel')?.classList.remove('hidden');
+      toast('🔧 Admin panel opened', 'warn');
+    } else {
+      errEl.textContent = '❌ Wrong password.';
+      input.value = '';
+      input.focus();
+      input.style.borderColor = 'var(--danger)';
+      setTimeout(() => { input.style.borderColor = 'var(--border)'; }, 800);
+    }
   }
-  renderAdminPanel();
-  document.getElementById('admin-panel')?.classList.remove('hidden');
-  toast('🔧 Admin panel opened', 'warn');
-  console.log('[Admin] Panel opened. Player level:', G.player.level, '| Gold:', G.player.gold);
+
+  modal.querySelector('#admin-pw-submit').addEventListener('click', submit);
+  modal.querySelector('#admin-pw-cancel').addEventListener('click', () => modal.remove());
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') submit();
+    if (e.key === 'Escape') modal.remove();
+  });
 }
 
 function renderAdminPanel() {
