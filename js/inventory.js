@@ -124,6 +124,11 @@ function renderEquipSlots() {
     return id;
   });
 
+  // Truncate to maxSlots — slots beyond max are inaccessible and should be cleared
+  p.equipped = p.equipped.slice(0, maxSlots);
+  // Pad back up to maxSlots with nulls if needed
+  while (p.equipped.length < maxSlots) p.equipped.push(null);
+
   // Auto-equip vessel_switch if owned but not slotted
   if (p.techniques.includes('vessel_switch') && !p.equipped.includes('vessel_switch')) {
     const emptySlot = p.equipped.findIndex(e => e === null);

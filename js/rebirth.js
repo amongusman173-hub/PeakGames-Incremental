@@ -161,6 +161,18 @@ function performRebirth() {
   // Re-grant heritage techniques (clan/weapon/style bonuses)
   _reapplyHeritageTechs();
 
+  // After re-granting heritage techs, fill empty equipped slots with them
+  // so player doesn't start post-ascension with all empty slots
+  const maxSlots = typeof getMaxEquipSlots === 'function' ? getMaxEquipSlots() : 4;
+  while (G.player.equipped.length < maxSlots) G.player.equipped.push(null);
+  G.player.techniques.forEach(id => {
+    if (G.player.equipped.includes(id)) return; // already slotted
+    const t = typeof TECHNIQUES !== 'undefined' ? TECHNIQUES.find(x => x.id === id) : null;
+    if (!t || t._vesselOnly) return;
+    const slot = G.player.equipped.indexOf(null);
+    if (slot >= 0) G.player.equipped[slot] = id;
+  });
+
   recalcRebirthMultipliers();
   applyRebirthMultipliers();
 
