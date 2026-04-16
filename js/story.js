@@ -246,9 +246,9 @@ function getStageEnemy(chapter, stage) {
   const isLast = stage === STAGES_PER_CHAPTER - 1;
   const p = G.player;
 
-  // Scale factor: enemies scale with player level so they're always challenging
-  // Base multiplier starts at 2.0 (hard from the start) and scales up with level
-  const levelScale = 2.0 + (p.level * 0.12);
+  // Scale factor: enemies scale hard with player level — always threatening
+  // Base multiplier 3.5 + level * 0.18 makes even early enemies dangerous
+  const levelScale = 3.5 + (p.level * 0.18);
 
   if (isLast) {
     const b = chapter.bossEnemy;
@@ -265,8 +265,8 @@ function getStageEnemy(chapter, stage) {
   // Use per-stage enemy variants if defined
   if (chapter.stageEnemies && chapter.stageEnemies[stage]) {
     const e = chapter.stageEnemies[stage];
-    // Stage scaling: each stage within chapter also gets harder
-    const stageScale = levelScale * (1 + stage * 0.12);
+    // Stage scaling: each stage within chapter gets significantly harder
+    const stageScale = levelScale * (1 + stage * 0.18);
     return {
       ...e,
       hp:   Math.floor(e.hp  * stageScale),
@@ -439,6 +439,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Reset vessel switch when returning to chapter select
     vesselSwitchActive = false;
     vesselSwitchCharges = 0;
+    // Clear domain carryover when leaving story
+    _storyDomainCarryover = [];
     renderStoryChapters();
   });
 });

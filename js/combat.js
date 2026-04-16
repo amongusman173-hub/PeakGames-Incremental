@@ -757,6 +757,9 @@ function endRaidBattle(won) {
   }, 1800);
 }
 
+// Domain expansion carry-over between story stages (cleared when leaving story)
+let _storyDomainCarryover = [];
+
 // ── STORY BATTLE (interactive, with minigames) ──
 function startStoryBattle(enemy, storyCallback) {
   if (combatActive) return;
@@ -769,7 +772,9 @@ function startStoryBattle(enemy, storyCallback) {
   combatEnemyHP = enemy.hp;
   combatTurn = 0;
   combatStatusPlayer = [];
-  combatStatusEnemy = [];
+  // Carry over domain slash DOT to new enemy if still active
+  combatStatusEnemy = _storyDomainCarryover.filter(s => s.turns > 0);
+  _storyDomainCarryover = [];
   resetMgCounts();
   resetTechCooldowns();
   // Only reset vessel switch on a fresh story session (not when chaining enemies)
@@ -1175,6 +1180,16 @@ function endBattle(won) {
   combatActive = false;
   G.player.hp = Math.max(1, Math.floor(combatPlayerHP));
   setBattleActionsEnabled(false, 'story');
+
+  // Save domain slash DOT to carry over to next story stage on win
+  if (won === true && combatContext === 'story') {
+    _storyDomainCarryover = combatStatusEnemy.filter(s => s.isEnemyDot && s.turns > 0);
+    if (_storyDomainCarryover.length > 0) {
+      appendLog(combatLog, `🏯 Domain Expansion carries over — ${_storyDomainCarryover[0].turns} turns remaining!`, 'log-crit');
+    }
+  } else {
+    _storyDomainCarryover = [];
+  }
 
   // Decrement vessel switch charges on any fight end (win, lose, or flee)
   if (vesselSwitchActive) {
