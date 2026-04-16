@@ -569,9 +569,9 @@ button:disabled{cursor:not-allowed!important;pointer-events:auto}
 .settings-section-header{font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--accent);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border)}
 .settings-danger-zone{border-color:rgba(229,57,53,0.3)}
 .settings-danger-zone .settings-section-header{color:var(--danger)}
-.setting-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.04)}
+.setting-row{display:flex;align-items:center;gap:16px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
 .setting-row:last-child{border-bottom:none}
-.setting-label{flex:1;font-size:13px;color:var(--text);font-weight:500}
+.setting-label{flex:1;font-size:13px;color:var(--text);font-weight:500;white-space:nowrap}
 .setting-control{display:flex;align-items:center;gap:8px;flex:1}
 .setting-val{min-width:38px;text-align:right;font-size:13px;font-weight:700;color:var(--accent)}
 .setting-btn-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
@@ -593,35 +593,67 @@ button:disabled{cursor:not-allowed!important;pointer-events:auto}
 .settings-audio-btn.mute-btn:hover { background:rgba(229,57,53,0.12); }
 .settings-audio-btn.btn-flash { animation:settingsBtnFlash 0.35s ease-out; }
 @keyframes settingsBtnFlash { 0%{transform:scale(1)} 50%{transform:scale(1.12);background:rgba(255,255,255,0.2)} 100%{transform:scale(1)} }
+/* ── SLIDER — clean modern design ── */
 .setting-slider {
-  flex:1; -webkit-appearance:none; appearance:none;
-  height:8px; border-radius:8px; outline:none; cursor:pointer;
-  background: linear-gradient(to right,
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 99px;
+  outline: none;
+  cursor: pointer;
+  background: linear-gradient(
+    to right,
     var(--accent) 0%,
     var(--accent) calc(var(--val, 0.5) * 100%),
-    rgba(255,255,255,0.08) calc(var(--val, 0.5) * 100%),
-    rgba(255,255,255,0.08) 100%);
-  border: 1px solid rgba(255,255,255,0.08);
-  transition: background 0.05s;
+    rgba(255,255,255,0.1) calc(var(--val, 0.5) * 100%),
+    rgba(255,255,255,0.1) 100%
+  );
 }
 .setting-slider::-webkit-slider-thumb {
-  -webkit-appearance:none;
-  width:22px; height:22px; border-radius:50%;
-  background: radial-gradient(circle at 35% 35%, #fff 0%, var(--accent) 60%);
-  cursor:pointer;
-  border:2px solid rgba(255,255,255,0.3);
-  box-shadow:0 0 10px rgba(108,159,255,0.7), 0 2px 6px rgba(0,0,0,0.4);
-  transition: transform 0.1s, box-shadow 0.1s;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.5), 0 0 0 3px rgba(108,159,255,0.35);
+  transition: box-shadow 0.15s, transform 0.15s;
 }
-.setting-slider::-webkit-slider-thumb:hover {
-  transform: scale(1.2);
-  box-shadow:0 0 16px rgba(108,159,255,0.9), 0 2px 8px rgba(0,0,0,0.5);
+.setting-slider::-webkit-slider-thumb:hover,
+.setting-slider:active::-webkit-slider-thumb {
+  box-shadow: 0 1px 6px rgba(0,0,0,0.6), 0 0 0 5px rgba(108,159,255,0.5);
+  transform: scale(1.15);
 }
 .setting-slider::-moz-range-thumb {
-  width:22px; height:22px; border-radius:50%;
-  background: radial-gradient(circle at 35% 35%, #fff 0%, var(--accent) 60%);
-  cursor:pointer; border:2px solid rgba(255,255,255,0.3);
-  box-shadow:0 0 10px rgba(108,159,255,0.7);
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.5), 0 0 0 3px rgba(108,159,255,0.35);
+}
+.setting-slider::-moz-range-track {
+  height: 6px;
+  border-radius: 99px;
+  background: rgba(255,255,255,0.1);
+}
+/* Wrap label + slider + value together */
+.setting-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 2;
+}
+.setting-val {
+  min-width: 42px;
+  text-align: right;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
 }
 .settings-info-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .settings-info-item{background:rgba(255,255,255,0.04);border-radius:6px;padding:10px;text-align:center}
