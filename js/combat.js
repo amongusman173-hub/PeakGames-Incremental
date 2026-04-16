@@ -726,10 +726,17 @@ function useRaidTechnique(techId) {
   const tech = TECHNIQUES.find(t => t.id === techId);
   if (!tech) return;
   setBattleActionsEnabled(false, 'raid');
-  // Vessel switch activates instantly — no minigame needed
+  // Vessel switch has a minigame — fail = skip your turn, can try again next turn
   if (tech.effect === 'vessel' || tech._vesselSwitch) {
-    applyTechniqueEffect(tech, 1.0, () => {
-      if (combatEnemyHP > 0) setTimeout(() => enemyTurnRaid(), 500);
+    techniqueMinigame(tech, (mult) => {
+      if (mult < 1.0) {
+        appendLog(combatLog, '🩸 Vessel Switch failed — Sukuna resists! Turn skipped.', 'log-enemy');
+        setTimeout(() => enemyTurnRaid(), 500);
+        return;
+      }
+      applyTechniqueEffect(tech, mult, () => {
+        if (combatEnemyHP > 0) setTimeout(() => enemyTurnRaid(), 500);
+      });
     });
     return;
   }
@@ -1186,9 +1193,16 @@ function useTechnique(techId) {
     return;
   }
   setBattleActionsEnabled(false, 'story');
-  // Vessel switch activates instantly — no minigame needed
+  // Vessel switch has a minigame — fail = skip your turn, can try again next turn
   if (tech.effect === 'vessel' || tech._vesselSwitch) {
-    applyTechniqueEffect(tech, 1.0, () => setTimeout(enemyTurn, 500));
+    techniqueMinigame(tech, (mult) => {
+      if (mult < 1.0) {
+        appendLog(combatLog, '🩸 Vessel Switch failed — Sukuna resists! Turn skipped.', 'log-enemy');
+        setTimeout(enemyTurn, 500);
+        return;
+      }
+      applyTechniqueEffect(tech, mult, () => setTimeout(enemyTurn, 500));
+    });
     return;
   }
   techniqueMinigame(tech, (mult) => {
