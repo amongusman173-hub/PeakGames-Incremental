@@ -288,6 +288,11 @@ document.addEventListener('keydown', function(e) {
 });
 
 function openAdminPanel() {
+  const pw = prompt('🔧 Admin Panel — Enter password:');
+  if (pw !== 'rah') {
+    toast('❌ Wrong password.', 'warn');
+    return;
+  }
   renderAdminPanel();
   document.getElementById('admin-panel')?.classList.remove('hidden');
   toast('🔧 Admin panel opened', 'warn');
