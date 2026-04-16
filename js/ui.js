@@ -302,7 +302,8 @@ function openAdminPanel() {
       <div style="position:relative;margin-bottom:16px">
         <input id="admin-pw-input" type="password"
           style="width:100%;box-sizing:border-box;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 40px 10px 12px;color:var(--text);font-size:15px;outline:none;letter-spacing:3px"
-          placeholder="••••••" autocomplete="off" maxlength="32">
+          placeholder="••••••" autocomplete="off" maxlength="32"
+          oncopy="return false" onpaste="return false" oncut="return false">
         <button id="admin-pw-eye" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:var(--dim);padding:0">👁</button>
       </div>
       <div id="admin-pw-err" style="font-size:12px;color:var(--danger);margin-bottom:12px;min-height:16px"></div>
@@ -326,7 +327,7 @@ function openAdminPanel() {
   });
 
   function submit() {
-    if (input.value === 'rah') {
+    if (input.value === 'mango') {
       modal.remove();
       renderAdminPanel();
       document.getElementById('admin-panel')?.classList.remove('hidden');
