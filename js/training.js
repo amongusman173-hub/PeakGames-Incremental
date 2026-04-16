@@ -30,6 +30,7 @@ function tickTraining(actionId) {
   if (!spendStamina(action.staminaCost)) {
     // Out of stamina
     const cancel = getSettings().staminaCancelOnEmpty !== false;
+    G.player._ranOutOfStamina = true;
     if (cancel) {
       stopTraining();
       toast(`⚡ Out of stamina! ${action.name} cancelled. (Disable in Settings to pause instead)`, 'warn');

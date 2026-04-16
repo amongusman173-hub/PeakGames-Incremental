@@ -64,6 +64,10 @@ const G = {
     equipped: [null, null, null, null],
     // Offline time tracking
     lastSave: Date.now(),
+    achievements: [],
+    _digCount: 0,
+    _harvestCount: 0,
+    _ranOutOfStamina: false,
   },
 
   // Active job (id or null)
@@ -123,6 +127,10 @@ function loadGame() {
     if (!G.player.heritageRerolls || typeof G.player.heritageRerolls !== 'object') G.player.heritageRerolls = {};
     if (typeof G.player.digRegenTick !== 'number') G.player.digRegenTick = 0;
     if (!Array.isArray(G.player.ascensionHistory)) G.player.ascensionHistory = [];
+    if (!Array.isArray(G.player.achievements)) G.player.achievements = [];
+    if (typeof G.player._digCount !== 'number') G.player._digCount = 0;
+    if (typeof G.player._harvestCount !== 'number') G.player._harvestCount = 0;
+    if (typeof G.player._ranOutOfStamina !== 'boolean') G.player._ranOutOfStamina = false;
     // Clamp numeric values to prevent NaN/Infinity
     ['hp','maxHp','stamina','maxStamina','atk','def','spd','gold','xp','level'].forEach(k => {
       if (typeof G.player[k] !== 'number' || isNaN(G.player[k])) {
@@ -286,6 +294,7 @@ function gameTick() {
   // Save every 10 seconds (40 ticks)
   if (G.tickCount % 40 === 0) {
     saveGame();
+    if (typeof checkAchievements === 'function') checkAchievements();
   }
 
   // Safety: reset stuck minigame every 30s (120 ticks)

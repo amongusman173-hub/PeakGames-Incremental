@@ -332,6 +332,7 @@ function digTile(index) {
 
   p.digCharges--;
   tile.dug = true;
+  if (typeof p._digCount === 'number') p._digCount++; else p._digCount = 1;
 
   // Get the tile element for VFX
   const tileEl = document.querySelector(`[data-dig-idx="${index}"]`);

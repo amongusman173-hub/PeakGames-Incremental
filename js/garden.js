@@ -216,6 +216,8 @@ function harvestPlot(plotIndex) {
   gardenVFX('harvest', plotIndex);
   toast(`🌾 Harvested ${count}x ${ing ? ing.name : seed.yields}!`, 'success');
   spawnFloatingText(`+${count} ${ing?.icon || '🌿'}`, 'float-xp');
+  const p = G.player;
+  if (typeof p._harvestCount === 'number') p._harvestCount++; else p._harvestCount = 1;
   plots[plotIndex] = null;
   renderGarden();
 }

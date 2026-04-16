@@ -1,6 +1,6 @@
 // ===== UI SYSTEM =====
 
-const TAB_ORDER = ['training','jobs','raids','dig','shop','dojo','library','inventory','story','alchemy','rebirth','garden','heritage','settings'];
+const TAB_ORDER = ['training','jobs','raids','dig','shop','dojo','library','inventory','story','alchemy','rebirth','garden','heritage','achievements','settings'];
 let activeTab = 'training';
 
 function initUI() {
@@ -77,6 +77,7 @@ function refreshTab(tab) {
   if (tab === 'settings') renderSettings();
   if (tab === 'garden')   renderGarden();
   if (tab === 'heritage') renderHeritage();
+  if (tab === 'achievements') renderAchievements();
 }
 
 function updateActiveTabUI() {
