@@ -1685,8 +1685,8 @@ function resetMgCounts() {
 // ── STIR GAME — circular mouse/touch stirring for alchemy brewing ──
 // Player must stir the cauldron by moving in circles. Tracks rotation quality.
 function buildStirGame(el, difficulty, label) {
-  const required = [3, 5, 7, 9][Math.min(3, difficulty - 1)]; // full circles needed
-  const timeMs   = [10000, 12000, 15000, 18000][Math.min(3, difficulty - 1)];
+  const required = [8, 14, 20, 30][Math.min(3, difficulty - 1)]; // full circles needed
+  const timeMs   = [15000, 20000, 28000, 40000][Math.min(3, difficulty - 1)];
   let circles = 0, lastAngle = null, totalAngle = 0, done = false;
   let prevX = null, prevY = null;
 
