@@ -1056,9 +1056,11 @@ function applyTechniqueEffect(tech, mult, afterCb) {
   const snd = TECH_SOUNDS[tech.id] || (tech.effect === 'heal' ? 'healingmagic' : tech.effect === 'damage' ? 'basicattack' : null);
   if (snd) playSound(snd, 0.8);
 
-  // Set cooldown for this technique
-  const cd = getTechCooldown(tech.id);
-  if (cd > 0) techCooldowns[tech.id] = cd;
+  // Set cooldown for this technique (vessel_switch uses charge system instead)
+  if (tech.id !== 'vessel_switch') {
+    const cd = getTechCooldown(tech.id);
+    if (cd > 0) techCooldowns[tech.id] = cd;
+  }
 
   // Track Gojo technique usage for Red/Blue MAX upgrades
   if (typeof useGojoTech === 'function' && (tech.id === 'reversal_red' || tech.id === 'lapse_blue')) {
