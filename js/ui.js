@@ -249,8 +249,11 @@ function toast(msg, type = 'info') {
   const el = document.createElement('div');
   el.className = `toast ${type}`;
   el.textContent = msg;
+  el.style.cursor = 'pointer';
+  el.title = 'Click to dismiss';
+  const timer = setTimeout(() => el.remove(), 3000);
+  el.addEventListener('click', () => { clearTimeout(timer); el.remove(); });
   container.appendChild(el);
-  setTimeout(() => el.remove(), 3000);
 }
 
 // ===== KONAMI CODE — Admin Panel =====
