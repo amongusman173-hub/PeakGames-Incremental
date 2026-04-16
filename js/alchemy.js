@@ -196,13 +196,13 @@ function alchemyBrewVFX(rarity) {
 }
 
 // ── BREWING MINIGAME — stir the cauldron, then wait for brew to finish ──
-// Brew times: common 8s, uncommon 12s, rare 16s, legendary 22s
-const BREW_TIMES = { common: 8000, uncommon: 12000, rare: 16000, legendary: 22000 };
+// Brew times: common 8s, uncommon 30s, rare 60s, legendary 120s
+const BREW_TIMES = { common: 8000, uncommon: 30000, rare: 60000, legendary: 120000 };
 // Stir difficulty: common=1, uncommon=2, rare=3, legendary=4
 const BREW_STIR_DIFF = { common: 1, uncommon: 2, rare: 3, legendary: 4 };
 
 function brewMinigame(rarity, callback) {
-  const diff  = BREW_STIR_DIFF[rarity] || 1;
+  const diff   = BREW_STIR_DIFF[rarity] || 1;
   const brewMs = BREW_TIMES[rarity] || 8000;
   const label = {
     common:    '⚗️ Stir the cauldron!',
@@ -213,50 +213,55 @@ function brewMinigame(rarity, callback) {
 
   // Step 1: stir minigame
   showMinigame('stir', diff, label, (mult) => {
-    // Step 2: show brew timer overlay
+    // Play sound immediately after minigame
+    playSound('make potion', 0.8);
+    // Step 2: show brew timer in the alchemy panel (not the mg-overlay)
     _showBrewTimer(rarity, brewMs, mult, callback);
   });
 }
 
 function _showBrewTimer(rarity, brewMs, stirMult, callback) {
-  const overlay = document.getElementById('mg-overlay');
-  if (!overlay) { callback(stirMult); return; }
-  overlay.classList.remove('hidden');
-
   const rarityColors = { common:'#66bb6a', uncommon:'#6c9fff', rare:'#b06aff', legendary:'#f5c542' };
   const color = rarityColors[rarity] || '#66bb6a';
   const icons = { common:'🧪', uncommon:'⚗️', rare:'🔮', legendary:'✨' };
-  const icon = icons[rarity] || '🧪';
-  const secs = (brewMs / 1000).toFixed(0);
+  const icon  = icons[rarity] || '🧪';
+  const secs  = (brewMs / 1000).toFixed(0);
 
-  overlay.innerHTML = `<div class="mg-box" style="text-align:center">
-    <div style="font-size:48px;margin-bottom:8px">${icon}</div>
-    <div class="mg-label">Brewing in progress…</div>
-    <div style="font-size:13px;color:var(--dim);margin-bottom:12px">${rarity.toUpperCase()} · ${secs}s brew time</div>
-    <div style="position:relative;height:12px;background:rgba(255,255,255,0.08);border-radius:99px;overflow:hidden;margin-bottom:12px">
-      <div id="brew-timer-fill" style="height:100%;width:0%;background:${color};border-radius:99px;transition:none"></div>
-    </div>
-    <div id="brew-timer-txt" style="font-size:13px;color:${color};font-weight:700">${secs}s remaining</div>
-    <div style="font-size:11px;color:var(--dim);margin-top:8px">Stir quality: ${stirMult.toFixed(1)}× — affects potion count</div>
-  </div>`;
+  // Render into the in-panel brew status area
+  const statusEl = document.getElementById('brew-status');
+  if (statusEl) {
+    statusEl.innerHTML = `
+      <div style="background:rgba(0,0,0,0.25);border:1px solid ${color};border-radius:10px;padding:14px;margin-top:12px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <span style="font-size:28px">${icon}</span>
+          <div>
+            <div style="font-weight:700;font-size:13px;color:${color}">Brewing ${rarity.toUpperCase()}…</div>
+            <div style="font-size:11px;color:var(--dim)">Stir quality: ${stirMult.toFixed(1)}× · ${secs}s total</div>
+          </div>
+        </div>
+        <div style="position:relative;height:10px;background:rgba(255,255,255,0.08);border-radius:99px;overflow:hidden;margin-bottom:6px">
+          <div id="brew-timer-fill" style="height:100%;width:0%;background:${color};border-radius:99px;transition:none"></div>
+        </div>
+        <div id="brew-timer-txt" style="font-size:12px;color:var(--dim);text-align:right">${secs}s remaining</div>
+      </div>`;
+    statusEl.classList.remove('hidden');
+  }
 
-  const fill = overlay.querySelector('#brew-timer-fill');
-  const txt  = overlay.querySelector('#brew-timer-txt');
   const start = Date.now();
-
   const iv = setInterval(() => {
-    const elapsed = Date.now() - start;
-    const pct = Math.min(100, (elapsed / brewMs) * 100);
-    fill.style.width = pct + '%';
+    const elapsed   = Date.now() - start;
+    const pct       = Math.min(100, (elapsed / brewMs) * 100);
     const remaining = Math.max(0, Math.ceil((brewMs - elapsed) / 1000));
-    txt.textContent = remaining > 0 ? `${remaining}s remaining` : 'Done!';
+    const fill = document.getElementById('brew-timer-fill');
+    const txt  = document.getElementById('brew-timer-txt');
+    if (fill) fill.style.width = pct + '%';
+    if (txt)  txt.textContent  = remaining > 0 ? `${remaining}s remaining` : 'Done!';
     if (elapsed >= brewMs) {
       clearInterval(iv);
-      overlay.classList.add('hidden');
-      overlay.innerHTML = '';
+      if (statusEl) { statusEl.innerHTML = ''; statusEl.classList.add('hidden'); }
       callback(stirMult);
     }
-  }, 100);
+  }, 200);
 }
 
 function attemptBrew() {
@@ -300,7 +305,6 @@ function attemptBrew() {
       const count = mult >= 1.8 ? 3 : mult >= 1.4 ? 2 : 1;
       addPotion(match.id, count);
       gainXP(50 * count);
-      playSound('make potion');
       alchemyBrewVFX(match.rarity);
       toast(`${match.icon} Brewed ${count}x ${match.name}!`, 'success');
       spawnFloatingText(`+${count} ${match.icon}`, 'float-xp');
@@ -334,7 +338,6 @@ function useKnownRecipe(recipeId) {
     const count = mult >= 1.8 ? 3 : mult >= 1.4 ? 2 : 1;
     addPotion(recipe.id, count);
     alchemyBrewVFX(recipe.rarity);
-    playSound('make potion');
     toast(`${recipe.icon} Brewed ${count}x ${recipe.name}!`, 'success');
     spawnFloatingText(`+${count} ${recipe.icon}`, 'float-xp');
     renderAlchemy();
@@ -464,6 +467,7 @@ function renderAlchemy() {
           <button class="btn-primary" onclick="attemptBrew()">🔥 Brew!</button>
           <button class="btn-small" onclick="clearBrewSlots()">Clear</button>
         </div>
+        <div id="brew-status" class="hidden"></div>
         <h3 style="margin-top:20px">📜 Known Recipes (${p.alchemyRecipes.length}/${ALCHEMY_RECIPES.length})</h3>
         <div class="card-grid" style="margin-top:10px">${knownHtml}</div>
         ${hintedHtml}
