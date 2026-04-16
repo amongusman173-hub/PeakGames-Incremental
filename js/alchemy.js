@@ -344,6 +344,27 @@ function useKnownRecipe(recipeId) {
   });
 }
 
+function brewHintedRecipe(recipeId) {
+  const recipe = ALCHEMY_RECIPES.find(r => r.id === recipeId);
+  if (!recipe) return;
+  // Check ingredients
+  const needed = {};
+  for (const id of recipe.ingredients) needed[id] = (needed[id] || 0) + 1;
+  for (const [id, cnt] of Object.entries(needed)) {
+    if (getIngredientCount(id) < cnt) {
+      const ing = ALCHEMY_INGREDIENTS.find(i => i.id === id);
+      toast(`Missing: ${ing ? ing.name : id}`, 'warn');
+      return;
+    }
+  }
+  // Auto-discover the recipe first so it shows up in known recipes after brewing
+  if (!G.player.alchemyRecipes.includes(recipe.id)) {
+    G.player.alchemyRecipes.push(recipe.id);
+  }
+  // Brew it using the normal flow
+  useKnownRecipe(recipeId);
+}
+
 function renderAlchemy() {
   const container = document.getElementById('alchemy-container');
   if (!container) return;
@@ -436,15 +457,28 @@ function renderAlchemy() {
           <div style="font-size:24px">❓</div>
           <div style="font-size:11px;color:var(--dim);margin-top:4px">${r.rarity} recipe — buy hint to reveal</div>
         </div>`;
-        // Show all ingredients
+        // Show all ingredients, check if brewable
+        const needed = {};
+        for (const id of r.ingredients) needed[id] = (needed[id] || 0) + 1;
+        const canBrew = Object.entries(needed).every(([id, cnt]) => getIngredientCount(id) >= cnt);
         const allIngs = r.ingredients.map(id => {
           const ing = ALCHEMY_INGREDIENTS.find(x => x.id === id);
-          return ing ? `${ing.icon} ${ing.name}` : '?';
+          const have = getIngredientCount(id);
+          const color = have >= (needed[id] || 1) ? 'var(--ok)' : 'var(--danger)';
+          return ing ? `<span style="color:${color}">${ing.icon} ${ing.name}(${have})</span>` : '?';
         });
-        return `<div class="card" style="padding:10px">
-          <div style="font-size:11px;color:var(--dim)">🔍 ${r.rarity} · ${r.ingredients.length} ingredients</div>
-          <div style="font-size:12px;margin-top:4px;color:var(--text)">${allIngs.join(' + ')}</div>
-          <div style="font-size:11px;color:var(--dim);margin-top:2px">Discover the full recipe by experimenting!</div>
+        const rarityColors = { common:'var(--ok)', uncommon:'var(--accent)', rare:'var(--accent2)', legendary:'var(--gold)' };
+        const borderColor = canBrew ? 'var(--ok)' : (rarityColors[r.rarity] || 'var(--border)');
+        return `<div class="card" style="padding:10px;border-color:${borderColor};${canBrew ? 'background:rgba(39,174,96,0.07);' : ''}">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <div style="font-size:11px;color:var(--dim)">🔍 ${r.rarity} · ${r.ingredients.length} ingredients</div>
+            ${canBrew ? `<span style="font-size:10px;color:var(--ok);font-weight:700">✓ Ready!</span>` : ''}
+          </div>
+          <div style="font-size:12px;margin:4px 0;line-height:1.6">${allIngs.join(' + ')}</div>
+          ${canBrew
+            ? `<button class="btn-primary" style="margin-top:6px;width:100%;background:rgba(39,174,96,0.2);border-color:var(--ok)" onclick="brewHintedRecipe('${r.id}')">🔥 Brew it!</button>`
+            : `<div style="font-size:11px;color:var(--dim);margin-top:4px">Gather ingredients to brew</div>`
+          }
         </div>`;
       }).join('')}
     </div>`;
