@@ -141,7 +141,8 @@ function updateHeader() {
   setW('bar-xp', (p.xp / p.xpNeeded) * 100);
   set('txt-xp', `${Math.floor(p.xp)}/${p.xpNeeded}`);
   setW('bar-stamina', (p.stamina / p.maxStamina) * 100);
-  set('txt-stamina', `${Math.floor(p.stamina)}/${p.maxStamina}`);
+  const regenPerSec = ((1 + (p.spd / 10) * 0.1) / 8 * (1000 / G.tickRate)).toFixed(1);
+  set('txt-stamina', `${Math.floor(p.stamina)}/${p.maxStamina} (+${regenPerSec}/s)`);
 
   set('res-gold', Math.floor(p.gold));
   set('res-atk', Math.floor(p.atk));
