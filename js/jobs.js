@@ -74,13 +74,18 @@ function startJob(jobId) {
 function quickJob(jobId) {
   const job = JOBS.find(j => j.id === jobId);
   if (!job || !canDoJob(job)) return;
+  const staminaCost = job.staminaPerCycle || 0;
+  if (staminaCost > 0 && !spendStamina(staminaCost)) {
+    toast('Not enough stamina!', 'warn');
+    return;
+  }
   quickJobMinigame(job, (mult) => {
     const goldMult = getUpgradeValue('job_gold_mult');
     const xpMult   = getUpgradeValue('job_xp_mult');
     const earned = gainGold(Math.floor(job.goldPerCycle * goldMult * mult));
     gainXP(Math.floor(job.xpPerCycle * xpMult));
     spawnFloatingText(`+${earned}g`, 'float-gold');
-    toast(`Quick job: +${earned}g!`, 'success');
+    toast(`Quick job: +${earned}g! (${mult.toFixed(1)}x)`, 'success');
   });
 }
 
