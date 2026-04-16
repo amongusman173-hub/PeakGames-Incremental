@@ -575,6 +575,24 @@ button:disabled{cursor:not-allowed!important;pointer-events:auto}
 .setting-control{display:flex;align-items:center;gap:8px;flex:1}
 .setting-val{min-width:38px;text-align:right;font-size:13px;font-weight:700;color:var(--accent)}
 .setting-btn-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.settings-audio-btn {
+  display:flex;align-items:center;gap:6px;padding:8px 14px;
+  border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,0.05);
+  color:var(--text);font-size:12px;font-weight:600;cursor:pointer;
+  transition:all 0.15s;flex:1;min-width:80px;justify-content:center;
+}
+.settings-audio-btn:hover { background:rgba(255,255,255,0.1); border-color:var(--accent); }
+.settings-audio-btn .sab-icon { font-size:16px; }
+.settings-audio-btn .sab-label { font-size:11px; }
+.settings-audio-btn.test-btn { border-color:rgba(108,159,255,0.4); }
+.settings-audio-btn.test-btn:hover { background:rgba(108,159,255,0.15); }
+.settings-audio-btn.test-vfx-btn { border-color:rgba(245,197,66,0.4); }
+.settings-audio-btn.test-vfx-btn:hover { background:rgba(245,197,66,0.12); }
+.settings-audio-btn.reset-btn { border-color:rgba(255,255,255,0.15); }
+.settings-audio-btn.mute-btn { border-color:rgba(229,57,53,0.3); }
+.settings-audio-btn.mute-btn:hover { background:rgba(229,57,53,0.12); }
+.settings-audio-btn.btn-flash { animation:settingsBtnFlash 0.35s ease-out; }
+@keyframes settingsBtnFlash { 0%{transform:scale(1)} 50%{transform:scale(1.12);background:rgba(255,255,255,0.2)} 100%{transform:scale(1)} }
 .setting-slider{flex:1;accent-color:var(--accent)}
 .settings-info-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .settings-info-item{background:rgba(255,255,255,0.04);border-radius:6px;padding:10px;text-align:center}

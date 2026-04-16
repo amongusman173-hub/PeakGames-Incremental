@@ -70,9 +70,19 @@ function renderSettings() {
           </div>
         </div>
         <div class="setting-btn-row">
-          <button class="btn-small" onclick="playSound('buttonpress',1.0)">▶ Test SFX</button>
-          <button class="btn-small" onclick="updateSetting('musicVolume',0.5);updateSetting('sfxVolume',0.7);renderSettings()">↺ Reset</button>
-          <button class="btn-small" onclick="updateSetting('musicVolume',0);updateSetting('sfxVolume',0);renderSettings()">🔇 Mute All</button>
+          <button class="settings-audio-btn test-btn" onclick="settingsTestSFX(this)" title="Play a test sound">
+            <span class="sab-icon">▶</span><span class="sab-label">Test SFX</span>
+          </button>
+          <button class="settings-audio-btn test-vfx-btn" onclick="settingsTestVFX(this)" title="Play a test VFX burst">
+            <span class="sab-icon">✨</span><span class="sab-label">Test VFX</span>
+          </button>
+          <button class="settings-audio-btn reset-btn" onclick="settingsResetAudio()" title="Reset to defaults">
+            <span class="sab-icon">↺</span><span class="sab-label">Reset</span>
+          </button>
+          <button class="settings-audio-btn mute-btn" id="settings-mute-btn" onclick="settingsToggleMute()" title="Mute / Unmute all audio">
+            <span class="sab-icon">${(getSettings().musicVolume === 0 && getSettings().sfxVolume === 0) ? '🔇' : '🔊'}</span>
+            <span class="sab-label">${(getSettings().musicVolume === 0 && getSettings().sfxVolume === 0) ? 'Unmute' : 'Mute All'}</span>
+          </button>
         </div>
       </div>
 
@@ -131,6 +141,64 @@ function renderSettings() {
 function confirmReset() {
   const modal = document.getElementById('reset-modal');
   if (modal) modal.classList.remove('hidden');
+}
+
+// ── Settings audio button actions ──
+let _prevVolumes = null; // for mute toggle
+
+function settingsTestSFX(btn) {
+  playSound('buttonpress', 1.0);
+  btn.classList.add('btn-flash');
+  setTimeout(() => btn.classList.remove('btn-flash'), 400);
+}
+
+function settingsTestVFX(btn) {
+  // Burst particles from the button
+  const rect = btn.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  const colors = ['#f5c542','#ff9900','#b388ff','#42a5f5','#66bb6a','#ff5252','#fff'];
+  for (let i = 0; i < 20; i++) {
+    const p = document.createElement('div');
+    const angle = (Math.PI * 2 * i / 20) + Math.random() * 0.5;
+    const dist = 40 + Math.random() * 40;
+    const size = 4 + Math.random() * 6;
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    p.style.cssText = `position:fixed;z-index:9999;pointer-events:none;border-radius:50%;
+      width:${size}px;height:${size}px;background:${color};
+      left:${cx}px;top:${cy}px;
+      --dx:${Math.cos(angle)*dist}px;--dy:${Math.sin(angle)*dist}px;
+      animation:digBurst 0.6s ease-out forwards;`;
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 800);
+  }
+  btn.classList.add('btn-flash');
+  setTimeout(() => btn.classList.remove('btn-flash'), 400);
+}
+
+function settingsResetAudio() {
+  updateSetting('musicVolume', 0.15);
+  updateSetting('sfxVolume', 1.0);
+  renderSettings();
+  playSound('buttonpress', 1.0);
+}
+
+function settingsToggleMute() {
+  const s = getSettings();
+  const isMuted = s.musicVolume === 0 && s.sfxVolume === 0;
+  if (isMuted) {
+    // Unmute — restore previous or defaults
+    const prev = _prevVolumes || { musicVolume: 0.15, sfxVolume: 1.0 };
+    updateSetting('musicVolume', prev.musicVolume);
+    updateSetting('sfxVolume', prev.sfxVolume);
+    _prevVolumes = null;
+  } else {
+    // Mute — save current volumes
+    _prevVolumes = { musicVolume: s.musicVolume, sfxVolume: s.sfxVolume };
+    updateSetting('musicVolume', 0);
+    updateSetting('sfxVolume', 0);
+  }
+  renderSettings();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
