@@ -136,9 +136,15 @@ function performRebirth() {
   // Keep vessel_switch technique (Sukuna's Finger) — it's a permanent unlock
   const keepTechs = (p.techniques || []).filter(id => id === 'vessel_switch');
   // Keep equipped slots that reference kept techniques
-  const keepEquipped = (p.equipped || [null,null,null,null]).map(id =>
+  let keepEquipped = (p.equipped || [null,null,null,null]).map(id =>
     keepTechs.includes(id) ? id : null
   );
+  // If vessel_switch is kept but not in any slot, auto-equip it in slot 0
+  if (keepTechs.includes('vessel_switch') && !keepEquipped.includes('vessel_switch')) {
+    const emptySlot = keepEquipped.indexOf(null);
+    if (emptySlot >= 0) keepEquipped[emptySlot] = 'vessel_switch';
+    else keepEquipped[0] = 'vessel_switch';
+  }
 
   resetGame();
 

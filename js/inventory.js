@@ -115,13 +115,20 @@ function renderEquipSlots() {
   while (p.equipped.length < maxSlots) p.equipped.push(null);
 
   // Purge vessel-only techs AND techs that don't exist in TECHNIQUES array
+  // Never purge vessel_switch — it's a permanent unlock
   p.equipped = p.equipped.map(id => {
     if (!id) return null;
     const t = TECHNIQUES.find(t => t.id === id);
     if (!t) return null; // technique not found — remove from slot
-    if (t._vesselOnly) return null;
+    if (t._vesselOnly) return null; // vessel-only never equippable
     return id;
   });
+
+  // Auto-equip vessel_switch if owned but not slotted
+  if (p.techniques.includes('vessel_switch') && !p.equipped.includes('vessel_switch')) {
+    const emptySlot = p.equipped.findIndex(e => e === null);
+    if (emptySlot >= 0) p.equipped[emptySlot] = 'vessel_switch';
+  }
 
   grid.innerHTML = p.equipped.slice(0, maxSlots).map((techId, i) => {
     if (!techId) {
