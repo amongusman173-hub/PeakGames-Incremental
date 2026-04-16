@@ -161,14 +161,8 @@ function performRebirth() {
   const preview = getAscensionBonusForLevel(ascendLevel);
   const pctXP   = Math.round(preview.xp   * 100);
   const pctLuck = Math.round(preview.luck  * 100);
-  toast(`✨ Ascension ${count}! (Lv.${ascendLevel}) +${pctXP}% XP/Gold/Train, +${pctLuck}% Luck`, 'rare');
-  spawnFloatingText('✨ ASCENDED!', 'float-xp');
 
-  // Big flash VFX
-  const f = document.createElement('div');
-  f.style.cssText = `position:fixed;inset:0;z-index:9999;pointer-events:none;background:rgba(245,197,66,0.4);animation:digFlash 1s ease-out forwards;`;
-  document.body.appendChild(f);
-  setTimeout(() => f.remove(), 1100);
+  _ascensionVFX(count, ascendLevel, pctXP, pctLuck);
 
   renderRebirthPanel();
   renderTraining();
@@ -177,6 +171,110 @@ function performRebirth() {
   renderStoryChapters();
   renderInventory();
   renderHeritage();
+}
+
+function _ascensionVFX(count, level, pctXP, pctLuck) {
+  const cx = window.innerWidth  / 2;
+  const cy = window.innerHeight / 2;
+
+  function spawnParticle(color, angle, dist, size, duration, delay) {
+    const p = document.createElement('div');
+    p.style.cssText = `position:fixed;z-index:10000;pointer-events:none;border-radius:50%;
+      width:${size}px;height:${size}px;background:${color};
+      left:${cx}px;top:${cy}px;
+      --dx:${Math.cos(angle)*dist}px;--dy:${Math.sin(angle)*dist}px;
+      animation:digBurst ${duration}ms ease-out forwards;animation-delay:${delay}ms;`;
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), duration + delay + 100);
+  }
+
+  function flash(color, duration, delay) {
+    const f = document.createElement('div');
+    f.style.cssText = `position:fixed;inset:0;z-index:9999;pointer-events:none;
+      background:${color};animation:digFlash ${duration}ms ease-out forwards;animation-delay:${delay}ms;`;
+    document.body.appendChild(f);
+    setTimeout(() => f.remove(), duration + delay + 100);
+  }
+
+  function floatLabel(text, color, yOffset, delay, fontSize) {
+    const el = document.createElement('div');
+    el.textContent = text;
+    el.style.cssText = `position:fixed;z-index:10001;pointer-events:none;
+      left:50%;top:${cy + yOffset}px;transform:translateX(-50%);
+      font-size:${fontSize || 32}px;font-weight:900;color:${color};
+      text-shadow:0 0 20px ${color},0 0 40px ${color};white-space:nowrap;
+      animation:floatUp 1.4s ease-out forwards;animation-delay:${delay}ms;`;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 1600 + delay);
+  }
+
+  const GOLD   = ['#f5c542','#ffdd66','#ff9900','#fff9c4','#fff','#ffe082'];
+  const PURPLE = ['#b388ff','#7c4dff','#e040fb','#ea80fc','#fff','#ce93d8'];
+
+  // Phase 1 — white flash
+  flash('rgba(255,255,255,0.95)', 400, 0);
+
+  // Phase 2 (300ms) — gold explosion
+  setTimeout(() => {
+    for (let i = 0; i < 60; i++) {
+      const angle = (Math.PI * 2 * i / 60) + Math.random() * 0.3;
+      spawnParticle(GOLD[i % GOLD.length], angle, 80 + Math.random() * 220, 4 + Math.random() * 10, 900 + Math.random() * 400, 0);
+    }
+    flash('rgba(245,197,66,0.55)', 600, 0);
+  }, 300);
+
+  // Phase 3 (500ms) — purple wave
+  setTimeout(() => {
+    for (let i = 0; i < 40; i++) {
+      const angle = (Math.PI * 2 * i / 40) + Math.random() * 0.5;
+      spawnParticle(PURPLE[i % PURPLE.length], angle, 120 + Math.random() * 180, 3 + Math.random() * 8, 800 + Math.random() * 300, 0);
+    }
+    flash('rgba(124,77,255,0.3)', 500, 0);
+  }, 500);
+
+  // Phase 4 (700ms) — 12 star ring
+  setTimeout(() => {
+    for (let i = 0; i < 12; i++) {
+      const angle = (Math.PI * 2 * i / 12);
+      const star = document.createElement('div');
+      star.textContent = '✨';
+      star.style.cssText = `position:fixed;z-index:10000;pointer-events:none;font-size:24px;
+        left:${cx + Math.cos(angle) * 160 - 12}px;top:${cy + Math.sin(angle) * 160 - 12}px;
+        animation:floatUp 1.2s ease-out forwards;animation-delay:${i * 40}ms;`;
+      document.body.appendChild(star);
+      setTimeout(() => star.remove(), 1400 + i * 40);
+    }
+  }, 700);
+
+  // Phase 5 (800ms) — screen shake
+  setTimeout(() => {
+    const scene = document.getElementById('content') || document.body;
+    let t = 0;
+    const iv = setInterval(() => {
+      const x = (Math.random() - 0.5) * 14 * (1 - t / 8);
+      const y = (Math.random() - 0.5) * 8  * (1 - t / 8);
+      scene.style.transform = `translate(${x}px,${y}px)`;
+      if (++t >= 8) { clearInterval(iv); scene.style.transform = ''; }
+    }, 60);
+  }, 800);
+
+  // Phase 6 (900–1300ms) — floating text labels
+  setTimeout(() => floatLabel('✨ ASCENDED ✨',                        '#f5c542', -80, 0, 36), 900);
+  setTimeout(() => floatLabel(`Ascension ×${count}  (Lv.${level})`,   '#fff',    -30, 0, 20), 1100);
+  setTimeout(() => floatLabel(`+${pctXP}% XP/Gold  ·  +${pctLuck}% Luck`, '#b388ff', 20, 0, 16), 1300);
+
+  // Phase 7 (1200ms) — final white fade
+  flash('rgba(255,255,255,0.6)', 800, 1200);
+
+  // Phase 8 (1600ms) — trailing gold burst + toasts
+  setTimeout(() => {
+    for (let i = 0; i < 30; i++) {
+      const angle = (Math.PI * 2 * i / 30) + Math.random() * 0.4;
+      spawnParticle(GOLD[i % GOLD.length], angle, 60 + Math.random() * 140, 3 + Math.random() * 6, 600, 0);
+    }
+    toast(`✨ Ascension ${count}! (Lv.${level}) +${pctXP}% XP/Gold/Train, +${pctLuck}% Luck`, 'rare');
+    spawnFloatingText('✨ ASCENDED!', 'float-xp');
+  }, 1600);
 }
 
 // Re-grant technique unlocks from current heritage after ascension
