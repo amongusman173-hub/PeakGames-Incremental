@@ -732,28 +732,29 @@ function endRaidBattle(won) {
   G.player.hp = Math.max(1, Math.floor(combatPlayerHP));
   setBattleActionsEnabled(false, 'raid');
 
-  const resultEl = document.getElementById('raid-result');
+  // Fire callback immediately for rewards
+  if (combatCallback) combatCallback(won);
+
+  const raidBattle = document.getElementById('raid-battle');
+  const raidList   = document.getElementById('raids-list');
+  const resultEl   = document.getElementById('raid-result');
   const resultText = document.getElementById('raid-result-text');
-  if (resultEl) resultEl.classList.remove('hidden');
+
+  // Show result text briefly
   if (resultText) {
     if (won === true)  { resultText.textContent = '🏆 Victory!'; resultText.style.color = 'var(--ok)'; }
     else if (won === false) { resultText.textContent = '💀 Defeated...'; resultText.style.color = 'var(--danger)'; }
     else               { resultText.textContent = '🏃 Escaped!'; resultText.style.color = 'var(--warn)'; }
   }
+  if (resultEl) resultEl.classList.remove('hidden');
 
-  // Fire callback immediately for rewards
-  if (combatCallback) combatCallback(won);
-
-  // Auto-return to raid list after showing result
-  const delay = won === true ? 2000 : 2500;
+  // Always return to raid list after a short delay
   setTimeout(() => {
-    const raidBattle = document.getElementById('raid-battle');
-    const raidList   = document.getElementById('raids-list');
     if (raidBattle) raidBattle.classList.add('hidden');
     if (raidList)   raidList.classList.remove('hidden');
     if (resultEl)   resultEl.classList.add('hidden');
     renderRaids();
-  }, delay);
+  }, 1800);
 }
 
 // ── STORY BATTLE (interactive, with minigames) ──
