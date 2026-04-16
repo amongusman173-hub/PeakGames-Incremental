@@ -726,6 +726,13 @@ function useRaidTechnique(techId) {
   const tech = TECHNIQUES.find(t => t.id === techId);
   if (!tech) return;
   setBattleActionsEnabled(false, 'raid');
+  // Vessel switch activates instantly — no minigame needed
+  if (tech.effect === 'vessel' || tech._vesselSwitch) {
+    applyTechniqueEffect(tech, 1.0, () => {
+      if (combatEnemyHP > 0) setTimeout(() => enemyTurnRaid(), 500);
+    });
+    return;
+  }
   techniqueMinigame(tech, (mult) => {
     applyTechniqueEffect(tech, mult, () => {
       if (combatEnemyHP > 0) setTimeout(() => enemyTurnRaid(), 500);
@@ -1175,11 +1182,15 @@ function applyTechniqueEffect(tech, mult, afterCb) {
 function useTechnique(techId) {
   const tech = TECHNIQUES.find(t => t.id === techId);
   if (!tech) {
-    // Safety: if tech not found but vessel is active, re-enable buttons
     if (vesselSwitchActive) setBattleActionsEnabled(true, 'story');
     return;
   }
   setBattleActionsEnabled(false, 'story');
+  // Vessel switch activates instantly — no minigame needed
+  if (tech.effect === 'vessel' || tech._vesselSwitch) {
+    applyTechniqueEffect(tech, 1.0, () => setTimeout(enemyTurn, 500));
+    return;
+  }
   techniqueMinigame(tech, (mult) => {
     applyTechniqueEffect(tech, mult, () => setTimeout(enemyTurn, 500));
   });
