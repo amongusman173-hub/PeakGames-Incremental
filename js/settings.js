@@ -5,6 +5,7 @@ const SETTINGS_DEFAULTS = {
   sfxVolume: 1.0,
   showFloatingText: true,
   reducedAnimations: false,
+  staminaCancelOnEmpty: true,
 };
 
 function getSettings() {
@@ -101,6 +102,17 @@ function renderSettings() {
           <label class="toggle-switch">
             <input type="checkbox" ${s.reducedAnimations ? 'checked' : ''}
               onchange="updateSetting('reducedAnimations', this.checked)">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="setting-row">
+          <label class="setting-label" style="flex:1">
+            ⚡ Cancel job/train on empty stamina
+            <div style="font-size:11px;color:var(--dim);margin-top:2px">When off, job/train pauses and waits for stamina to regen instead of stopping.</div>
+          </label>
+          <label class="toggle-switch">
+            <input type="checkbox" ${s.staminaCancelOnEmpty !== false ? 'checked' : ''}
+              onchange="updateSetting('staminaCancelOnEmpty', this.checked)">
             <span class="toggle-slider"></span>
           </label>
         </div>

@@ -27,7 +27,16 @@ function tickTraining(actionId) {
   if (!action) { G.activeTraining = null; return; }
   const p = G.player;
   if (p.level < action.levelReq) { stopTraining(); return; }
-  if (!spendStamina(action.staminaCost)) return; // wait for stamina
+  if (!spendStamina(action.staminaCost)) {
+    // Out of stamina
+    const cancel = getSettings().staminaCancelOnEmpty !== false;
+    if (cancel) {
+      stopTraining();
+      toast(`⚡ Out of stamina! ${action.name} cancelled. (Disable in Settings to pause instead)`, 'warn');
+    }
+    // else: just pause silently — banner already shows "waiting…"
+    return;
+  }
 
   if (!p.trainingProgress[actionId]) p.trainingProgress[actionId] = 0;
   p.trainingProgress[actionId] = Math.min(action.maxProgress, p.trainingProgress[actionId] + 1);
@@ -119,7 +128,10 @@ function quickTrain(actionId) {
   if (!action) return;
   const p = G.player;
   if (p.level < action.levelReq) { toast(`Requires level ${action.levelReq}`, 'warn'); return; }
-  if (!spendStamina(action.staminaCost)) { toast('Not enough stamina!', 'warn'); return; }
+  if (!spendStamina(action.staminaCost)) {
+    toast(`⚡ Not enough stamina! Need ${action.staminaCost}, have ${Math.floor(p.stamina)}.`, 'warn');
+    return;
+  }
 
   const game = QUICK_TRAIN_GAMES[quickTrainIndex % QUICK_TRAIN_GAMES.length];
   quickTrainIndex++;

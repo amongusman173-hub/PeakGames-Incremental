@@ -76,7 +76,7 @@ function quickJob(jobId) {
   if (!job || !canDoJob(job)) return;
   const staminaCost = job.staminaPerCycle || 0;
   if (staminaCost > 0 && !spendStamina(staminaCost)) {
-    toast('Not enough stamina!', 'warn');
+    toast(`⚡ Not enough stamina! Need ${staminaCost}, have ${Math.floor(G.player.stamina)}.`, 'warn');
     return;
   }
   quickJobMinigame(job, (mult) => {
@@ -107,10 +107,16 @@ function tickJob(jobId) {
   G.player.jobProgress[jobId]++;
   if (G.player.jobProgress[jobId] >= job.ticksNeeded) {
     G.player.jobProgress[jobId] = 0;
-    // Check stamina — job pauses if not enough
+    // Check stamina — cancel or pause based on setting
     const staminaCost = job.staminaPerCycle || 0;
     if (staminaCost > 0 && !spendStamina(staminaCost)) {
-      // Not enough stamina — pause and wait
+      const cancel = getSettings().staminaCancelOnEmpty !== false;
+      if (cancel) {
+        G.activeJob = null;
+        G.jobTick = 0;
+        toast(`⚡ Out of stamina! ${job.name} cancelled. (Disable in Settings to pause instead)`, 'warn');
+        renderJobs();
+      }
       return;
     }
     const goldMult = getUpgradeValue('job_gold_mult');
