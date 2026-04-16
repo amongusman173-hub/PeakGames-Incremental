@@ -1016,10 +1016,11 @@ function renderTechniqueActions() {
 }
 
 function renderVesselTechniqueActions() {
-  const container = document.getElementById('technique-actions');
+  // Use the correct container based on context
+  const containerId = combatContext === 'raid' ? 'raid-technique-actions' : 'technique-actions';
+  const container = document.getElementById(containerId);
   if (!container) return;
   const jjkIds = ['dismantle', 'cleave', 'fuga', 'domain_expansion'];
-  // Use the right handler depending on whether we're in story or raid
   const handler = combatContext === 'raid' ? 'useRaidTechnique' : 'useTechnique';
   const buttons = jjkIds.map(id => {
     const tech = TECHNIQUES.find(t => t.id === id);
@@ -1080,7 +1081,7 @@ function applyTechniqueEffect(tech, mult, afterCb) {
     document.body.appendChild(flash);
     setTimeout(() => flash.remove(), 700);
     renderVesselTechniqueActions();
-    updateBattleUI();
+    if (combatContext === 'raid') updateRaidBattleUI(); else updateBattleUI();
     // Enemy takes a turn, then re-enable the new vessel buttons
     setTimeout(() => {
       if (combatContext === 'raid') enemyTurnRaid(); else enemyTurn();
