@@ -740,18 +740,20 @@ function endRaidBattle(won) {
     else if (won === false) { resultText.textContent = '💀 Defeated...'; resultText.style.color = 'var(--danger)'; }
     else               { resultText.textContent = '🏃 Escaped!'; resultText.style.color = 'var(--warn)'; }
   }
+
+  // Fire callback immediately for rewards
   if (combatCallback) combatCallback(won);
 
-  // Auto-return to raid list after 2.5s so one-taps don't get stuck
+  // Auto-return to raid list after showing result
+  const delay = won === true ? 2000 : 2500;
   setTimeout(() => {
     const raidBattle = document.getElementById('raid-battle');
     const raidList   = document.getElementById('raids-list');
-    if (raidBattle && !raidBattle.classList.contains('hidden')) {
-      raidBattle.classList.add('hidden');
-      if (raidList) raidList.classList.remove('hidden');
-      if (resultEl) resultEl.classList.add('hidden');
-    }
-  }, 2500);
+    if (raidBattle) raidBattle.classList.add('hidden');
+    if (raidList)   raidList.classList.remove('hidden');
+    if (resultEl)   resultEl.classList.add('hidden');
+    renderRaids();
+  }, delay);
 }
 
 // ── STORY BATTLE (interactive, with minigames) ──
@@ -923,6 +925,11 @@ function applyTechniqueEffect(tech, mult, afterCb) {
   // Set cooldown for this technique
   const cd = getTechCooldown(tech.id);
   if (cd > 0) techCooldowns[tech.id] = cd;
+
+  // Track Gojo technique usage for Red/Blue MAX upgrades
+  if (typeof useGojoTech === 'function' && (tech.id === 'reversal_red' || tech.id === 'lapse_blue')) {
+    useGojoTech(tech.id);
+  }
 
   // ── VESSEL SWITCH — swap moveset to JJK techniques for 3 enemy kills ──
   if (tech.effect === 'vessel' || tech._vesselSwitch) {

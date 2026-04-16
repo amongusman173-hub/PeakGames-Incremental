@@ -32,7 +32,8 @@ function tickTraining(actionId) {
   if (!p.trainingProgress[actionId]) p.trainingProgress[actionId] = 0;
   p.trainingProgress[actionId] = Math.min(action.maxProgress, p.trainingProgress[actionId] + 1);
 
-  const gainMult = getUpgradeValue('train_gain_mult');
+  const ascBonus = typeof getAscensionBonus === 'function' ? getAscensionBonus().trainMult : 1;
+  const gainMult = getUpgradeValue('train_gain_mult') * ascBonus;
   const sm = p.statMult;
   const gains = [];
 
@@ -70,7 +71,12 @@ function tickTraining(actionId) {
 
 function getTrainingTicksNeeded(action) {
   const speedMult = getUpgradeValue('train_speed_mult'); // <1 = faster
-  return Math.max(4, Math.floor(action.ticksNeeded * speedMult));
+  // Stamina bonus: every 100 max stamina above base 40 = 2% faster training
+  const staminaBonus = Math.max(0, (G.player.maxStamina - 40) / 100) * 0.02;
+  // SPD bonus: every 50 SPD = 1% faster training
+  const spdBonus = Math.floor(G.player.spd / 50) * 0.01;
+  const totalMult = Math.max(0.2, speedMult * (1 - staminaBonus - spdBonus));
+  return Math.max(4, Math.floor(action.ticksNeeded * totalMult));
 }
 
 function startTraining(actionId) {
@@ -119,7 +125,8 @@ function quickTrain(actionId) {
   quickTrainIndex++;
 
   game(action, (mult) => {
-    const gainMult = getUpgradeValue('train_gain_mult') * mult;
+    const ascBonus = typeof getAscensionBonus === 'function' ? getAscensionBonus().trainMult : 1;
+    const gainMult = getUpgradeValue('train_gain_mult') * mult * ascBonus;
     const sm = p.statMult;
     const gains = [];
     for (const [stat, val] of Object.entries(action.statGain)) {

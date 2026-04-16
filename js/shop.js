@@ -217,7 +217,11 @@ function getUpgradeValue(key) {
     }
     case 'job_speed_mult': {
       const v = (n.w3||0)*0.10 + (n.w6||0)*0.15 + (n.w10||0)*0.20 + (n.w13||0)*0.30 + (n.w14||0)*0.40;
-      return Math.max(0.1, 1 - v);
+      // Stamina bonus: every 100 max stamina above base = 1% faster jobs
+      const staminaBonus = Math.max(0, (G.player.maxStamina - 40) / 100) * 0.01;
+      // SPD bonus: every 100 SPD = 1% faster jobs
+      const spdBonus = Math.floor(G.player.spd / 100) * 0.01;
+      return Math.max(0.1, 1 - v - staminaBonus - spdBonus);
     }
     case 'train_gain_mult': {
       const v = (n.m1||0)*0.10 + (n.m4||0)*0.12;
