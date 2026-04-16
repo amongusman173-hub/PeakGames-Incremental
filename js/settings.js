@@ -55,8 +55,8 @@ function renderSettings() {
           <label class="setting-label">🎵 Music</label>
           <div class="setting-control">
             <input type="range" min="0" max="1" step="0.05" value="${s.musicVolume}"
-              oninput="updateSetting('musicVolume', parseFloat(this.value)); document.getElementById('music-vol-val').textContent = Math.round(this.value*100)+'%'"
-              class="setting-slider">
+              oninput="updateSetting('musicVolume', parseFloat(this.value)); document.getElementById('music-vol-val').textContent = Math.round(this.value*100)+'%'; this.style.setProperty('--val', this.value)"
+              class="setting-slider" style="--val:${s.musicVolume}">
             <span class="setting-val" id="music-vol-val">${Math.round(s.musicVolume*100)}%</span>
           </div>
         </div>
@@ -64,8 +64,8 @@ function renderSettings() {
           <label class="setting-label">🔔 SFX</label>
           <div class="setting-control">
             <input type="range" min="0" max="1" step="0.05" value="${s.sfxVolume}"
-              oninput="updateSetting('sfxVolume', parseFloat(this.value)); document.getElementById('sfx-vol-val').textContent = Math.round(this.value*100)+'%'"
-              class="setting-slider">
+              oninput="updateSetting('sfxVolume', parseFloat(this.value)); document.getElementById('sfx-vol-val').textContent = Math.round(this.value*100)+'%'; this.style.setProperty('--val', this.value)"
+              class="setting-slider" style="--val:${s.sfxVolume}">
             <span class="setting-val" id="sfx-vol-val">${Math.round(s.sfxVolume*100)}%</span>
           </div>
         </div>

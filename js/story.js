@@ -246,6 +246,10 @@ function getStageEnemy(chapter, stage) {
   const isLast = stage === STAGES_PER_CHAPTER - 1;
   const p = G.player;
 
+  // Name variants to avoid repetition
+  const ENEMY_PREFIXES = ['', 'Elite ', 'Veteran ', 'Ancient ', 'Cursed ', 'Shadow ', 'Infernal ', 'Void ', 'Corrupted ', 'Savage '];
+  const stagePrefix = ENEMY_PREFIXES[Math.min(stage, ENEMY_PREFIXES.length - 1)];
+
   // Scale factor: enemies scale hard with player level — always threatening
   // Base multiplier 3.5 + level * 0.18 makes even early enemies dangerous
   const levelScale = 3.5 + (p.level * 0.18);
@@ -281,7 +285,7 @@ function getStageEnemy(chapter, stage) {
   const scale = levelScale * (1 + stage * 0.1);
   const b = chapter.baseEnemy;
   return {
-    name: b.name,
+    name: stagePrefix + b.name,
     icon: b.icon,
     hp:   Math.floor(b.hp  * scale),
     maxHp:Math.floor(b.hp  * scale),

@@ -593,7 +593,17 @@ button:disabled{cursor:not-allowed!important;pointer-events:auto}
 .settings-audio-btn.mute-btn:hover { background:rgba(229,57,53,0.12); }
 .settings-audio-btn.btn-flash { animation:settingsBtnFlash 0.35s ease-out; }
 @keyframes settingsBtnFlash { 0%{transform:scale(1)} 50%{transform:scale(1.12);background:rgba(255,255,255,0.2)} 100%{transform:scale(1)} }
-.setting-slider{flex:1;accent-color:var(--accent)}
+.setting-slider {
+  flex:1; accent-color:var(--accent);
+  -webkit-appearance:none; appearance:none;
+  height:6px; border-radius:3px; outline:none; cursor:pointer;
+  background: linear-gradient(to right, var(--accent) 0%, var(--accent) calc(var(--val, 0.5) * 100%), rgba(255,255,255,0.1) calc(var(--val, 0.5) * 100%), rgba(255,255,255,0.1) 100%);
+}
+.setting-slider::-webkit-slider-thumb {
+  -webkit-appearance:none; width:18px; height:18px; border-radius:50%;
+  background:var(--accent); cursor:pointer; border:2px solid var(--bg);
+  box-shadow:0 0 6px rgba(108,159,255,0.5);
+}
 .settings-info-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .settings-info-item{background:rgba(255,255,255,0.04);border-radius:6px;padding:10px;text-align:center}
 .settings-info-label{display:block;font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px}

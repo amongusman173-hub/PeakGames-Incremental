@@ -82,6 +82,30 @@ function onLevelUp() {
   const hdr = document.getElementById('header');
   if (hdr) { hdr.classList.add('level-up-flash'); setTimeout(() => hdr.classList.remove('level-up-flash'), 700); }
 
+  // Level up particle burst from header
+  const hdrEl = document.getElementById('hdr-level');
+  if (hdrEl) {
+    const rect = hdrEl.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const colors = ['#f5c542','#ffdd66','#ff9900','#fff','#b388ff','#42a5f5'];
+    for (let i = 0; i < 25; i++) {
+      const el = document.createElement('div');
+      const angle = (Math.PI * 2 * i / 25) + Math.random() * 0.5;
+      const dist = 40 + Math.random() * 60;
+      const size = 4 + Math.random() * 7;
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      el.style.cssText = `position:fixed;z-index:9999;pointer-events:none;border-radius:50%;width:${size}px;height:${size}px;background:${color};left:${cx}px;top:${cy}px;--dx:${Math.cos(angle)*dist}px;--dy:${Math.sin(angle)*dist}px;animation:digBurst 0.8s ease-out forwards;`;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 1000);
+    }
+    // Gold flash
+    const f = document.createElement('div');
+    f.style.cssText = `position:fixed;inset:0;z-index:9997;pointer-events:none;background:rgba(245,197,66,0.15);animation:digFlash 0.5s ease-out forwards;`;
+    document.body.appendChild(f);
+    setTimeout(() => f.remove(), 600);
+  }
+
   // Level gates — re-render any tab whose unlock threshold was just crossed
   // so the locked section disappears immediately without needing a refresh
   const lvl = p.level;

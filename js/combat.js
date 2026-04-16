@@ -285,10 +285,18 @@ function playAttackVFX(techId, crit) {
       vfxEmoji('☄️', eEl, '#ff6d00');
       break;
     case 'time_stop':
-      vfxFlash('rgba(255,255,255,0.6)', 200);
-      setTimeout(() => vfxFlash('rgba(100,100,255,0.2)', 600), 200);
-      vfxBurst(eEl, ['#e8eaf6','#9fa8da','#fff'], 18, 70, 600);
-      vfxEmoji('⏰', eEl, '#9fa8da');
+      // Dramatic time freeze — white flash, clock particles, blue tint
+      vfxFlash('rgba(255,255,255,0.95)', 150);
+      setTimeout(() => {
+        vfxFlash('rgba(100,150,255,0.3)', 1500);
+        vfxBurst(eEl, ['#e8eaf6','#9fa8da','#5c6bc0','#fff','#b3e5fc'], 30, 90, 800);
+        vfxShake(6);
+        vfxEmoji('⏰', eEl, '#9fa8da');
+        // Clock particles spiral
+        for (let i = 0; i < 12; i++) setTimeout(() => {
+          vfxBurst(eEl, ['#e8eaf6','#9fa8da','#fff'], 4, 50, 600);
+        }, i * 100);
+      }, 100);
       break;
     case 'void_blast':
       vfxBurst(eEl, ['#1a237e','#283593','#7986cb','#fff'], 28, 90, 700);
@@ -444,6 +452,34 @@ function playAttackVFX(techId, crit) {
           vfxBurst(eEl, ['#fff','#e8eaf6'], 4, 50, 400);
         }, i * 100);
       }, 400);
+      break;
+
+    case 'wind_slash':
+      vfxSlash(eEl, '#b2ff59', 2); vfxBurst(eEl, ['#b2ff59','#69f0ae','#fff'], 12, 50, 350); vfxShake(3); break;
+    case 'stone_spike':
+      vfxBurst(eEl, ['#8d6e63','#a1887f','#ffcc80','#fff'], 14, 55, 450); vfxShake(7); vfxEmoji('🪨', eEl); break;
+    case 'poison_cloud':
+      vfxBurst(eEl, ['#388e3c','#66bb6a','#a5d6a7','#fff'], 16, 60, 500); vfxFlash('rgba(56,142,60,0.2)', 400); vfxEmoji('☠️', eEl, '#66bb6a'); break;
+    case 'ice_lance':
+      for (let i = 0; i < 3; i++) setTimeout(() => { vfxSlash(eEl, '#81d4fa', 1); vfxBurst(eEl, ['#b3e5fc','#81d4fa','#fff'], 5, 35, 350); }, i * 80);
+      vfxShake(5); break;
+    case 'thunder_clap':
+      vfxLightning(eEl); vfxBurst(eEl, ['#ffe066','#fff176','#fff'], 18, 70, 500); vfxFlash('rgba(255,224,102,0.25)', 300); vfxShake(8); break;
+    case 'blizzard':
+      for (let i = 0; i < 5; i++) setTimeout(() => { vfxBurst(eEl, ['#b3e5fc','#81d4fa','#e1f5fe','#fff'], 6, 45, 400); }, i * 100);
+      vfxFlash('rgba(179,229,252,0.2)', 600); vfxShake(6); break;
+    case 'inferno':
+      vfxBurst(eEl, ['#bf360c','#e64a19','#ff7043','#ffab40','#fff'], 28, 95, 700); vfxFlash('rgba(191,54,12,0.4)', 500); vfxShake(12); vfxEmoji('🌋', eEl, '#ff7043'); break;
+    case 'gravity_well':
+      vfxBurst(eEl, ['#4a148c','#7b1fa2','#ce93d8','#fff'], 22, 80, 600); vfxFlash('rgba(74,20,140,0.3)', 400); vfxShake(9); vfxEmoji('🌀', eEl, '#ce93d8'); break;
+    case 'soul_drain':
+      vfxBurst(eEl, ['#212121','#880e4f','#e91e63','#fff'], 18, 65, 550); vfxFlash('rgba(136,14,79,0.3)', 400); vfxEmoji('💀', eEl, '#e91e63'); break;
+    case 'star_fall':
+      for (let i = 0; i < 8; i++) setTimeout(() => { vfxBurst(eEl, ['#f5c542','#ffdd66','#fff9c4','#fff'], 5, 50, 400); vfxShake(3); }, i * 80);
+      vfxFlash('rgba(245,197,66,0.2)', 700); break;
+    case 'divine_wrath':
+      vfxFlash('rgba(255,255,255,0.8)', 200);
+      setTimeout(() => { vfxBurst(eEl, ['#fff9c4','#fffde7','#f5c542','#fff','#42a5f5'], 40, 120, 900); vfxFlash('rgba(245,197,66,0.4)', 600); vfxShake(16); vfxEmoji('⚡', eEl, '#f5c542'); }, 200);
       break;
 
     default:
@@ -851,6 +887,10 @@ const TECH_COOLDOWN_MAP = {
   'vessel_switch': 3,
   // Infinity: 4-turn cooldown
   'infinity': 4,
+  // New magic spells
+  'wind_slash': 1, 'stone_spike': 1, 'poison_cloud': 2, 'ice_lance': 2,
+  'thunder_clap': 2, 'blizzard': 3, 'inferno': 3, 'gravity_well': 3,
+  'soul_drain': 3, 'star_fall': 4, 'divine_wrath': 5,
 };
 
 function getTechCooldown(techId) {
@@ -1018,6 +1058,18 @@ function applyTechniqueEffect(tech, mult, afterCb) {
     appendLog(combatLog, `${tech.icon} ${tech.name}: Healed ${healAmt} HP!`, 'log-heal');
   } else if (tech.effect === 'stun') {
     playAttackVFX(tech.id, mult >= 1.5);
+    // ── TIME STOP — damage dealt during freeze is stored and released at end ──
+    if (tech.id === 'time_stop') {
+      const frozenDmg = Math.max(1, Math.floor(p.atk * tech.multiplier * mult) - combatEnemy.def);
+      // Store frozen damage — will be released when status expires
+      combatStatusEnemy.push({ name: 'Time Frozen', icon: '⏰', turns: 3, frozenDmg: 0, isTimeFrozen: true, skipTurn: true });
+      // Initial hit does 0 visible damage — it's stored
+      appendLog(combatLog, `⏰ TIME STOP! Enemy frozen for 3 turns. Damage will release on expiry!`, 'log-crit');
+      updateBattleUI();
+      if (combatEnemyHP <= 0) { endBattle(true); return; }
+      afterCb();
+      return;
+    }
     const dmg = Math.max(1, Math.floor(p.atk * tech.multiplier * mult) - combatEnemy.def);
     combatEnemyHP -= dmg;
     if (mult >= 1.0) combatStatusEnemy.push({ name: 'Stunned', icon: '⚡', turns: 2 });
@@ -1117,7 +1169,18 @@ function enemyTurn() {
       appendLog(combatLog, `🏯 Malevolent Shrine slashes for ${dmg} dmg!`, 'log-crit');
     }
     if (s.skipTurn) enemySkipTurn = true;
-    return { ...s, turns: s.turns - 1 };
+    if (s.isTimeFrozen) {
+      // Accumulate damage each turn while frozen
+      s.frozenDmg = (s.frozenDmg || 0) + Math.floor(p.atk * 0.5);
+    }
+    const newTurns = s.turns - 1;
+    if (newTurns <= 0 && s.isTimeFrozen && s.frozenDmg > 0) {
+      // Time resumes — release all stored damage
+      combatEnemyHP -= s.frozenDmg;
+      appendLog(combatLog, `⏰ TIME RESUMES! ${s.frozenDmg} stored damage released!`, 'log-crit');
+      vfxBurst(getEnemyEl(), ['#e8eaf6','#9fa8da','#fff'], 20, 70, 500);
+    }
+    return { ...s, turns: newTurns };
   }).filter(s => s.turns > 0);
 
   updateBattleUI();
