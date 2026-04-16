@@ -16,6 +16,7 @@ const G = {
     gold: 0,
     rebirthCount: 0,
     rebirthPoints: 0,
+    ascensionHistory: [],
     // Multipliers from rebirth
     xpMult: 1,
     goldMult: 1,
@@ -121,6 +122,7 @@ function loadGame() {
     if (!G.player.heritage || typeof G.player.heritage !== 'object') G.player.heritage = {};
     if (!G.player.heritageRerolls || typeof G.player.heritageRerolls !== 'object') G.player.heritageRerolls = {};
     if (typeof G.player.digRegenTick !== 'number') G.player.digRegenTick = 0;
+    if (!Array.isArray(G.player.ascensionHistory)) G.player.ascensionHistory = [];
     // Clamp numeric values to prevent NaN/Infinity
     ['hp','maxHp','stamina','maxStamina','atk','def','spd','gold','xp','level'].forEach(k => {
       if (typeof G.player[k] !== 'number' || isNaN(G.player[k])) {
