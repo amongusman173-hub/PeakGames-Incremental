@@ -143,8 +143,54 @@ function _doHeritageRoll(category) {
   if (category === 'style')   result = weightedRoll(FIGHTING_STYLES);
   if (!result) return;
 
+  // ── Remove techniques from the OLD heritage item being replaced ──
+  const oldId = p.heritage[category];
+  if (oldId) {
+    const oldItem = getHeritageItem(category, oldId);
+    if (oldItem && oldItem.techs && oldItem.techs.length > 0) {
+      // Collect all techs still granted by the OTHER two categories
+      const otherCats = ['clan','weapon','style'].filter(c => c !== category);
+      const stillGranted = new Set();
+      otherCats.forEach(cat => {
+        const otherId = p.heritage[cat];
+        if (!otherId) return;
+        const other = getHeritageItem(cat, otherId);
+        if (other && other.techs) other.techs.forEach(id => stillGranted.add(id));
+        // If other is gojo, keep all gojo techs
+        if (other && other._gojo) {
+          ['infinity','reversal_red','lapse_blue','hollow_purple','domain_infinite_void'].forEach(id => stillGranted.add(id));
+        }
+      });
+      // Also keep vessel_switch — it's a permanent dig unlock
+      stillGranted.add('vessel_switch');
+
+      // Remove old techs that aren't still granted elsewhere
+      const toRemove = oldItem.techs.filter(id => !stillGranted.has(id));
+      // If old item was gojo, also remove gojo techs (unless another category is also gojo)
+      if (oldItem._gojo) {
+        const otherGojo = otherCats.some(cat => {
+          const otherId = p.heritage[cat];
+          const other = otherId ? getHeritageItem(cat, otherId) : null;
+          return other && other._gojo;
+        });
+        if (!otherGojo) {
+          ['infinity','reversal_red','lapse_blue','hollow_purple','domain_infinite_void',
+           'reversal_red_max','lapse_blue_max'].forEach(id => {
+            if (!stillGranted.has(id)) toRemove.push(id);
+          });
+        }
+      }
+
+      if (toRemove.length > 0) {
+        p.techniques = p.techniques.filter(id => !toRemove.includes(id));
+        p.equipped   = p.equipped.map(id => toRemove.includes(id) ? null : id);
+        invalidateStatCache();
+      }
+    }
+  }
+
+  // ── Apply new heritage ──
   p.heritage[category] = result.id;
-  // Track rerolls so cost scales up
   if (!p.heritageRerolls) p.heritageRerolls = {};
   p.heritageRerolls[category] = (p.heritageRerolls[category] || 0) + 1;
   invalidateStatCache();
