@@ -1222,6 +1222,7 @@ function basicAttack() {
     const dmg = Math.max(1, base - combatEnemy.def);
     const crit = Math.random() < 0.1 + techBonus.critChance + getSpdCritBonus();
     const final = crit ? Math.floor(dmg * 1.8) : dmg;
+    if (crit) { if (typeof G.player._critCount === 'number') G.player._critCount++; else G.player._critCount = 1; }
     playAttackVFX('basic', crit);
     playSound('basicattack', 0.7);
     // If enemy is time-frozen, store damage instead of applying it
@@ -1245,6 +1246,7 @@ function fleeBattle() {
   fleeMinigame((success) => {
     if (success) {
       appendLog(combatLog, '🏃 You fled! No gold lost.', 'log-info');
+      if (typeof G.player._fleeCount === 'number') G.player._fleeCount++; else G.player._fleeCount = 1;
       endBattle(null);
     } else {
       const penalty = Math.floor(G.player.gold * 0.1);

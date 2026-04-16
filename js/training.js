@@ -30,7 +30,7 @@ function tickTraining(actionId) {
   if (!spendStamina(action.staminaCost)) {
     // Out of stamina
     const cancel = getSettings().staminaCancelOnEmpty !== false;
-    G.player._ranOutOfStamina = true;
+  G.player._ranOutOfStamina = true;
     if (cancel) {
       stopTraining();
       toast(`⚡ Out of stamina! ${action.name} cancelled. (Disable in Settings to pause instead)`, 'warn');
@@ -41,6 +41,7 @@ function tickTraining(actionId) {
 
   if (!p.trainingProgress[actionId]) p.trainingProgress[actionId] = 0;
   p.trainingProgress[actionId] = Math.min(action.maxProgress, p.trainingProgress[actionId] + 1);
+  if (typeof p._trainCount === 'number') p._trainCount++; else p._trainCount = 1;
 
   const ascBonus = typeof getAscensionBonus === 'function' ? getAscensionBonus().trainMult : 1;
   const gainMult = getUpgradeValue('train_gain_mult') * ascBonus;

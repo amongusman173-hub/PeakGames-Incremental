@@ -111,6 +111,7 @@ function drinkPotion(recipeId) {
   recipe.effect(G.player);
   playSound('drink potion');
   spawnFloatingText(recipe.icon, 'float-xp');
+  if (typeof G.player._potionsDrunk === 'number') G.player._potionsDrunk++; else G.player._potionsDrunk = 1;
   renderAlchemy();
 }
 

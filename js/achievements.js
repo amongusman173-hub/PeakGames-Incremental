@@ -77,6 +77,87 @@ const ACHIEVEMENTS = [
   }},
   { id: 'stamina0', name: 'Exhausted',          icon: '😮‍💨', desc: 'Run out of stamina.',        cat: 'misc',     check: p => (p._ranOutOfStamina || false) },
   { id: 'max_slots',name: 'Full Arsenal',       icon: '🎯', desc: 'Unlock all 10 gear slots.',   cat: 'misc',     check: p => typeof getMaxEquipSlots === 'function' && getMaxEquipSlots() >= 10 },
+
+  // ── More Leveling ──
+  { id: 'lv30',     name: 'Ascension Ready',    icon: '🔱', desc: 'Reach level 30.',             cat: 'progress', check: p => p.level >= 30 },
+
+  // ── More Wealth ──
+  { id: 'gold500k', name: 'Tycoon',             icon: '🤑', desc: 'Have 500,000 gold.',          cat: 'wealth',   check: p => p.gold >= 500000 },
+  { id: 'spend10k', name: 'Big Spender',        icon: '💸', desc: 'Spend 10,000 gold on heritage.', cat: 'wealth', check: p => {
+    if (!p.heritageRerolls) return false;
+    const total = Object.values(p.heritageRerolls).reduce((a,b) => a+b, 0);
+    return total >= 5;
+  }},
+
+  // ── More Combat ──
+  { id: 'no_damage',  name: 'Untouchable',      icon: '🧊', desc: 'Win a battle without taking damage.', cat: 'combat', check: p => (p._perfectBattles || 0) >= 1 },
+  { id: 'crit10',     name: 'Critical Eye',     icon: '💥', desc: 'Land 10 critical hits.',      cat: 'combat',   check: p => (p._critCount || 0) >= 10 },
+  { id: 'crit100',    name: 'Precision',        icon: '🎯', desc: 'Land 100 critical hits.',     cat: 'combat',   check: p => (p._critCount || 0) >= 100 },
+  { id: 'flee',       name: 'Coward',           icon: '🏃', desc: 'Successfully flee a battle.', cat: 'combat',   check: p => (p._fleeCount || 0) >= 1 },
+  { id: 'story5',     name: 'Hero',             icon: '🦸', desc: 'Complete 5 story chapters.',  cat: 'combat',   check: p => p.completedChapters && p.completedChapters.length >= 5 },
+
+  // ── More Stats ──
+  { id: 'atk1000',  name: 'Godlike Power',      icon: '⚡', desc: 'Reach 1,000 ATK.',            cat: 'stats',    check: p => p.atk >= 1000 },
+  { id: 'def500',   name: 'Fortress',           icon: '🏰', desc: 'Reach 500 DEF.',              cat: 'stats',    check: p => p.def >= 500 },
+  { id: 'spd500',   name: 'Blur',               icon: '💨', desc: 'Reach 500 SPD.',              cat: 'stats',    check: p => p.spd >= 500 },
+  { id: 'hp10000',  name: 'Immortal',           icon: '🫀', desc: 'Reach 10,000 Max HP.',        cat: 'stats',    check: p => p.maxHp >= 10000 },
+  { id: 'stamina500',name:'Endless Energy',     icon: '⚡', desc: 'Reach 500 Max Stamina.',      cat: 'stats',    check: p => p.maxStamina >= 500 },
+
+  // ── More Ascension ──
+  { id: 'asc10',    name: 'Infinite Cycle',     icon: '🌀', desc: 'Ascend 10 times.',            cat: 'ascend',   check: p => p.rebirthCount >= 10 },
+  { id: 'asc_lv50', name: 'Powered Ascension',  icon: '💪', desc: 'Ascend at level 50+.',        cat: 'ascend',   check: p => p.ascensionHistory && p.ascensionHistory.some(l => l >= 50) },
+  { id: 'asc_lv75', name: 'Elite Ascension',    icon: '🌟', desc: 'Ascend at level 75+.',        cat: 'ascend',   check: p => p.ascensionHistory && p.ascensionHistory.some(l => l >= 75) },
+
+  // ── More Techniques ──
+  { id: 'tech15',   name: 'Master Collector',   icon: '🗃️', desc: 'Own 15 techniques.',          cat: 'tech',     check: p => p.techniques && p.techniques.length >= 15 },
+  { id: 'hollow',   name: 'Hollow Purple',      icon: '🟣', desc: 'Unlock Hollow Purple.',       cat: 'tech',     check: p => p.techniques && p.techniques.includes('hollow_purple') },
+  { id: 'infinite_void', name: 'Infinite Void', icon: '🌌', desc: 'Unlock Domain: Infinite Void.', cat: 'tech',  check: p => p.techniques && p.techniques.includes('domain_infinite_void') },
+  { id: 'all_gojo', name: 'Six Eyes Mastery',   icon: '👁️', desc: 'Unlock all Gojo techniques.', cat: 'tech',    check: p => p.techniques && ['infinity','reversal_red','lapse_blue','hollow_purple','domain_infinite_void'].every(id => p.techniques.includes(id)) },
+  { id: 'max_red',  name: 'Reversal Red MAX',   icon: '🔴', desc: 'Unlock Reversal Red MAX.',    cat: 'tech',     check: p => p.techniques && p.techniques.includes('reversal_red_max') },
+  { id: 'max_blue', name: 'Lapse Blue MAX',     icon: '🔵', desc: 'Unlock Lapse Blue MAX.',      cat: 'tech',     check: p => p.techniques && p.techniques.includes('lapse_blue_max') },
+
+  // ── More Alchemy ──
+  { id: 'brew5',    name: 'Brewer',             icon: '🧫', desc: 'Discover 5 recipes.',         cat: 'alchemy',  check: p => p.alchemyRecipes && p.alchemyRecipes.length >= 5 },
+  { id: 'brew_legendary', name: 'Grand Alchemist', icon: '✨', desc: 'Brew a Legendary potion.', cat: 'alchemy',  check: p => {
+    if (!p.potionInv || typeof ALCHEMY_RECIPES === 'undefined') return false;
+    return ALCHEMY_RECIPES.filter(r => r.rarity === 'legendary').some(r => (p.potionInv[r.id] || 0) > 0 || (p.alchemyRecipes || []).includes(r.id));
+  }},
+  { id: 'drink20',  name: 'Potion Addict',      icon: '🍶', desc: 'Drink 20 potions.',           cat: 'alchemy',  check: p => (p._potionsDrunk || 0) >= 20 },
+
+  // ── More Explore ──
+  { id: 'dig1000',  name: 'Master Digger',      icon: '⛏️', desc: 'Dig 1,000 tiles.',            cat: 'explore',  check: p => (p._digCount || 0) >= 1000 },
+  { id: 'sonar',    name: 'Sonar Expert',       icon: '📡', desc: 'Use sonar 10 times.',         cat: 'explore',  check: p => (p._sonarCount || 0) >= 10 },
+  { id: 'harvest50',name: 'Harvest Festival',   icon: '🌻', desc: 'Harvest 50 plants.',          cat: 'explore',  check: p => (p._harvestCount || 0) >= 50 },
+  { id: 'full_garden', name: 'Full Garden',     icon: '🌿', desc: 'Fill all garden plots.',      cat: 'explore',  check: p => {
+    if (!p.gardenPlots) return false;
+    const filled = p.gardenPlots.filter(x => x !== null).length;
+    return filled >= 9;
+  }},
+
+  // ── More Heritage ──
+  { id: 'reroll10', name: 'Gambler',            icon: '🎲', desc: 'Reroll heritage 10 times.',   cat: 'heritage', check: p => {
+    if (!p.heritageRerolls) return false;
+    return Object.values(p.heritageRerolls).reduce((a,b) => a+b, 0) >= 10;
+  }},
+  { id: 'all_heritage', name: 'Complete Heritage', icon: '🏛️', desc: 'Have all 3 heritage slots filled.', cat: 'heritage', check: p => p.heritage && p.heritage.clan && p.heritage.weapon && p.heritage.style },
+  { id: 'secret_heritage', name: 'Secret Blood', icon: '🔴', desc: 'Roll a Secret rarity heritage.', cat: 'heritage', check: p => {
+    if (!p.heritage) return false;
+    const all = [...(typeof CLANS!=='undefined'?CLANS:[]), ...(typeof WEAPONS!=='undefined'?WEAPONS:[]), ...(typeof FIGHTING_STYLES!=='undefined'?FIGHTING_STYLES:[])];
+    return [p.heritage.clan, p.heritage.weapon, p.heritage.style].filter(Boolean).some(id => {
+      const item = all.find(x => x.id === id);
+      return item && item.rarity === 'secret';
+    });
+  }},
+
+  // ── More Misc ──
+  { id: 'jobs10',   name: 'Workaholic',         icon: '💼', desc: 'Complete 10 quick jobs.',     cat: 'misc',     check: p => (p._quickJobCount || 0) >= 10 },
+  { id: 'jobs100',  name: 'Career',             icon: '🏢', desc: 'Complete 100 quick jobs.',    cat: 'misc',     check: p => (p._quickJobCount || 0) >= 100 },
+  { id: 'train100', name: 'Dedicated',          icon: '🏋️', desc: 'Complete 100 training sessions.', cat: 'misc', check: p => (p._trainCount || 0) >= 100 },
+  { id: 'train1000',name: 'Iron Will',          icon: '🔩', desc: 'Complete 1,000 training sessions.', cat: 'misc', check: p => (p._trainCount || 0) >= 1000 },
+  { id: 'library_all', name: 'Scholar',         icon: '📚', desc: 'Learn all library spells.',   cat: 'misc',     check: p => {
+    if (typeof MAGIC_SPELLS === 'undefined') return false;
+    return MAGIC_SPELLS.every(s => p.techniques && p.techniques.includes(s.id));
+  }},
 ];
 
 // Track which achievements have been unlocked

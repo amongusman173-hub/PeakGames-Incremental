@@ -68,6 +68,12 @@ const G = {
     _digCount: 0,
     _harvestCount: 0,
     _ranOutOfStamina: false,
+    _critCount: 0,
+    _fleeCount: 0,
+    _sonarCount: 0,
+    _quickJobCount: 0,
+    _trainCount: 0,
+    _potionsDrunk: 0,
   },
 
   // Active job (id or null)
@@ -131,6 +137,14 @@ function loadGame() {
     if (typeof G.player._digCount !== 'number') G.player._digCount = 0;
     if (typeof G.player._harvestCount !== 'number') G.player._harvestCount = 0;
     if (typeof G.player._ranOutOfStamina !== 'boolean') G.player._ranOutOfStamina = false;
+    if (typeof G.player._digCount !== 'number') G.player._digCount = 0;
+    if (typeof G.player._harvestCount !== 'number') G.player._harvestCount = 0;
+    if (typeof G.player._critCount !== 'number') G.player._critCount = 0;
+    if (typeof G.player._fleeCount !== 'number') G.player._fleeCount = 0;
+    if (typeof G.player._sonarCount !== 'number') G.player._sonarCount = 0;
+    if (typeof G.player._quickJobCount !== 'number') G.player._quickJobCount = 0;
+    if (typeof G.player._trainCount !== 'number') G.player._trainCount = 0;
+    if (typeof G.player._potionsDrunk !== 'number') G.player._potionsDrunk = 0;
     // Clamp numeric values to prevent NaN/Infinity
     ['hp','maxHp','stamina','maxStamina','atk','def','spd','gold','xp','level'].forEach(k => {
       if (typeof G.player[k] !== 'number' || isNaN(G.player[k])) {

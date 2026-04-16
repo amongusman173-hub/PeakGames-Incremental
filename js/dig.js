@@ -184,6 +184,7 @@ function activateSonarPulse() {
   if (!G.player.sonarCharges || G.player.sonarCharges <= 0) { toast('No sonar charges! Wait for regen.', 'warn'); return; }
 
   G.player.sonarCharges--;
+  if (typeof G.player._sonarCount === 'number') G.player._sonarCount++; else G.player._sonarCount = 1;
   const revealCount = sonarLevel * 3;
   const undug = digGrid.map((t,i) => i).filter(i => !digGrid[i].dug);
   if (undug.length === 0) { toast('All tiles already dug!', 'info'); return; }

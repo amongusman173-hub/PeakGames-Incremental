@@ -86,6 +86,7 @@ function quickJob(jobId) {
     gainXP(Math.floor(job.xpPerCycle * xpMult));
     spawnFloatingText(`+${earned}g`, 'float-gold');
     toast(`Quick job: +${earned}g! (${mult.toFixed(1)}x)`, 'success');
+    if (typeof G.player._quickJobCount === 'number') G.player._quickJobCount++; else G.player._quickJobCount = 1;
   });
 }
 
