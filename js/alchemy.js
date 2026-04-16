@@ -227,24 +227,28 @@ function _showBrewTimer(rarity, brewMs, stirMult, callback) {
   const icon  = icons[rarity] || '🧪';
   const secs  = (brewMs / 1000).toFixed(0);
 
-  // Render into the in-panel brew status area
+  // Each brew gets a unique ID so multiple can run simultaneously
+  const brewId = 'brew-' + Date.now() + '-' + Math.floor(Math.random() * 9999);
+
   const statusEl = document.getElementById('brew-status');
   if (statusEl) {
-    statusEl.innerHTML = `
-      <div style="background:rgba(0,0,0,0.25);border:1px solid ${color};border-radius:10px;padding:14px;margin-top:12px">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-          <span style="font-size:28px">${icon}</span>
-          <div>
-            <div style="font-weight:700;font-size:13px;color:${color}">Brewing ${rarity.toUpperCase()}…</div>
-            <div style="font-size:11px;color:var(--dim)">Stir quality: ${stirMult.toFixed(1)}× · ${secs}s total</div>
-          </div>
-        </div>
-        <div style="position:relative;height:10px;background:rgba(255,255,255,0.08);border-radius:99px;overflow:hidden;margin-bottom:6px">
-          <div id="brew-timer-fill" style="height:100%;width:0%;background:${color};border-radius:99px;transition:none"></div>
-        </div>
-        <div id="brew-timer-txt" style="font-size:12px;color:var(--dim);text-align:right">${secs}s remaining</div>
-      </div>`;
     statusEl.classList.remove('hidden');
+    const card = document.createElement('div');
+    card.id = brewId;
+    card.style.cssText = `background:rgba(0,0,0,0.25);border:1px solid ${color};border-radius:10px;padding:12px;margin-top:8px`;
+    card.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <span style="font-size:22px">${icon}</span>
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:12px;color:${color}">${rarity.toUpperCase()} brewing…</div>
+          <div style="font-size:10px;color:var(--dim)">Stir quality: ${stirMult.toFixed(1)}× · ${secs}s total</div>
+        </div>
+        <div id="${brewId}-txt" style="font-size:12px;color:var(--dim);font-weight:700;min-width:36px;text-align:right">${secs}s</div>
+      </div>
+      <div style="height:8px;background:rgba(255,255,255,0.08);border-radius:99px;overflow:hidden">
+        <div id="${brewId}-fill" style="height:100%;width:0%;background:${color};border-radius:99px;transition:none"></div>
+      </div>`;
+    statusEl.appendChild(card);
   }
 
   const start = Date.now();
@@ -252,13 +256,18 @@ function _showBrewTimer(rarity, brewMs, stirMult, callback) {
     const elapsed   = Date.now() - start;
     const pct       = Math.min(100, (elapsed / brewMs) * 100);
     const remaining = Math.max(0, Math.ceil((brewMs - elapsed) / 1000));
-    const fill = document.getElementById('brew-timer-fill');
-    const txt  = document.getElementById('brew-timer-txt');
+    const fill = document.getElementById(brewId + '-fill');
+    const txt  = document.getElementById(brewId + '-txt');
     if (fill) fill.style.width = pct + '%';
-    if (txt)  txt.textContent  = remaining > 0 ? `${remaining}s remaining` : 'Done!';
+    if (txt)  txt.textContent  = remaining > 0 ? `${remaining}s` : 'Done!';
     if (elapsed >= brewMs) {
       clearInterval(iv);
-      if (statusEl) { statusEl.innerHTML = ''; statusEl.classList.add('hidden'); }
+      // Remove this brew's card
+      const card = document.getElementById(brewId);
+      if (card) card.remove();
+      // Hide container if no more brews
+      const statusEl = document.getElementById('brew-status');
+      if (statusEl && statusEl.children.length === 0) statusEl.classList.add('hidden');
       callback(stirMult);
     }
   }, 200);
@@ -483,6 +492,11 @@ function renderAlchemy() {
       }).join('')}
     </div>`;
 
+  // Preserve active brew cards across re-renders
+  const existingBrewStatus = document.getElementById('brew-status');
+  const savedBrewHtml   = existingBrewStatus ? existingBrewStatus.innerHTML : '';
+  const brewStatusHidden = existingBrewStatus ? existingBrewStatus.classList.contains('hidden') : true;
+
   container.innerHTML = `
     <div class="alchemy-layout">
       <div class="alchemy-left">
@@ -507,5 +521,12 @@ function renderAlchemy() {
         ${hintedHtml}
       </div>
     </div>`;
+
+  // Restore active brew cards that were wiped by innerHTML reassignment
+  const newBrewStatus = document.getElementById('brew-status');
+  if (newBrewStatus && savedBrewHtml) {
+    newBrewStatus.innerHTML = savedBrewHtml;
+    if (!brewStatusHidden) newBrewStatus.classList.remove('hidden');
+  }
 }
 
