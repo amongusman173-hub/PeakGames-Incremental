@@ -47,6 +47,7 @@ function showMinigame(type, difficulty, label, callback, forcedPhrase) {
     case 'balance':        buildBalanceGame(overlay, difficulty, label); break;
     case 'countdown':      buildCountdownGame(overlay, difficulty, label); break;
     case 'multi_mash':     buildMultiMashGame(overlay, difficulty, label); break;
+    case 'stir':           buildStirGame(overlay, difficulty, label); break;
     default:          resolveMinigame(1);
   }
 }
@@ -1679,4 +1680,150 @@ function resetMgCounts() {
   mgResolve = null;
   const overlay = MG_CONTAINER();
   if (overlay) overlay.classList.add('hidden');
+}
+
+// ── STIR GAME — circular mouse/touch stirring for alchemy brewing ──
+// Player must stir the cauldron by moving in circles. Tracks rotation quality.
+function buildStirGame(el, difficulty, label) {
+  const required = [3, 5, 7, 9][Math.min(3, difficulty - 1)]; // full circles needed
+  const timeMs   = [10000, 12000, 15000, 18000][Math.min(3, difficulty - 1)];
+  let circles = 0, lastAngle = null, totalAngle = 0, done = false;
+  let prevX = null, prevY = null;
+
+  const colors = { 1: '#66bb6a', 2: '#6c9fff', 3: '#b06aff', 4: '#f5c542' };
+  const cauldronColor = colors[Math.min(4, difficulty)] || '#66bb6a';
+
+  el.innerHTML = `<div class="mg-box">
+    <div class="mg-label">${label}</div>
+    <div class="mg-hint">Stir the cauldron in circles! <strong>${required} full stirs</strong> needed.</div>
+    <div id="mg-stir-area" style="position:relative;width:180px;height:180px;margin:10px auto;cursor:crosshair;touch-action:none">
+      <canvas id="mg-stir-canvas" width="180" height="180" style="position:absolute;inset:0;border-radius:50%;background:rgba(0,0,0,0.3)"></canvas>
+      <div id="mg-stir-spoon" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:32px;pointer-events:none;transition:transform 0.05s">🥄</div>
+    </div>
+    <div style="text-align:center;margin:6px 0">
+      <span id="mg-stir-count" style="font-size:22px;font-weight:800;color:${cauldronColor}">0</span>
+      <span style="font-size:13px;color:var(--dim)"> / ${required} stirs</span>
+    </div>
+    <div class="mg-timer-bar"><div class="mg-timer-fill" id="mg-stir-fill" style="background:${cauldronColor}"></div></div>
+    <div style="font-size:11px;color:var(--dim);text-align:center;margin-top:4px">Move your mouse/finger in circles over the cauldron</div>
+  </div>`;
+
+  const area    = el.querySelector('#mg-stir-area');
+  const canvas  = el.querySelector('#mg-stir-canvas');
+  const spoon   = el.querySelector('#mg-stir-spoon');
+  const countEl = el.querySelector('#mg-stir-count');
+  const fill    = el.querySelector('#mg-stir-fill');
+  const ctx     = canvas.getContext('2d');
+  const cx = 90, cy = 90;
+  const start = Date.now();
+
+  // Draw cauldron base
+  ctx.beginPath();
+  ctx.arc(cx, cy, 75, 0, Math.PI * 2);
+  ctx.strokeStyle = cauldronColor;
+  ctx.lineWidth = 3;
+  ctx.globalAlpha = 0.3;
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  // Trail points
+  const trail = [];
+
+  const timerInterval = setInterval(() => {
+    if (done) return;
+    const elapsed = Date.now() - start;
+    fill.style.width = Math.max(0, 100 - (elapsed / timeMs) * 100) + '%';
+    if (elapsed >= timeMs) {
+      done = true;
+      clearInterval(timerInterval);
+      finish();
+    }
+  }, 50);
+
+  function getPos(e) {
+    const r = area.getBoundingClientRect();
+    const src = e.touches ? e.touches[0] : e;
+    return { x: src.clientX - r.left, y: src.clientY - r.top };
+  }
+
+  function onMove(e) {
+    if (done) return;
+    e.preventDefault();
+    const { x, y } = getPos(e);
+
+    // Move spoon emoji
+    spoon.style.left = x + 'px';
+    spoon.style.top  = y + 'px';
+
+    // Draw trail
+    ctx.clearRect(0, 0, 180, 180);
+    // Redraw base circle
+    ctx.beginPath();
+    ctx.arc(cx, cy, 75, 0, Math.PI * 2);
+    ctx.strokeStyle = cauldronColor;
+    ctx.lineWidth = 3;
+    ctx.globalAlpha = 0.2;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    trail.push({ x, y });
+    if (trail.length > 60) trail.shift();
+    if (trail.length > 2) {
+      ctx.beginPath();
+      ctx.moveTo(trail[0].x, trail[0].y);
+      for (let i = 1; i < trail.length; i++) {
+        ctx.lineTo(trail[i].x, trail[i].y);
+      }
+      ctx.strokeStyle = cauldronColor;
+      ctx.lineWidth = 3;
+      ctx.lineCap = 'round';
+      ctx.globalAlpha = 0.7;
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+
+    // Track angle from center to detect full circles
+    const angle = Math.atan2(y - cy, x - cx);
+    if (lastAngle !== null) {
+      let delta = angle - lastAngle;
+      // Normalize to [-π, π]
+      if (delta > Math.PI)  delta -= Math.PI * 2;
+      if (delta < -Math.PI) delta += Math.PI * 2;
+      totalAngle += delta;
+      // Each full circle = 2π
+      const newCircles = Math.floor(Math.abs(totalAngle) / (Math.PI * 2));
+      if (newCircles > circles) {
+        circles = newCircles;
+        countEl.textContent = Math.min(circles, required);
+        // Flash the count
+        countEl.style.transform = 'scale(1.4)';
+        setTimeout(() => { countEl.style.transform = 'scale(1)'; }, 150);
+        if (circles >= required && !done) {
+          done = true;
+          clearInterval(timerInterval);
+          finish();
+        }
+      }
+    }
+    lastAngle = angle;
+    prevX = x; prevY = y;
+  }
+
+  function finish() {
+    const ratio = Math.min(1, circles / required);
+    const elapsed = Date.now() - start;
+    const timePct = elapsed / timeMs;
+    let mult, msg;
+    if (ratio >= 1 && timePct < 0.5)      { mult = 2.2; msg = '💥 PERFECT BREW!'; }
+    else if (ratio >= 1)                   { mult = 1.8; msg = '✅ Well stirred!'; }
+    else if (ratio >= 0.6)                 { mult = 1.2; msg = '⚠️ Partially stirred…'; }
+    else                                   { mult = 0.5; msg = '❌ Barely stirred!'; }
+    showMgResult(el, mult, msg, () => resolveMinigame(mult));
+  }
+
+  area.addEventListener('mousemove', onMove);
+  area.addEventListener('touchmove', onMove, { passive: false });
+  // Reset angle tracking on mouse leave/re-enter
+  area.addEventListener('mouseleave', () => { lastAngle = null; });
+  area.addEventListener('mouseenter', () => { lastAngle = null; });
 }

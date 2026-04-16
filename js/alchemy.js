@@ -195,40 +195,68 @@ function alchemyBrewVFX(rarity) {
   }
 }
 
-// ── BREWING MINIGAME — rarity determines difficulty and type ──
-// common: 1 easy hold
-// uncommon: 1 medium hold + timing
-// rare: 2 rounds (hold + mash)
-// legendary: 3 rounds (hold + mash + sequence)
+// ── BREWING MINIGAME — stir the cauldron, then wait for brew to finish ──
+// Brew times: common 8s, uncommon 12s, rare 16s, legendary 22s
+const BREW_TIMES = { common: 8000, uncommon: 12000, rare: 16000, legendary: 22000 };
+// Stir difficulty: common=1, uncommon=2, rare=3, legendary=4
+const BREW_STIR_DIFF = { common: 1, uncommon: 2, rare: 3, legendary: 4 };
+
 function brewMinigame(rarity, callback) {
-  const configs = {
-    common:    { rounds: [['hold', 1]], label: '⚗️ Brewing — stir gently!' },
-    uncommon:  { rounds: [['hold', 2], ['timing', 2]], label: '⚗️ Brewing — careful concentration!' },
-    rare:      { rounds: [['hold', 2], ['mash', 2], ['timing', 3]], label: '⚗️ Rare Brew — intense focus required!' },
-    legendary: { rounds: [['hold', 3], ['mash', 3], ['sequence', 3], ['timing', 3]], label: '⚗️ LEGENDARY BREW — master the cauldron!' },
-  };
-  const cfg = configs[rarity] || configs.common;
-  let roundIdx = 0;
-  let totalMult = 1;
+  const diff  = BREW_STIR_DIFF[rarity] || 1;
+  const brewMs = BREW_TIMES[rarity] || 8000;
+  const label = {
+    common:    '⚗️ Stir the cauldron!',
+    uncommon:  '⚗️ Careful stirring required!',
+    rare:      '⚗️ Rare brew — stir with precision!',
+    legendary: '⚗️ LEGENDARY BREW — master the cauldron!',
+  }[rarity] || '⚗️ Stir the cauldron!';
 
-  function runRound() {
-    if (roundIdx >= cfg.rounds.length) {
-      callback(Math.min(2.2, totalMult / cfg.rounds.length));
-      return;
+  // Step 1: stir minigame
+  showMinigame('stir', diff, label, (mult) => {
+    // Step 2: show brew timer overlay
+    _showBrewTimer(rarity, brewMs, mult, callback);
+  });
+}
+
+function _showBrewTimer(rarity, brewMs, stirMult, callback) {
+  const overlay = document.getElementById('mg-overlay');
+  if (!overlay) { callback(stirMult); return; }
+  overlay.classList.remove('hidden');
+
+  const rarityColors = { common:'#66bb6a', uncommon:'#6c9fff', rare:'#b06aff', legendary:'#f5c542' };
+  const color = rarityColors[rarity] || '#66bb6a';
+  const icons = { common:'🧪', uncommon:'⚗️', rare:'🔮', legendary:'✨' };
+  const icon = icons[rarity] || '🧪';
+  const secs = (brewMs / 1000).toFixed(0);
+
+  overlay.innerHTML = `<div class="mg-box" style="text-align:center">
+    <div style="font-size:48px;margin-bottom:8px">${icon}</div>
+    <div class="mg-label">Brewing in progress…</div>
+    <div style="font-size:13px;color:var(--dim);margin-bottom:12px">${rarity.toUpperCase()} · ${secs}s brew time</div>
+    <div style="position:relative;height:12px;background:rgba(255,255,255,0.08);border-radius:99px;overflow:hidden;margin-bottom:12px">
+      <div id="brew-timer-fill" style="height:100%;width:0%;background:${color};border-radius:99px;transition:none"></div>
+    </div>
+    <div id="brew-timer-txt" style="font-size:13px;color:${color};font-weight:700">${secs}s remaining</div>
+    <div style="font-size:11px;color:var(--dim);margin-top:8px">Stir quality: ${stirMult.toFixed(1)}× — affects potion count</div>
+  </div>`;
+
+  const fill = overlay.querySelector('#brew-timer-fill');
+  const txt  = overlay.querySelector('#brew-timer-txt');
+  const start = Date.now();
+
+  const iv = setInterval(() => {
+    const elapsed = Date.now() - start;
+    const pct = Math.min(100, (elapsed / brewMs) * 100);
+    fill.style.width = pct + '%';
+    const remaining = Math.max(0, Math.ceil((brewMs - elapsed) / 1000));
+    txt.textContent = remaining > 0 ? `${remaining}s remaining` : 'Done!';
+    if (elapsed >= brewMs) {
+      clearInterval(iv);
+      overlay.classList.add('hidden');
+      overlay.innerHTML = '';
+      callback(stirMult);
     }
-    const [type, diff] = cfg.rounds[roundIdx];
-    const roundLabel = cfg.rounds.length > 1
-      ? `${cfg.label} (${roundIdx + 1}/${cfg.rounds.length})`
-      : cfg.label;
-    showMinigame(type, diff, roundLabel, (mult) => {
-      totalMult += mult;
-      roundIdx++;
-      // Small delay between rounds so player can see result
-      setTimeout(runRound, 900);
-    });
-  }
-
-  runRound();
+  }, 100);
 }
 
 function attemptBrew() {
@@ -393,8 +421,9 @@ function renderAlchemy() {
         </div>`;
       }).join('');
 
-  // Undiscovered recipes with hints
-  const undiscovered = ALCHEMY_RECIPES.filter(r => !p.alchemyRecipes.includes(r.id));
+  // Undiscovered recipes with hints — strictly exclude anything already in alchemyRecipes
+  const discoveredSet = new Set(p.alchemyRecipes);
+  const undiscovered = ALCHEMY_RECIPES.filter(r => !discoveredSet.has(r.id));
   const hintedHtml = undiscovered.length === 0 ? '' : `
     <h3 style="margin-top:20px">🔍 Undiscovered Recipes</h3>
     <div class="card-grid" style="margin-top:8px">
