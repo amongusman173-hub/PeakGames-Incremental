@@ -74,10 +74,10 @@ const ALCHEMY_RECIPES = [
 
 // ── HINT UPGRADES — buy to reveal recipe hints ──
 const ALCHEMY_HINT_UPGRADES = [
-  { id: 'hint_common',    name: 'Common Hints',    icon: '📗', desc: 'Reveals hints for all Common recipes.',    cost: 300,  rarity: 'common'    },
-  { id: 'hint_uncommon',  name: 'Uncommon Hints',  icon: '📘', desc: 'Reveals hints for all Uncommon recipes.',  cost: 800,  rarity: 'uncommon'  },
-  { id: 'hint_rare',      name: 'Rare Hints',      icon: '📙', desc: 'Reveals hints for all Rare recipes.',      cost: 2000, rarity: 'rare'      },
-  { id: 'hint_legendary', name: 'Legendary Hints', icon: '📕', desc: 'Reveals hints for all Legendary recipes.', cost: 6000, rarity: 'legendary' },
+  { id: 'hint_common',    name: 'Common Hints',    icon: '📗', desc: 'Reveals hints for all Common recipes.',    cost: 5000,   rarity: 'common'    },
+  { id: 'hint_uncommon',  name: 'Uncommon Hints',  icon: '📘', desc: 'Reveals hints for all Uncommon recipes.',  cost: 20000,  rarity: 'uncommon'  },
+  { id: 'hint_rare',      name: 'Rare Hints',      icon: '📙', desc: 'Reveals hints for all Rare recipes.',      cost: 75000,  rarity: 'rare'      },
+  { id: 'hint_legendary', name: 'Legendary Hints', icon: '📕', desc: 'Reveals hints for all Legendary recipes.', cost: 250000, rarity: 'legendary' },
 ];
 
 function hasHintFor(rarity) {
@@ -433,15 +433,14 @@ function renderAlchemy() {
           <div style="font-size:24px">❓</div>
           <div style="font-size:11px;color:var(--dim);margin-top:4px">${r.rarity} recipe — buy hint to reveal</div>
         </div>`;
-        // Show partial hint: first 2 ingredients and total count
-        const hintIngs = r.ingredients.slice(0, 2).map(id => {
+        // Show all ingredients
+        const allIngs = r.ingredients.map(id => {
           const ing = ALCHEMY_INGREDIENTS.find(x => x.id === id);
           return ing ? `${ing.icon} ${ing.name}` : '?';
         });
-        const more = r.ingredients.length > 2 ? ` + ${r.ingredients.length - 2} more` : '';
         return `<div class="card" style="padding:10px">
           <div style="font-size:11px;color:var(--dim)">🔍 ${r.rarity} · ${r.ingredients.length} ingredients</div>
-          <div style="font-size:12px;margin-top:4px;color:var(--text)">${hintIngs.join(' + ')}${more}</div>
+          <div style="font-size:12px;margin-top:4px;color:var(--text)">${allIngs.join(' + ')}</div>
           <div style="font-size:11px;color:var(--dim);margin-top:2px">Discover the full recipe by experimenting!</div>
         </div>`;
       }).join('')}

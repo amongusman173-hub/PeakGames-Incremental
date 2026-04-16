@@ -371,7 +371,7 @@ function renderRebirthPanel() {
       <div style="background:rgba(108,159,255,0.1);border:1px solid rgba(108,159,255,0.25);border-radius:8px;padding:10px;margin-bottom:12px">
         <div style="font-size:11px;color:var(--dim);margin-bottom:4px">Next ascension at Lv.${p.level} gives:</div>
         <div style="font-size:14px;font-weight:700;color:var(--accent)">+${pctXP}% XP / Gold / Train &nbsp;·&nbsp; +${pctLuck}% Luck</div>
-        <div style="font-size:10px;color:var(--dim);margin-top:4px">Heritage, vessel_switch, and equipped slots are preserved.</div>
+        <div style="font-size:10px;color:var(--dim);margin-top:4px">Heritage and its techniques are preserved.</div>
       </div>` : ''}
     </div>
 
@@ -389,9 +389,8 @@ function renderRebirthPanel() {
       <h3 style="color:var(--dim);font-size:12px;margin-bottom:8px">ℹ️ What carries over</h3>
       <ul style="font-size:12px;color:var(--dim);line-height:1.9;padding-left:16px;margin:0">
         <li>✅ Heritage (Clan, Weapon, Style) and their techniques</li>
-        <li>✅ Vessel Switch (Sukuna's Finger)</li>
         <li>✅ All ascension multipliers</li>
-        <li>❌ Level, gold, stats, other techniques, story progress</li>
+        <li>❌ Level, gold, stats, techniques, story progress</li>
       </ul>
     </div>`;
 
@@ -431,7 +430,7 @@ document.addEventListener('DOMContentLoaded', () => {
       `You will gain:\n` +
       `• +${pctXP}% XP, Gold, and Training gains\n` +
       `• +${pctLuck}% Luck\n\n` +
-      `Heritage, vessel_switch, and equipped slots are preserved.\n` +
+      `Heritage and its techniques are preserved.\n` +
       `All other progress resets. Multipliers stack forever.`
     )) {
       performRebirth();
