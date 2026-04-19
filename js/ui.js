@@ -328,7 +328,7 @@ function openAdminPanel() {
   });
 
   function submit() {
-    if (input.value === 'mango') {
+    if (input.value === 'm@ango') {
       modal.remove();
       renderAdminPanel();
       document.getElementById('admin-panel')?.classList.remove('hidden');
