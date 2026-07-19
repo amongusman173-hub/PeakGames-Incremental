@@ -132,19 +132,11 @@ function performRebirth() {
   const heritage       = { ...(p.heritage || {}) };
   const heritageRerolls= { ...(p.heritageRerolls || {}) };
   const heritageSkip   = p.heritageSkipAnim || false;
+  const achievements   = [...(p.achievements || [])];
 
-  // Keep vessel_switch technique (Sukuna's Finger) — it's a permanent unlock
-  const keepTechs = (p.techniques || []).filter(id => id === 'vessel_switch');
-  // Keep equipped slots that reference kept techniques
-  let keepEquipped = (p.equipped || [null,null,null,null]).map(id =>
-    keepTechs.includes(id) ? id : null
-  );
-  // If vessel_switch is kept but not in any slot, auto-equip it in slot 0
-  if (keepTechs.includes('vessel_switch') && !keepEquipped.includes('vessel_switch')) {
-    const emptySlot = keepEquipped.indexOf(null);
-    if (emptySlot >= 0) keepEquipped[emptySlot] = 'vessel_switch';
-    else keepEquipped[0] = 'vessel_switch';
-  }
+  // Keep heritage techniques (they're re-granted below)
+  const keepTechs = [];
+  const keepEquipped = [null, null, null, null];
 
   resetGame();
 
@@ -157,6 +149,7 @@ function performRebirth() {
   G.player.heritageSkipAnim= heritageSkip;
   G.player.techniques      = keepTechs;
   G.player.equipped        = keepEquipped;
+  G.player.achievements    = achievements;
 
   // Re-grant heritage techniques (clan/weapon/style bonuses)
   _reapplyHeritageTechs();
@@ -168,7 +161,7 @@ function performRebirth() {
   G.player.techniques.forEach(id => {
     if (G.player.equipped.includes(id)) return; // already slotted
     const t = typeof TECHNIQUES !== 'undefined' ? TECHNIQUES.find(x => x.id === id) : null;
-    if (!t || t._vesselOnly) return;
+    if (!t) return;
     const slot = G.player.equipped.indexOf(null);
     if (slot >= 0) G.player.equipped[slot] = id;
   });
@@ -189,6 +182,7 @@ function performRebirth() {
   renderStoryChapters();
   renderInventory();
   renderHeritage();
+  if (typeof updateTabLockStates === 'function') updateTabLockStates();
 }
 
 function _ascensionVFX(count, level, pctXP, pctLuck) {
@@ -218,81 +212,99 @@ function _ascensionVFX(count, level, pctXP, pctLuck) {
     const el = document.createElement('div');
     el.textContent = text;
     el.style.cssText = `position:fixed;z-index:10001;pointer-events:none;
-      left:50%;top:${cy + yOffset}px;transform:translateX(-50%);
+      left:50%;top:${cy + yOffset}px;transform:translateX(-50%) scale(0.5);
       font-size:${fontSize || 32}px;font-weight:900;color:${color};
       text-shadow:0 0 20px ${color},0 0 40px ${color};white-space:nowrap;
-      animation:floatUp 1.4s ease-out forwards;animation-delay:${delay}ms;`;
+      animation:ascLabelIn 1.4s cubic-bezier(0.34,1.56,0.64,1) forwards;animation-delay:${delay}ms;`;
     document.body.appendChild(el);
     setTimeout(() => el.remove(), 1600 + delay);
   }
 
   const GOLD   = ['#f5c542','#ffdd66','#ff9900','#fff9c4','#fff','#ffe082'];
   const PURPLE = ['#b388ff','#7c4dff','#e040fb','#ea80fc','#fff','#ce93d8'];
+  const WHITE  = ['#ffffff','#f5f5f5','#e0e0e0','#ffffff'];
 
-  // Phase 1 — white flash
-  flash('rgba(255,255,255,0.95)', 400, 0);
+  // Phase 0 (0ms) — expanding ring
+  const ring = document.createElement('div');
+  ring.style.cssText = `position:fixed;z-index:9999;pointer-events:none;border:3px solid rgba(245,197,66,0.6);
+    left:${cx}px;top:${cy}px;width:0;height:0;border-radius:50%;transform:translate(-50%,-50%);
+    animation:ascRing 1.2s ease-out forwards;`;
+  document.body.appendChild(ring);
+  setTimeout(() => ring.remove(), 1300);
 
-  // Phase 2 (300ms) — gold explosion
+  // Phase 1 (100ms) — white flash
+  flash('rgba(255,255,255,0.95)', 400, 100);
+
+  // Phase 2 (400ms) — gold explosion (80 particles!)
   setTimeout(() => {
-    for (let i = 0; i < 60; i++) {
-      const angle = (Math.PI * 2 * i / 60) + Math.random() * 0.3;
-      spawnParticle(GOLD[i % GOLD.length], angle, 80 + Math.random() * 220, 4 + Math.random() * 10, 900 + Math.random() * 400, 0);
+    for (let i = 0; i < 80; i++) {
+      const angle = (Math.PI * 2 * i / 80) + Math.random() * 0.2;
+      spawnParticle(GOLD[i % GOLD.length], angle, 100 + Math.random() * 280, 3 + Math.random() * 12, 1000 + Math.random() * 500, 0);
     }
-    flash('rgba(245,197,66,0.55)', 600, 0);
-  }, 300);
+    flash('rgba(245,197,66,0.6)', 700, 0);
+  }, 400);
 
-  // Phase 3 (500ms) — purple wave
+  // Phase 3 (600ms) — purple wave (50 particles)
   setTimeout(() => {
-    for (let i = 0; i < 40; i++) {
-      const angle = (Math.PI * 2 * i / 40) + Math.random() * 0.5;
-      spawnParticle(PURPLE[i % PURPLE.length], angle, 120 + Math.random() * 180, 3 + Math.random() * 8, 800 + Math.random() * 300, 0);
+    for (let i = 0; i < 50; i++) {
+      const angle = (Math.PI * 2 * i / 50) + Math.random() * 0.4;
+      spawnParticle(PURPLE[i % PURPLE.length], angle, 140 + Math.random() * 200, 3 + Math.random() * 9, 900 + Math.random() * 350, 0);
     }
-    flash('rgba(124,77,255,0.3)', 500, 0);
-  }, 500);
+    flash('rgba(124,77,255,0.35)', 500, 0);
+  }, 600);
 
-  // Phase 4 (700ms) — 12 star ring
+  // Phase 4 (800ms) — white particle burst
   setTimeout(() => {
-    for (let i = 0; i < 12; i++) {
-      const angle = (Math.PI * 2 * i / 12);
+    for (let i = 0; i < 30; i++) {
+      const angle = (Math.PI * 2 * i / 30) + Math.random() * 0.6;
+      spawnParticle(WHITE[i % WHITE.length], angle, 60 + Math.random() * 160, 2 + Math.random() * 5, 600 + Math.random() * 200, 0);
+    }
+  }, 800);
+
+  // Phase 5 (900ms) — 16 star ring (rotating)
+  setTimeout(() => {
+    for (let i = 0; i < 16; i++) {
+      const angle = (Math.PI * 2 * i / 16);
       const star = document.createElement('div');
       star.textContent = '✨';
       star.style.cssText = `position:fixed;z-index:10000;pointer-events:none;font-size:24px;
-        left:${cx + Math.cos(angle) * 160 - 12}px;top:${cy + Math.sin(angle) * 160 - 12}px;
-        animation:floatUp 1.2s ease-out forwards;animation-delay:${i * 40}ms;`;
+        left:${cx + Math.cos(angle) * 180 - 12}px;top:${cy + Math.sin(angle) * 180 - 12}px;
+        animation:ascStarBurst 1.4s ease-out forwards;animation-delay:${i * 35}ms;`;
       document.body.appendChild(star);
-      setTimeout(() => star.remove(), 1400 + i * 40);
+      setTimeout(() => star.remove(), 1600 + i * 35);
     }
-  }, 700);
+  }, 900);
 
-  // Phase 5 (800ms) — screen shake
+  // Phase 6 (1000ms) — screen shake (intense)
   setTimeout(() => {
     const scene = document.getElementById('content') || document.body;
     let t = 0;
     const iv = setInterval(() => {
-      const x = (Math.random() - 0.5) * 14 * (1 - t / 8);
-      const y = (Math.random() - 0.5) * 8  * (1 - t / 8);
+      const decay = 1 - t / 10;
+      const x = (Math.random() - 0.5) * 18 * decay;
+      const y = (Math.random() - 0.5) * 12 * decay;
       scene.style.transform = `translate(${x}px,${y}px)`;
-      if (++t >= 8) { clearInterval(iv); scene.style.transform = ''; }
-    }, 60);
-  }, 800);
+      if (++t >= 10) { clearInterval(iv); scene.style.transform = ''; }
+    }, 50);
+  }, 1000);
 
-  // Phase 6 (900–1300ms) — floating text labels
-  setTimeout(() => floatLabel('✨ ASCENDED ✨',                        '#f5c542', -80, 0, 36), 900);
-  setTimeout(() => floatLabel(`Ascension ×${count}  (Lv.${level})`,   '#fff',    -30, 0, 20), 1100);
-  setTimeout(() => floatLabel(`+${pctXP}% XP/Gold  ·  +${pctLuck}% Luck`, '#b388ff', 20, 0, 16), 1300);
+  // Phase 7 (1100–1500ms) — floating text labels
+  setTimeout(() => floatLabel('✨ ASCENDED ✨',                        '#f5c542', -90, 0, 40), 1100);
+  setTimeout(() => floatLabel(`Ascension ×${count}  (Lv.${level})`,   '#fff',    -35, 0, 22), 1300);
+  setTimeout(() => floatLabel(`+${pctXP}% XP/Gold  ·  +${pctLuck}% Luck`, '#b388ff', 15, 0, 16), 1500);
 
-  // Phase 7 (1200ms) — final white fade
-  flash('rgba(255,255,255,0.6)', 800, 1200);
+  // Phase 8 (1500ms) — final gold flash
+  flash('rgba(255,255,255,0.5)', 600, 1500);
 
-  // Phase 8 (1600ms) — trailing gold burst + toasts
+  // Phase 9 (1800ms) — trailing sparkle burst + toasts
   setTimeout(() => {
-    for (let i = 0; i < 30; i++) {
-      const angle = (Math.PI * 2 * i / 30) + Math.random() * 0.4;
-      spawnParticle(GOLD[i % GOLD.length], angle, 60 + Math.random() * 140, 3 + Math.random() * 6, 600, 0);
+    for (let i = 0; i < 40; i++) {
+      const angle = (Math.PI * 2 * i / 40) + Math.random() * 0.3;
+      spawnParticle(GOLD[i % GOLD.length], angle, 50 + Math.random() * 150, 2 + Math.random() * 7, 700, 0);
     }
     toast(`✨ Ascension ${count}! (Lv.${level}) +${pctXP}% XP/Gold/Train, +${pctLuck}% Luck`, 'rare');
     spawnFloatingText('✨ ASCENDED!', 'float-xp');
-  }, 1600);
+  }, 1800);
 }
 
 // Re-grant technique unlocks from current heritage after ascension
@@ -309,12 +321,6 @@ function _reapplyHeritageTechs() {
   sources.forEach(item => {
     if (!item) return;
     if (item.techs) item.techs.forEach(id => grantTechnique(id));
-    if (item._gojo && typeof GOJO_TECHNIQUES !== 'undefined') {
-      GOJO_TECHNIQUES.forEach(t => {
-        if (!TECHNIQUES.find(x => x.id === t.id)) TECHNIQUES.push(t);
-      });
-      ['infinity','reversal_red','lapse_blue','hollow_purple','domain_infinite_void'].forEach(id => grantTechnique(id));
-    }
   });
 }
 
@@ -341,7 +347,7 @@ function renderRebirthPanel() {
   const historyHtml = history.length > 0
     ? history.map((lvl, i) => {
         const b = getAscensionBonusForLevel(lvl);
-        return `<div style="font-size:11px;color:var(--dim);display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
+        return `<div class="asc-history-row" style="animation-delay:${i * 0.05}s">
           <span>✨ Ascension ${i+1} <span style="color:var(--text)">(Lv.${lvl})</span></span>
           <span style="color:var(--ok)">+${Math.round(b.xp*100)}% XP/Gold · +${Math.round(b.luck*100)}% Luck</span>
         </div>`;
@@ -355,66 +361,83 @@ function renderRebirthPanel() {
     [90, 35, 15], [100, 40, 17],
   ];
   const tableHtml = TABLE.map(([lvl, xp, luck]) => {
-    const isNext = p.level >= lvl && p.level < (lvl + 10 < 100 ? lvl + 10 : 999);
-    return `<div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 6px;border-radius:4px;${isNext ? 'background:rgba(108,159,255,0.12);color:var(--text)' : 'color:var(--dim)'}">
-      <span>Lv.${lvl}${lvl < 100 ? '–' + (lvl+9) : '+'}</span>
-      <span>+${xp}% XP/Gold/Train · +${luck}% Luck</span>
+    const isCurrent = p.level >= lvl && p.level < (lvl + 10 < 100 ? lvl + 10 : 999);
+    const isPast = p.level >= (lvl + 10);
+    return `<div class="asc-table-row ${isCurrent ? 'asc-table-current' : ''} ${isPast ? 'asc-table-past' : ''}">
+      <span class="asc-table-level">Lv.${lvl}${lvl < 100 ? '–' + (lvl+9) : '+'}</span>
+      <span class="asc-table-bonus">+${xp}% XP/Gold/Train · +${luck}% Luck</span>
     </div>`;
   }).join('');
 
   const starsHtml = history.length > 0
-    ? Array.from({length: Math.min(history.length, 10)}, () => '✨').join('')
+    ? Array.from({length: Math.min(history.length, 10)}, (_, i) => `<span class="asc-star" style="animation-delay:${i * 0.1}s">✨</span>`).join('')
     : '—';
 
+  // Progress to next level bracket
+  const currentBracketStart = TABLE.find(([lvl]) => p.level >= lvl && p.level < (lvl + 10 < 100 ? lvl + 10 : 999));
+  const nextBracket = TABLE.find(([lvl]) => lvl > p.level);
+  const progressToNext = nextBracket ? Math.min(100, Math.floor(((p.level - (currentBracketStart?.[0] || 30)) / (nextBracket[0] - (currentBracketStart?.[0] || 30))) * 100)) : 100;
+
   const ascHtml = `
-    <div class="card" style="border-color:var(--gold);background:rgba(245,197,66,0.07);margin-bottom:16px">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
-        <div style="font-size:36px">✨</div>
+    <div class="card asc-main-card" style="border-color:var(--gold);margin-bottom:16px">
+      <div class="asc-header">
+        <div class="asc-icon-wrap">
+          <span class="asc-icon">✨</span>
+          <div class="asc-icon-ring"></div>
+        </div>
         <div>
-          <div style="font-size:18px;font-weight:800;color:var(--gold)">Ascension ×${p.rebirthCount}</div>
-          <div style="font-size:12px;color:var(--dim);margin-top:2px">${starsHtml}</div>
+          <div class="asc-title">Ascension ×${p.rebirthCount}</div>
+          <div class="asc-stars">${starsHtml}</div>
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
-        <div style="background:rgba(0,0,0,0.2);border-radius:8px;padding:10px;text-align:center">
-          <div style="font-size:10px;color:var(--dim);margin-bottom:4px">📚 XP / 💰 Gold / 💪 Train</div>
-          <div style="font-size:20px;font-weight:800;color:var(--ok)">${asc.xpMult.toFixed(2)}×</div>
+      <div class="asc-multipliers">
+        <div class="asc-mult-card asc-mult-xp">
+          <div class="asc-mult-label">📚 XP / 💰 Gold / 💪 Train</div>
+          <div class="asc-mult-value" style="color:var(--ok)">${asc.xpMult.toFixed(2)}×</div>
         </div>
-        <div style="background:rgba(0,0,0,0.2);border-radius:8px;padding:10px;text-align:center">
-          <div style="font-size:10px;color:var(--dim);margin-bottom:4px">🍀 Luck</div>
-          <div style="font-size:20px;font-weight:800;color:var(--accent2)">${asc.luckMult.toFixed(2)}×</div>
+        <div class="asc-mult-card asc-mult-luck">
+          <div class="asc-mult-label">🍀 Luck</div>
+          <div class="asc-mult-value" style="color:var(--accent2)">${asc.luckMult.toFixed(2)}×</div>
         </div>
       </div>
       ${p.level >= 30 ? `
-      <div style="background:rgba(108,159,255,0.1);border:1px solid rgba(108,159,255,0.25);border-radius:8px;padding:10px;margin-bottom:12px">
-        <div style="font-size:11px;color:var(--dim);margin-bottom:4px">Next ascension at Lv.${p.level} gives:</div>
-        <div style="font-size:14px;font-weight:700;color:var(--accent)">+${pctXP}% XP / Gold / Train &nbsp;·&nbsp; +${pctLuck}% Luck</div>
+      <div class="asc-next-preview">
+        <div class="asc-next-header">
+          <span>Next ascension at Lv.${p.level}</span>
+          <span class="asc-next-bonus">+${pctXP}% XP/Gold/Train · +${pctLuck}% Luck</span>
+        </div>
+        <div class="asc-progress-bar">
+          <div class="asc-progress-fill" style="width:${progressToNext}%"></div>
+        </div>
         <div style="font-size:10px;color:var(--dim);margin-top:4px">Heritage and its techniques are preserved.</div>
-      </div>` : ''}
+      </div>` : `
+      <div class="asc-locked-msg">
+        Reach Lv.30 to unlock Ascension
+      </div>`}
     </div>
 
-    <div class="card" style="background:rgba(0,0,0,0.15);margin-bottom:16px">
-      <h3 style="color:var(--dim);font-size:12px;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px">📈 Bonus Scaling Table</h3>
-      <div style="display:flex;flex-direction:column;gap:2px">${tableHtml}</div>
+    <div class="card asc-section-card">
+      <h3 class="asc-section-title">📈 Bonus Scaling Table</h3>
+      <div class="asc-table">${tableHtml}</div>
     </div>
 
-    <div class="card" style="background:rgba(0,0,0,0.15);margin-bottom:16px">
-      <h3 style="color:var(--dim);font-size:12px;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px">📜 Ascension History</h3>
-      <div style="display:flex;flex-direction:column;gap:2px">${historyHtml}</div>
+    <div class="card asc-section-card">
+      <h3 class="asc-section-title">📜 Ascension History</h3>
+      <div class="asc-history">${historyHtml}</div>
     </div>
 
-    <div class="card" style="background:rgba(0,0,0,0.12);margin-bottom:16px">
-      <h3 style="color:var(--dim);font-size:12px;margin-bottom:8px">ℹ️ What carries over</h3>
-      <ul style="font-size:12px;color:var(--dim);line-height:1.9;padding-left:16px;margin:0">
-        <li>✅ Heritage (Clan, Weapon, Style) and their techniques</li>
-        <li>✅ All ascension multipliers</li>
-        <li>❌ Level, gold, stats, techniques, story progress</li>
+    <div class="card asc-section-card">
+      <h3 class="asc-section-title">ℹ️ What carries over</h3>
+      <ul class="asc-carryover-list">
+        <li class="asc-carryover-yes">✅ Heritage (Clan, Weapon, Style) and their techniques</li>
+        <li class="asc-carryover-yes">✅ All ascension multipliers</li>
+        <li class="asc-carryover-no">❌ Level, gold, stats, techniques, story progress</li>
       </ul>
     </div>`;
 
   // Legacy RP — only if player has points
   const legacyHtml = p.rebirthPoints > 0 ? `
-    <div style="margin-bottom:8px">
+    <div class="asc-legacy-header">
       <h3 style="color:var(--gold)">🏛️ Legacy Points — ${p.rebirthPoints} RP</h3>
       <p style="font-size:11px;color:var(--dim);margin-bottom:12px">From old saves. Spend them here.</p>
     </div>
@@ -426,7 +449,7 @@ function renderRebirthPanel() {
         return `<div class="card rebirth-upgrade-card">
           <h3>${upgrade.icon} ${upgrade.name}</h3>
           <div class="card-desc">${upgrade.desc}</div>
-          <div style="font-size:11px;color:var(--dim);margin:4px 0">${owned}/${upgrade.maxLevel}</div>
+          <div class="asc-upgrade-progress">${owned}/${upgrade.maxLevel}</div>
           ${maxed
             ? `<span style="color:var(--ok);font-size:12px">✓ Maxed</span>`
             : `<button class="btn-small" onclick="buyRebirthUpgrade('${upgrade.id}')" ${canBuy ? '' : 'disabled'}>${upgrade.cost} RP</button>`}
@@ -443,15 +466,60 @@ document.addEventListener('DOMContentLoaded', () => {
     if (p.level < 30) { toast('Requires level 30!', 'warn'); return; }
     const pctXP   = Math.round(getAscensionBonusForLevel(p.level).xp   * 100);
     const pctLuck = Math.round(getAscensionBonusForLevel(p.level).luck  * 100);
-    if (confirm(
-      `Ascend at level ${p.level}?\n\n` +
-      `You will gain:\n` +
-      `• +${pctXP}% XP, Gold, and Training gains\n` +
-      `• +${pctLuck}% Luck\n\n` +
-      `Heritage and its techniques are preserved.\n` +
-      `All other progress resets. Multipliers stack forever.`
-    )) {
-      performRebirth();
-    }
+    showAscensionConfirm(p.level, pctXP, pctLuck);
   });
 });
+
+function showAscensionConfirm(level, pctXP, pctLuck) {
+  const existing = document.getElementById('asc-confirm-modal');
+  if (existing) existing.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'asc-confirm-modal';
+  modal.style.cssText = `position:fixed;inset:0;z-index:4000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0);backdrop-filter:blur(0px);transition:background 0.3s,backdrop-filter 0.3s`;
+  modal.innerHTML = `
+    <div class="asc-confirm-card" style="background:var(--bg2);border:1px solid var(--gold);border-radius:14px;padding:28px 32px;min-width:300px;max-width:360px;box-shadow:0 8px 40px rgba(0,0,0,0.6),0 0 40px rgba(245,197,66,0.1);transform:scale(0.85) translateY(20px);opacity:0;transition:transform 0.35s cubic-bezier(0.34,1.56,0.64,1),opacity 0.25s ease;text-align:center">
+      <div style="font-size:40px;margin-bottom:8px;filter:drop-shadow(0 0 12px rgba(245,197,66,0.5))">✨</div>
+      <div style="font-size:20px;font-weight:800;color:var(--gold);margin-bottom:12px">Ascend at Lv.${level}?</div>
+      <div style="background:rgba(0,0,0,0.2);border-radius:10px;padding:14px;margin-bottom:16px;text-align:left">
+        <div style="font-size:13px;color:var(--dim);margin-bottom:8px">You will gain:</div>
+        <div style="font-size:14px;color:var(--ok);font-weight:700;margin-bottom:4px">+${pctXP}% XP, Gold, and Training gains</div>
+        <div style="font-size:14px;color:var(--accent2);font-weight:700;margin-bottom:8px">+${pctLuck}% Luck</div>
+        <div style="font-size:11px;color:var(--dim);border-top:1px solid rgba(255,255,255,0.06);padding-top:8px;margin-top:4px">
+          ✅ Heritage preserved<br>❌ All other progress resets
+        </div>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button id="asc-confirm-yes" class="btn-primary" style="flex:1;background:linear-gradient(135deg,var(--gold),#ff9900);border:none;color:#111;font-weight:700">✨ Ascend</button>
+        <button id="asc-confirm-no" class="btn-small" style="flex:1">Cancel</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+
+  // Animate in
+  requestAnimationFrame(() => {
+    modal.style.background = 'rgba(0,0,0,0.7)';
+    modal.style.backdropFilter = 'blur(4px)';
+    const card = modal.querySelector('.asc-confirm-card');
+    if (card) {
+      card.style.transform = 'scale(1) translateY(0)';
+      card.style.opacity = '1';
+    }
+  });
+
+  function close() {
+    const card = modal.querySelector('.asc-confirm-card');
+    if (card) {
+      card.style.transform = 'scale(0.9)';
+      card.style.opacity = '0';
+      card.style.transition = 'transform 0.2s ease, opacity 0.15s ease';
+    }
+    modal.style.background = 'rgba(0,0,0,0)';
+    modal.style.backdropFilter = 'blur(0px)';
+    setTimeout(() => modal.remove(), 250);
+  }
+
+  modal.querySelector('#asc-confirm-yes').addEventListener('click', () => { close(); setTimeout(performRebirth, 280); });
+  modal.querySelector('#asc-confirm-no').addEventListener('click', close);
+  modal.addEventListener('click', e => { if (e.target === modal) close(); });
+}

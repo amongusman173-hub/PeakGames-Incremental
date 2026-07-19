@@ -71,19 +71,41 @@ function startJob(jobId) {
   renderJobs();
 }
 
+function getJobTier(job) {
+  const lv = job.levelReq;
+  if (lv >= 50) return 6;
+  if (lv >= 35) return 5;
+  if (lv >= 20) return 4;
+  if (lv >= 10) return 3;
+  if (lv >= 5)  return 2;
+  return 1;
+}
+
 function quickJob(jobId) {
   const job = JOBS.find(j => j.id === jobId);
   if (!job || !canDoJob(job)) return;
+  const tier = getJobTier(job);
+  if (tier >= 2) {
+    const reqChapter = 'ch' + tier;
+    if (!G.player.completedChapters || !G.player.completedChapters.includes(reqChapter)) {
+      toast(`🔒 Complete Story Chapter ${tier} to Quick Job this work!`, 'warn');
+      return;
+    }
+  }
   const staminaCost = job.staminaPerCycle || 0;
   if (staminaCost > 0 && !spendStamina(staminaCost)) {
     toast(`⚡ Not enough stamina! Need ${staminaCost}, have ${Math.floor(G.player.stamina)}.`, 'warn');
     return;
   }
   quickJobMinigame(job, (mult) => {
+    if (mult < 0.5) {
+      toast(`Quick Job failed! (${mult.toFixed(1)}x) — no pay.`, 'warn');
+      return;
+    }
     const goldMult = getUpgradeValue('job_gold_mult');
     const xpMult   = getUpgradeValue('job_xp_mult');
     const earned = gainGold(Math.floor(job.goldPerCycle * goldMult * mult));
-    gainXP(Math.floor(job.xpPerCycle * xpMult));
+    gainXP(Math.floor(job.xpPerCycle * xpMult * mult));
     spawnFloatingText(`+${earned}g`, 'float-gold');
     toast(`Quick job: +${earned}g! (${mult.toFixed(1)}x)`, 'success');
     if (typeof G.player._quickJobCount === 'number') G.player._quickJobCount++; else G.player._quickJobCount = 1;
@@ -165,7 +187,21 @@ function renderJobs() {
     }
   }
 
-  container.innerHTML = JOBS.map(job => {
+  const quickUnlocked = G.player.completedChapters && G.player.completedChapters.includes('ch1');
+
+  // Compute best job (highest gold/s among unlocked)
+  let bestJobId = null;
+  let bestGoldPerSec = 0;
+  JOBS.forEach(job => {
+    if (!canDoJob(job)) return;
+    const gm = getUpgradeValue('job_gold_mult');
+    const cycleSec = job.ticksNeeded * G.tickRate / 1000;
+    const gps = (job.goldPerCycle * gm) / cycleSec;
+    if (gps > bestGoldPerSec) { bestGoldPerSec = gps; bestJobId = job.id; }
+  });
+
+  let html = '';
+  JOBS.forEach(job => {
     const unlocked = canDoJob(job);
     const active = G.activeJob === job.id;
     const progress = (p.jobProgress && p.jobProgress[job.id]) || 0;
@@ -173,29 +209,41 @@ function renderJobs() {
     const cycleTime = (job.ticksNeeded * G.tickRate / 1000).toFixed(1);
     const goldMult = getUpgradeValue('job_gold_mult');
     const goldDisplay = Math.floor(job.goldPerCycle * goldMult);
+    const goldPerSec = (job.goldPerCycle * goldMult / (job.ticksNeeded * G.tickRate / 1000)).toFixed(1);
+    const isBest = unlocked && job.id === bestJobId;
+    const elapsedSec = active ? ((progress * G.tickRate) / 1000).toFixed(1) : null;
+    const jobTier = getJobTier(job);
+    const jobQuickOk = jobTier < 2 || (p.completedChapters && p.completedChapters.includes('ch' + jobTier));
 
-    return `
-      <div class="card${active ? ' card-active' : ''}${!unlocked ? ' card-locked-dim' : ''}">
-        <div class="card-top-row">
-          <h3>${job.icon} ${job.name}${active ? ' <span class="active-dot">●</span>' : ''}</h3>
-          ${active ? `<span class="job-cycle-badge">${cycleTime}s cycle</span>` : ''}
+    html += `
+      <div class="card${active ? ' card-active' : ''}${!unlocked ? ' card-locked-dim' : ''}${isBest ? ' card-best-job' : ''}"${!unlocked ? ` onclick="toast('🔒 Requires Lv.${job.levelReq}${job.atkReq > 0 ? ` / ${job.atkReq} ATK` : ''}','warn')"` : ''}${isBest ? ' style="border:1px solid rgba(255,215,0,0.5)"' : ''}>
+        <div class="card-inner">
+          <div class="card-top-row">
+            <h3>${job.icon} ${job.name}${active ? ' <span class="active-dot">●</span>' : ''}${isBest ? ' <span style="font-size:11px;color:gold">★ Best</span>' : ''}</h3>
+            ${active ? `<span class="job-cycle-badge">${cycleTime}s cycle</span>` : ''}
+          </div>
+          <div class="card-desc">${job.desc}</div>
+          <div class="card-stats">
+            <span class="highlight">💰 ${goldDisplay} / cycle</span>
+            <span>⏱ ${cycleTime}s</span>
+            <span>📈 ${goldPerSec} gold/s</span>
+            <span>⚡ ${job.staminaPerCycle || 0} STA</span>
+            ${job.atkReq > 0 ? `<span>⚔️ ${job.atkReq} ATK</span>` : ''}
+          </div>
+          ${active ? `<div class="progress-bar-wrap"><div class="bar-track"><div id="job-progress-bar-${job.id}" class="bar gold-bar" style="width:${pct}%"></div></div><span style="font-size:11px;color:var(--text-dim);margin-top:2px">${elapsedSec}s / ${cycleTime}s</span></div>` : ''}
+          ${unlocked
+            ? `<div style="display:flex;gap:6px;flex-wrap:wrap">
+                 <button class="btn-primary${active ? ' btn-stop' : ''}" onclick="startJob('${job.id}')">${active ? '■ Stop' : '▶ Work'}</button>
+                 ${!active && jobQuickOk ? `<button class="btn-small" onclick="quickJob('${job.id}')" title="Do one cycle instantly with a minigame">⚡ Quick</button>` : ''}
+                 ${!active && !jobQuickOk ? `<span class="card-locked" style="font-size:10px;padding:0">⚡ Quick: Ch.${jobTier}</span>` : ''}
+               </div>`
+            : ''
+          }
         </div>
-        <div class="card-desc">${job.desc}</div>
-        <div class="card-stats">
-          <span class="highlight">💰 ${goldDisplay} / cycle</span>
-          <span>⏱ ${cycleTime}s</span>
-          <span>⚡ ${job.staminaPerCycle || 0} STA</span>
-          ${job.atkReq > 0 ? `<span>⚔️ ${job.atkReq} ATK</span>` : ''}
-        </div>
-        ${active ? `<div class="progress-bar-wrap"><div class="bar-track"><div id="job-progress-bar-${job.id}" class="bar gold-bar" style="width:${pct}%"></div></div></div>` : ''}
-        ${unlocked
-          ? `<div style="display:flex;gap:6px;flex-wrap:wrap">
-               <button class="btn-primary${active ? ' btn-stop' : ''}" onclick="startJob('${job.id}')">${active ? '■ Stop' : '▶ Work'}</button>
-               ${!active ? `<button class="btn-small" onclick="quickJob('${job.id}')" title="Do one cycle instantly with a minigame">⚡ Quick</button>` : ''}
-             </div>`
-          : `<div class="card-locked">🔒 Lv.${job.levelReq}${job.atkReq > 0 ? ` / ${job.atkReq} ATK` : ''}</div>`
-        }
+        ${!unlocked ? `<div class="card-lock-overlay">🔒 Lv.${job.levelReq}${job.atkReq > 0 ? ` / ${job.atkReq} ATK` : ''}</div>` : ''}
       </div>
     `;
-  }).join('');
+  });
+
+  container.innerHTML = html;
 }

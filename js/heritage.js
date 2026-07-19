@@ -19,11 +19,10 @@ const CLANS = [
   // Legendary (2.5%)
   { id: 'demon_clan',   name: 'Demon Clan',       icon: '😈', rarity: 'legendary', weight: 1,  desc: 'Cursed bloodline of the underworld.',bonus: { atk: 60, spd: 30 },   techs: ['hellfire', 'void_rend'] },
   { id: 'god_clan',     name: 'God Clan',         icon: '🌟', rarity: 'legendary', weight: 0.5,desc: 'Divine blood flows through you.',  bonus: { atk: 50, def: 40, maxHp: 200 }, techs: ['holy_slash', 'divine_heal'] },
-  // SECRET (~0.1%) — Gojo Clan
-  { id: 'gojo_clan',    name: 'Gojo Clan',        icon: '🔵', rarity: 'secret',    weight: 0.1, desc: 'The honored one. Six Eyes. Infinity.',
+  // SECRET (~0.1%)
+  { id: 'ethereal_clan', name: 'Ethereal Clan',   icon: '🪐', rarity: 'secret',    weight: 0.1, desc: 'Born between worlds. Reality bends to your will.',
     bonus: { atk: 100, def: 80, spd: 60, maxHp: 500 },
-    techs: ['infinity', 'reversal_red', 'lapse_blue', 'hollow_purple', 'domain_infinite_void'],
-    _gojo: true },
+    techs: ['astral_slash', 'chrono_strike', 'void_nova', 'celestial_wrath', 'nexus_storm'] },
 ];
 
 // ── WEAPONS ──
@@ -35,7 +34,7 @@ const WEAPONS = [
   { id: 'dual_blades',  name: 'Dual Blades',       icon: '🗡️', rarity: 'uncommon',  weight: 8,  desc: 'Two blades, twice the cuts.',      bonus: { atk: 18, spd: 10 },     techs: ['fang_strike'] },
   { id: 'greatsword',   name: 'Greatsword',        icon: '🔱', rarity: 'rare',      weight: 5,  desc: 'Massive blade, massive damage.',   bonus: { atk: 35, def: -5 },     techs: ['power_strike'] },
   { id: 'void_blade',   name: 'Void Blade',        icon: '🌑', rarity: 'legendary', weight: 1,  desc: 'A blade forged from void energy.', bonus: { atk: 60, spd: 20 },     techs: ['void_rend', 'shadow_clone'] },
-  { id: 'six_eyes_staff',name:'Six Eyes Staff',    icon: '🔵', rarity: 'secret',    weight: 0.1,desc: 'Amplifies the Six Eyes technique.', bonus: { atk: 80, spd: 50 },    techs: [], _gojo: true },
+  { id: 'starfire_staff',name:'Starfire Staff',    icon: '🌟', rarity: 'secret',    weight: 0.1,desc: 'Forged from a dying star.',       bonus: { atk: 80, spd: 50 },    techs: ['celestial_wrath', 'nexus_storm'] },
 ];
 
 // ── FIGHTING TECHNIQUES ──
@@ -47,25 +46,23 @@ const FIGHTING_STYLES = [
   { id: 'guardian_style',name:'Guardian Style',    icon: '🛡️', rarity: 'uncommon',  weight: 8,  desc: 'Defense is the best offense.',     bonus: { def: 20, maxHp: 80 },   techs: ['counter'] },
   { id: 'shadow_style', name: 'Shadow Style',      icon: '👤', rarity: 'rare',      weight: 5,  desc: 'Move like a ghost.',               bonus: { spd: 20, atk: 15 },     techs: ['shadow_clone', 'death_blow'] },
   { id: 'void_style',   name: 'Void Style',        icon: '🌀', rarity: 'legendary', weight: 1,  desc: 'Harness the power of nothingness.', bonus: { atk: 40, spd: 25 },    techs: ['void_rend', 'thousand_fists'] },
-  { id: 'infinity_style',name:'Infinity Style',    icon: '♾️', rarity: 'secret',    weight: 0.1,desc: 'The pinnacle of jujutsu sorcery.',  bonus: { atk: 70, def: 60, spd: 40 }, techs: [], _gojo: true },
+  { id: 'astral_style', name: 'Astral Style',      icon: '✨', rarity: 'secret',    weight: 0.1,desc: 'Commands the fabric of spacetime.', bonus: { atk: 70, def: 60, spd: 40 }, techs: ['astral_slash', 'chrono_strike'] },
 ];
 
-// ── GOJO TECHNIQUES ──
+// ── CELESTIAL TECHNIQUES ──
 // Added to TECHNIQUES array on grant
-const GOJO_TECHNIQUES = [
-  { id: 'infinity',          name: 'Infinity',              icon: '♾️', rarity: 'legendary', desc: 'Limitless — immune to all damage for 2 turns.',    effect: 'shield',  shieldTurns: 2,  bonus: { def: 50 }, _gojo: true },
-  { id: 'reversal_red',      name: 'Reversal Red',          icon: '🔴', rarity: 'legendary', desc: 'Repel — pushes enemy with explosive force.',        effect: 'damage',  multiplier: 3.5, bonus: { atk: 40 }, _gojo: true, _upgradable: true, _upgradeId: 'reversal_red_max' },
-  { id: 'reversal_red_max',  name: 'Reversal Red MAX',      icon: '🔴', rarity: 'legendary', desc: 'Amplified Red — triple the repulsion force.',       effect: 'damage',  multiplier: 6.0, bonus: { atk: 60 }, _gojo: true },
-  { id: 'lapse_blue',        name: 'Lapse Blue',            icon: '🔵', rarity: 'legendary', desc: 'Attraction — pulls enemy in and crushes them.',     effect: 'stun',    multiplier: 3.0, bonus: { atk: 35, spd: 20 }, _gojo: true, _upgradable: true, _upgradeId: 'lapse_blue_max' },
-  { id: 'lapse_blue_max',    name: 'Lapse Blue MAX',        icon: '🔵', rarity: 'legendary', desc: 'Amplified Blue — gravitational collapse.',          effect: 'multi',   hits: 4, multiplier: 2.0, bonus: { atk: 50, spd: 30 }, _gojo: true },
-  { id: 'hollow_purple',     name: 'Hollow Purple',         icon: '🟣', rarity: 'legendary', desc: 'Red + Blue = Purple. Erases everything in its path.',effect: 'damage', multiplier: 8.0, bonus: { atk: 80, critChance: 0.5 }, _gojo: true },
-  { id: 'domain_infinite_void', name: 'Domain Expansion: Infinite Void', icon: '🌌', rarity: 'legendary',
-    desc: 'Traps the enemy in infinite information. Stuns for 3 turns and deals massive damage.',
-    effect: 'stun', multiplier: 5.0, bonus: { atk: 100, def: 50, spd: 50, critChance: 0.5 }, _gojo: true },
+const CELESTIAL_TECHNIQUES = [
+  { id: 'astral_slash',       name: 'Astral Slash',        icon: '✨', rarity: 'legendary', desc: 'Rend spacetime itself. Immune to damage for 2 turns.', effect: 'shield', shieldTurns: 2, bonus: { def: 50 } },
+  { id: 'chrono_strike',      name: 'Chrono Strike',       icon: '⏳', rarity: 'legendary', desc: 'Slow enemy time — massive damage.', effect: 'damage', multiplier: 3.5, bonus: { atk: 40 }, _upgradable: true, _upgradeId: 'chrono_strike_max' },
+  { id: 'chrono_strike_max',  name: 'Chrono Strike MAX',   icon: '⏳', rarity: 'legendary', desc: 'Time dilation amplified — triple the force.', effect: 'damage', multiplier: 6.0, bonus: { atk: 60 } },
+  { id: 'void_nova',          name: 'Void Nova',           icon: '🌑', rarity: 'legendary', desc: 'Collapse matter into a singularity.', effect: 'stun', multiplier: 3.0, bonus: { atk: 35, spd: 20 }, _upgradable: true, _upgradeId: 'void_nova_max' },
+  { id: 'void_nova_max',      name: 'Void Nova MAX',       icon: '🌑', rarity: 'legendary', desc: 'Singularity collapses inward — devastating.', effect: 'multi', hits: 4, multiplier: 2.0, bonus: { atk: 50, spd: 30 } },
+  { id: 'celestial_wrath',    name: 'Celestial Wrath',     icon: '⚡', rarity: 'legendary', desc: 'Channel the fury of dying stars.', effect: 'damage', multiplier: 8.0, bonus: { atk: 80, critChance: 0.5 } },
+  { id: 'nexus_storm',        name: 'Nexus Storm',         icon: '🌀', rarity: 'legendary', desc: 'Unleash a cosmic tempest. Stuns 3 turns + massive damage.', effect: 'stun', multiplier: 5.0, bonus: { atk: 100, def: 50, spd: 50, critChance: 0.5 } },
 ];
 
-// Track upgrade counts for Red/Blue
-const gojoUpgradeCounts = { reversal_red: 0, lapse_blue: 0 };
+// Track upgrade counts for Chrono Strike / Void Nova
+const celestialUpgradeCounts = { chrono_strike: 0, void_nova: 0 };
 
 // ── ROLL SYSTEM ──
 function weightedRoll(pool) {
@@ -82,7 +79,7 @@ function weightedRoll(pool) {
 const _heritageRolling = { clan: false, weapon: false, style: false };
 
 function rollHeritage(category) {
-  if (_heritageRolling[category]) return; // already rolling
+  if (_heritageRolling[category]) return;
   _heritageRolling[category] = true;
 
   const p = G.player;
@@ -107,32 +104,92 @@ function rollHeritage(category) {
     }
   }
 
-  // Skip animation if setting enabled
-  if (G.player.heritageSkipAnim) {
+  // Always play the reel animation
+  _runReelAnimation(category);
+}
+
+function _getPoolForCategory(category) {
+  if (category === 'clan') return CLANS;
+  if (category === 'weapon') return WEAPONS;
+  if (category === 'style') return FIGHTING_STYLES;
+  return [];
+}
+
+function _runReelAnimation(category) {
+  const pool = _getPoolForCategory(category);
+  if (!pool.length) return;
+
+  const cardEl = document.querySelector(`.heritage-card[data-cat="${category}"]`);
+  if (!cardEl) { _doHeritageRoll(category); _heritageRolling[category] = false; return; }
+
+  const reelWrap = cardEl.querySelector('.heritage-reel-wrap');
+  if (!reelWrap) { _doHeritageRoll(category); _heritageRolling[category] = false; return; }
+
+  const result = weightedRoll(pool);
+  const stripItems = [];
+  for (let i = 0; i < 50; i++) stripItems.push(pool[Math.floor(Math.random() * pool.length)]);
+  stripItems.push(result);
+
+  const itemH = 72;
+  const totalItems = stripItems.length;
+
+  const reelStrip = document.createElement('div');
+  reelStrip.className = 'heritage-reel-strip';
+  reelStrip.innerHTML = stripItems.map((item, i) => `
+    <div class="heritage-reel-item ${i === totalItems - 1 ? 'heritage-reel-final' : ''}" data-rarity="${item.rarity}">
+      <span class="heritage-reel-icon">${item.icon}</span>
+      <span class="heritage-reel-name">${item.name}</span>
+    </div>
+  `).join('');
+
+  reelWrap.innerHTML = '';
+  reelWrap.appendChild(reelStrip);
+
+  const targetY = -(totalItems - 1) * itemH;
+
+  // Phase 1: Fast spin (0 - 2s)
+  reelStrip.style.transition = 'none';
+  reelStrip.style.transform = 'translateY(0px)';
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      const fastTarget = targetY + itemH * 5;
+      reelStrip.style.transition = 'transform 2s cubic-bezier(0.1, 0.7, 0.3, 1)';
+      reelStrip.style.transform = `translateY(${fastTarget}px)`;
+
+      // Phase 2: Slow crawl to final (at 2s)
+      setTimeout(() => {
+        reelStrip.style.transition = 'transform 1.8s cubic-bezier(0.05, 0.9, 0.3, 1)';
+        reelStrip.style.transform = `translateY(${targetY}px)`;
+      }, 2000);
+    });
+  });
+
+  // Dim passed items periodically
+  const dimTimer = setInterval(() => {
+    const items = reelStrip.querySelectorAll('.heritage-reel-item:not(.heritage-reel-final)');
+    items.forEach(el => {
+      const rect = el.getBoundingClientRect();
+      const wrapRect = reelWrap.getBoundingClientRect();
+      const center = wrapRect.top + wrapRect.height / 2;
+      if (Math.abs(rect.top + rect.height / 2 - center) > itemH * 1.2) {
+        el.classList.add('heritage-reel-item-passed');
+      }
+    });
+  }, 80);
+
+  // When animation ends, apply the roll and bounce
+  setTimeout(() => {
+    clearInterval(dimTimer);
     _doHeritageRoll(category);
     _heritageRolling[category] = false;
-    return;
-  }
-
-  // ── Slot machine animation ──
-  const cardEl = document.querySelector(`.heritage-card[data-cat="${category}"]`);
-  const resultArea = cardEl ? cardEl.querySelector('.heritage-result, .heritage-empty') : null;
-  const icons = ['⚙️','💨','🪨','🌑','🔥','⚡','🐉','🌀','✨','😈','🌟','🔵'];
-  let spinCount = 0;
-  const spinEl = document.createElement('div');
-  spinEl.style.cssText = `font-size:40px;text-align:center;padding:12px;`;
-  if (resultArea) resultArea.replaceWith(spinEl);
-
-  const spinInterval = setInterval(() => {
-    spinEl.textContent = icons[spinCount % icons.length];
-    spinEl.style.transform = `scale(${1 + Math.sin(spinCount * 0.8) * 0.2})`;
-    spinCount++;
-    if (spinCount > 18) {
-      clearInterval(spinInterval);
-      _doHeritageRoll(category);
-      _heritageRolling[category] = false;
+    renderHeritage();
+    const finalEl = reelWrap.querySelector('.heritage-reel-final');
+    if (finalEl) {
+      finalEl.classList.add('heritage-reel-stopped');
+      setTimeout(() => finalEl.classList.remove('heritage-reel-stopped'), 500);
     }
-  }, 80);
+  }, 3900);
 }
 
 function _doHeritageRoll(category) {
@@ -148,7 +205,6 @@ function _doHeritageRoll(category) {
   if (oldId) {
     const oldItem = getHeritageItem(category, oldId);
     if (oldItem && oldItem.techs && oldItem.techs.length > 0) {
-      // Collect all techs still granted by the OTHER two categories
       const otherCats = ['clan','weapon','style'].filter(c => c !== category);
       const stillGranted = new Set();
       otherCats.forEach(cat => {
@@ -156,31 +212,9 @@ function _doHeritageRoll(category) {
         if (!otherId) return;
         const other = getHeritageItem(cat, otherId);
         if (other && other.techs) other.techs.forEach(id => stillGranted.add(id));
-        // If other is gojo, keep all gojo techs
-        if (other && other._gojo) {
-          ['infinity','reversal_red','lapse_blue','hollow_purple','domain_infinite_void'].forEach(id => stillGranted.add(id));
-        }
       });
-      // Also keep vessel_switch — it's a permanent dig unlock
-      stillGranted.add('vessel_switch');
-
-      // Remove old techs that aren't still granted elsewhere
+      stillGranted.add('astral_slash');
       const toRemove = oldItem.techs.filter(id => !stillGranted.has(id));
-      // If old item was gojo, also remove gojo techs (unless another category is also gojo)
-      if (oldItem._gojo) {
-        const otherGojo = otherCats.some(cat => {
-          const otherId = p.heritage[cat];
-          const other = otherId ? getHeritageItem(cat, otherId) : null;
-          return other && other._gojo;
-        });
-        if (!otherGojo) {
-          ['infinity','reversal_red','lapse_blue','hollow_purple','domain_infinite_void',
-           'reversal_red_max','lapse_blue_max'].forEach(id => {
-            if (!stillGranted.has(id)) toRemove.push(id);
-          });
-        }
-      }
-
       if (toRemove.length > 0) {
         p.techniques = p.techniques.filter(id => !toRemove.includes(id));
         p.equipped   = p.equipped.map(id => toRemove.includes(id) ? null : id);
@@ -199,16 +233,6 @@ function _doHeritageRoll(category) {
 
   if (result.techs) result.techs.forEach(id => grantTechnique(id));
 
-  if (result._gojo) {
-    GOJO_TECHNIQUES.forEach(t => { if (!TECHNIQUES.find(x => x.id === t.id)) TECHNIQUES.push(t); });
-    ['infinity', 'reversal_red', 'lapse_blue', 'hollow_purple', 'domain_infinite_void'].forEach(id => grantTechnique(id));
-    setTimeout(() => {
-      toast('👁️ Six Eyes awakened...', 'rare');
-      setTimeout(() => toast('♾️ Infinity activated. You are the honored one.', 'rare'), 1500);
-      setTimeout(() => toast('🌌 Domain Expansion: Infinite Void unlocked!', 'rare'), 3000);
-    }, 500);
-  }
-
   toast(`${result.icon} ${result.name} — ${result.rarity.toUpperCase()}!`, result.rarity === 'secret' || result.rarity === 'legendary' ? 'rare' : 'success');
   playSound('rollingspin sound');
 
@@ -216,7 +240,7 @@ function _doHeritageRoll(category) {
   const colors = { common:['#aaa','#ccc','#fff'], uncommon:['#6c9fff','#88aaff','#fff'], rare:['#b06aff','#cc88ff','#fff'], legendary:['#f5c542','#ffdd66','#ff9900','#fff'], secret:['#ff1744','#b71c1c','#fff','#ff8a80'] }[result.rarity] || ['#fff'];
   const count = result.rarity === 'secret' ? 50 : result.rarity === 'legendary' ? 35 : result.rarity === 'rare' ? 22 : 12;
   const spread = result.rarity === 'secret' ? 130 : result.rarity === 'legendary' ? 100 : 70;
-  const anchor = document.querySelector('.heritage-card') || document.getElementById('heritage-container');
+  const anchor = document.querySelector(`.heritage-card[data-cat="${category}"]`) || document.querySelector('.heritage-card') || document.getElementById('heritage-container');
   if (anchor && !G.player.heritageSkipAnim) {
     const rect = anchor.getBoundingClientRect();
     const cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
@@ -236,64 +260,16 @@ function _doHeritageRoll(category) {
   else if (result.rarity === 'rare') { const f = document.createElement('div'); f.style.cssText = `position:fixed;inset:0;z-index:9997;pointer-events:none;background:rgba(176,106,255,0.2);animation:digFlash 0.5s ease-out forwards;`; document.body.appendChild(f); setTimeout(() => f.remove(), 600); }
 
   spawnFloatingText(result.icon, 'float-xp');
-  renderHeritage();
 }
 
-// ── AUTO-ROLL SYSTEM ──
-let _autoRollInterval = null;
-const RARITY_ORDER = ['common', 'uncommon', 'rare', 'legendary', 'secret'];
-
-function startAutoRoll() {
-  const rarityEl = document.getElementById('heritage-auto-rarity');
-  const catEl = document.getElementById('heritage-auto-cat');
-  if (!rarityEl || !catEl) return;
-  const targetRarity = rarityEl.value;
-  const category = catEl.value;
-  if (!targetRarity) { toast('Select a target rarity first!', 'warn'); return; }
-
-  stopAutoRoll();
-  G.player.heritageSkipAnim = true; // force skip during auto-roll
-  document.getElementById('btn-stop-autoroll').style.display = '';
-  toast(`🎯 Auto-rolling ${category} until ${targetRarity}+…`, 'info');
-
-  const targetIdx = RARITY_ORDER.indexOf(targetRarity);
-
-  _autoRollInterval = setInterval(() => {
-    const cost = getHeritageCost(category);
-    if (G.player.gold < cost) {
-      stopAutoRoll();
-      toast('❌ Auto-roll stopped — not enough gold!', 'warn');
-      return;
-    }
-
-    // Check current result
-    const currentId = G.player.heritage[category];
-    const current = currentId ? getHeritageItem(category, currentId) : null;
-    const currentIdx = current ? RARITY_ORDER.indexOf(current.rarity) : -1;
-
-    if (currentIdx >= targetIdx) {
-      stopAutoRoll();
-      toast(`✅ Auto-roll done! Got ${current.icon} ${current.name} (${current.rarity})`, 'success');
-      return;
-    }
-
-    // Roll without confirm (auto-roll bypasses legendary confirm)
-    if (!spendGold(cost)) { stopAutoRoll(); return; }
-    _doHeritageRoll(category);
-  }, 300);
-}
-
-function stopAutoRoll() {
-  if (_autoRollInterval) { clearInterval(_autoRollInterval); _autoRollInterval = null; }
-  const btn = document.getElementById('btn-stop-autoroll');
-  if (btn) btn.style.display = 'none';
-}
+// ── Heritage Cost ──
+const HERITAGE_RARITY_ORDER = ['common', 'uncommon', 'rare', 'legendary', 'secret'];
 
 function getHeritageCost(category) {
   const p = G.player;
   const rerolls = (p.heritageRerolls && p.heritageRerolls[category]) || 0;
   const base = { clan: 1500, weapon: 1000, style: 1000 };
-  return Math.floor((base[category] || 1500) * Math.pow(2.5, rerolls));
+  return Math.floor((base[category] || 1500) * Math.pow(1.3, rerolls));
 }
 
 function getHeritageItem(category, id) {
@@ -303,20 +279,48 @@ function getHeritageItem(category, id) {
   return null;
 }
 
-// Called from combat when using Red/Blue — track upgrade count
-function useGojoTech(techId) {
-  if (techId === 'reversal_red' || techId === 'lapse_blue') {
-    gojoUpgradeCounts[techId] = (gojoUpgradeCounts[techId] || 0) + 1;
-    if (gojoUpgradeCounts[techId] >= 3) {
+// Called from combat when using Chrono Strike/Void Nova — track upgrade count
+function useCelestialTech(techId) {
+  if (techId === 'chrono_strike' || techId === 'void_nova') {
+    celestialUpgradeCounts[techId] = (celestialUpgradeCounts[techId] || 0) + 1;
+    if (celestialUpgradeCounts[techId] >= 3) {
       const maxId = techId + '_max';
       if (!G.player.techniques.includes(maxId)) {
         grantTechnique(maxId);
-        toast(`🔴 ${techId === 'reversal_red' ? 'Reversal Red MAX' : 'Lapse Blue MAX'} unlocked!`, 'rare');
+        toast(`✨ ${techId === 'chrono_strike' ? 'Chrono Strike MAX' : 'Void Nova MAX'} unlocked!`, 'rare');
       }
     }
   }
 }
 
+// ── RARITY HELPERS ──
+const RARITY_META = {
+  common:    { color: '#5a6a8a', label: 'COMMON',    borderGlow: 'none',                                       bg: 'rgba(90,106,138,0.08)' },
+  uncommon:  { color: '#6c9fff', label: 'UNCOMMON',  borderGlow: '0 0 8px rgba(108,159,255,0.4)',              bg: 'rgba(108,159,255,0.08)' },
+  rare:      { color: '#b06aff', label: 'RARE',       borderGlow: '0 0 12px rgba(176,106,255,0.5)',            bg: 'rgba(176,106,255,0.08)' },
+  legendary: { color: '#f5c542', label: 'LEGENDARY',  borderGlow: '0 0 16px rgba(245,197,66,0.6), 0 0 32px rgba(245,197,66,0.2)', bg: 'rgba(245,197,66,0.08)' },
+  secret:    { color: '#ff1744', label: 'SECRET',     borderGlow: '0 0 16px rgba(255,23,68,0.6), 0 0 32px rgba(255,23,68,0.3)', bg: 'rgba(255,23,68,0.08)' },
+};
+
+function _rarityPulseClass(rarity) {
+  if (rarity === 'legendary') return 'heritage-card--legendary';
+  if (rarity === 'secret')    return 'heritage-card--secret';
+  return '';
+}
+
+// ── STAT BONUS FORMATTING ──
+const HERITAGE_STAT_LABELS = { atk: '⚔️ ATK', def: '🛡️ DEF', spd: '💨 SPD', maxHp: '❤️ HP', critChance: '🎯 CRT' };
+function _formatBonusPills(bonus) {
+  if (!bonus) return '';
+  return Object.entries(bonus).map(([k, v]) => {
+    const label = HERITAGE_STAT_LABELS[k] || k.toUpperCase();
+    const sign = v > 0 ? '+' : '';
+    const cls = v < 0 ? 'bonus-negative' : '';
+    return `<span class="heritage-pill ${cls}">${sign}${v} ${label}</span>`;
+  }).join('');
+}
+
+// ── RENDER ──
 function renderHeritage() {
   const container = document.getElementById('heritage-container');
   if (!container) return;
@@ -325,111 +329,140 @@ function renderHeritage() {
   if (!p.heritageRerolls) p.heritageRerolls = {};
 
   const categories = [
-    { key: 'clan',   label: '🏰 Clan',             pool: CLANS,          desc: 'Your bloodline. Grants stat bonuses and techniques.' },
-    { key: 'weapon', label: '⚔️ Weapon Style',      pool: WEAPONS,        desc: 'Your weapon mastery. Grants ATK bonuses and techniques.' },
-    { key: 'style',  label: '🥋 Fighting Technique',pool: FIGHTING_STYLES,desc: 'Your combat style. Grants unique fighting techniques.' },
+    { key: 'clan',   label: '🏰 Clan',              pool: CLANS,          desc: 'Bloodline. Grants stat bonuses and techniques.' },
+    { key: 'weapon', label: '⚔️ Weapon',             pool: WEAPONS,        desc: 'Weapon mastery. Grants ATK bonuses and techniques.' },
+    { key: 'style',  label: '🥋 Fighting Style',    pool: FIGHTING_STYLES, desc: 'Combat style. Grants unique techniques.' },
   ];
 
-  const html = categories.map(cat => {
+  // ── Category columns ──
+  const catHtml = categories.map(cat => {
     const currentId = p.heritage[cat.key];
     const current   = currentId ? getHeritageItem(cat.key, currentId) : null;
     const cost      = getHeritageCost(cat.key);
     const rerolls   = p.heritageRerolls[cat.key] || 0;
-    const rarityColors = { common:'var(--dim)', uncommon:'var(--accent)', rare:'var(--accent2)', legendary:'var(--gold)', secret:'#ff3333' };
+    const meta      = current ? RARITY_META[current.rarity] : null;
+    const pulseClass = current ? _rarityPulseClass(current.rarity) : '';
 
-    return `<div class="heritage-card" data-cat="${cat.key}">
-      <div class="heritage-header">
-        <h3>${cat.label}</h3>
-        <p class="tab-desc" style="margin:0">${cat.desc}</p>
+    const hasTech = current && current.techs && current.techs.length > 0;
+
+    return `<div class="heritage-card ${pulseClass}" data-cat="${cat.key}">
+      <div class="heritage-card-header">
+        <span class="heritage-card-label">${cat.label}</span>
+        <span class="heritage-card-sub">${cat.desc}</span>
       </div>
+
       ${current ? `
-        <div class="heritage-result" style="border-color:${rarityColors[current.rarity] || 'var(--border)'}">
-          <div class="heritage-icon">${current.icon}</div>
-          <div class="heritage-info">
-            <div class="heritage-name" style="color:${rarityColors[current.rarity]}">${current.name}</div>
-            <div class="heritage-rarity">${current.rarity.toUpperCase()}</div>
-            <div class="heritage-desc">${current.desc}</div>
-            ${current.bonus ? `<div class="heritage-bonus">${Object.entries(current.bonus).map(([k,v])=>`${v>0?'+':''}${v} ${k.toUpperCase()}`).join(' · ')}</div>` : ''}
-            ${current.techs?.length ? `<div class="heritage-techs">🎁 ${current.techs.map(id=>{ const t=TECHNIQUES.find(x=>x.id===id); return t?`${t.icon}${t.name}`:id; }).join(', ')}</div>` : ''}
+        <div class="heritage-item-card" style="border-color:${meta.color};box-shadow:${meta.borderGlow};background:${meta.bg}">
+          <div class="heritage-item-top">
+            <span class="heritage-item-icon">${current.icon}</span>
+            <div class="heritage-item-text">
+              <span class="heritage-item-name" style="color:${meta.color}">${current.name}</span>
+              <span class="heritage-item-rarity" style="color:${meta.color}">${meta.label}</span>
+            </div>
           </div>
+          <div class="heritage-item-desc">${current.desc}</div>
+          <div class="heritage-item-bonuses">${_formatBonusPills(current.bonus)}</div>
+          ${hasTech ? `<div class="heritage-item-techs">${current.techs.map(id => {
+            const t = typeof TECHNIQUES !== 'undefined' ? TECHNIQUES.find(x => x.id === id) : null;
+            return t ? `<span class="heritage-tech-tag" title="${t.name}">${t.icon}</span>` : '';
+          }).join('')}</div>` : ''}
         </div>
-        <button class="btn-small heritage-reroll-btn" onclick="rollHeritage('${cat.key}')">
-          🎲 Re-roll (💰${cost}${rerolls > 0 ? ` · ${rerolls} rerolls` : ''})
-        </button>
       ` : `
-        <div class="heritage-empty">Not yet rolled</div>
-        <button class="btn-primary" onclick="rollHeritage('${cat.key}')" ${p.gold >= cost ? '' : 'disabled'}>
-          🎲 Roll (💰${cost})
-        </button>
+        <div class="heritage-item-card heritage-item-empty">
+          <div class="heritage-empty-icon">🎲</div>
+          <div class="heritage-empty-text">Not yet rolled</div>
+        </div>
       `}
+
+      <div class="heritage-reel-wrap">
+        <!-- Reel animation injected here during roll -->
+      </div>
+
+      <div class="heritage-card-footer">
+        <div class="heritage-cost-display">
+          <span class="heritage-cost-label">Cost</span>
+          <span class="heritage-cost-value">💰 ${_fmtGold(cost)}</span>
+          ${rerolls > 0 ? `<span class="heritage-reroll-count">${rerolls}×</span>` : ''}
+        </div>
+        <button class="btn-primary heritage-roll-btn" onclick="rollHeritage('${cat.key}')" ${p.gold >= cost ? '' : 'disabled'}>
+          ${current ? '🎲 Re-roll' : '🎲 Roll'}
+        </button>
+      </div>
     </div>`;
   }).join('');
 
-  // Show Gojo techniques if unlocked
-  const hasGojo = p.techniques.includes('infinity');
-  const gojoSection = hasGojo ? `
-    <div class="heritage-gojo-section">
-      <h3>👁️ Six Eyes Techniques</h3>
-      <p class="tab-desc">Satoru Gojo's limitless cursed techniques. Red upgrades to MAX after 3 uses. Blue upgrades to MAX after 3 uses.</p>
-      <div class="card-grid">
-        ${GOJO_TECHNIQUES.map(t => {
-          const owned = p.techniques.includes(t.id);
-          return `<div class="card jjk-technique${owned ? '' : ' card-locked-dim'}">
-            <div class="tech-rarity" style="color:#ff3333">CURSED · ${t.rarity.toUpperCase()}</div>
-            <h3>${t.icon} ${t.name}</h3>
-            <div class="card-desc">${t.desc}</div>
-            ${owned ? '<span style="color:var(--ok);font-size:12px">✓ Unlocked</span>' : '<span style="color:var(--dim);font-size:12px">🔒 Locked</span>'}
-          </div>`;
-        }).join('')}
-      </div>
+  // ── Total stat bonus summary ──
+  const totalBonus = { atk: 0, def: 0, spd: 0, maxHp: 0 };
+  for (const cat of categories) {
+    const id = p.heritage[cat.key];
+    if (!id) continue;
+    const item = getHeritageItem(cat.key, id);
+    if (item && item.bonus) {
+      for (const [k, v] of Object.entries(item.bonus)) {
+        if (totalBonus[k] !== undefined) totalBonus[k] += v;
+      }
+    }
+  }
+  const hasAnyHeritage = categories.some(cat => p.heritage[cat.key]);
+  const bonusSummary = hasAnyHeritage ? `
+    <div class="heritage-bonus-summary">
+      <h3>📊 Total Heritage Bonuses</h3>
+      <div class="heritage-bonus-pills">${_formatBonusPills(totalBonus)}</div>
     </div>` : '';
 
-  const autoRunning = _autoRollInterval !== null;
-  container.innerHTML = `
-    <div class="heritage-control-panel">
-      <div class="heritage-control-row">
-        <div class="heritage-control-group">
-          <span class="heritage-control-label">⚡ Animation</span>
-          <label class="toggle-switch" title="Skip the spin animation for instant rolls">
-            <input type="checkbox" ${p.heritageSkipAnim ? 'checked' : ''} onchange="G.player.heritageSkipAnim=this.checked">
-            <span class="toggle-slider"></span>
-          </label>
-          <span style="font-size:11px;color:var(--dim)">Skip spin</span>
-        </div>
-        <div class="heritage-control-group" style="flex:1">
-          <span class="heritage-control-label">🎯 Auto-Roll</span>
-          <select id="heritage-auto-cat" class="heritage-select">
-            <option value="clan">🏰 Clan</option>
-            <option value="weapon">⚔️ Weapon</option>
-            <option value="style">🥋 Style</option>
-          </select>
-          <span style="font-size:11px;color:var(--dim)">until</span>
-          <select id="heritage-auto-rarity" class="heritage-select">
-            <option value="">— select —</option>
-            <option value="uncommon">Uncommon+</option>
-            <option value="rare">Rare+</option>
-            <option value="legendary">Legendary+</option>
-            <option value="secret">Secret only</option>
-          </select>
-          ${autoRunning
-            ? `<button class="btn-small btn-stop" onclick="stopAutoRoll()" style="background:rgba(229,57,53,0.2);border-color:var(--danger)">■ Stop</button>
-               <span style="font-size:11px;color:var(--ok);animation:pulse 1s infinite">● Rolling…</span>`
-            : `<button class="btn-small" onclick="startAutoRoll()" style="background:rgba(39,174,96,0.15);border-color:var(--ok)">▶ Start</button>`
-          }
-        </div>
-      </div>
-      ${autoRunning ? `<div style="font-size:11px;color:var(--dim);margin-top:6px;padding:6px;background:rgba(245,197,66,0.08);border-radius:4px">⚠️ Auto-rolling — gold is being spent automatically. Click Stop to cancel.</div>` : ''}
-    </div>
-    <div class="heritage-grid">${html}</div>
-    ${gojoSection}
-    <div class="heritage-odds">
-      <h3>📊 Roll Odds</h3>
-      <div class="odds-grid">
-        <span class="odds-common">Common — ~60%</span>
-        <span class="odds-uncommon">Uncommon — ~25%</span>
-        <span class="odds-rare">Rare — ~12%</span>
-        <span class="odds-legendary">Legendary — ~2.5%</span>
-        <span class="odds-secret">Secret — ~0.1%</span>
-      </div>
+  // ── Odds footer ──
+  const oddsHtml = `
+    <div class="heritage-odds-footer">
+      <span class="odds-common">Common ~60%</span>
+      <span class="odds-uncommon">Uncommon ~25%</span>
+      <span class="odds-rare">Rare ~12%</span>
+      <span class="odds-legendary">Legendary ~2.5%</span>
+      <span class="odds-secret">Secret ~0.1%</span>
     </div>`;
+
+  // ── Celestial techniques (collapsible) ──
+  const hasCelestial = p.techniques && p.techniques.includes('astral_slash');
+  const celestialHtml = hasCelestial ? `
+    <details class="heritage-celestial-panel">
+      <summary class="heritage-celestial-toggle">✨ Celestial Techniques <span class="celestial-toggle-hint">— cosmic powers from beyond the stars</span></summary>
+      <div class="heritage-celestial-body">
+        <p class="tab-desc">Chrono Strike upgrades to MAX after 3 uses. Void Nova upgrades to MAX after 3 uses.</p>
+        <div class="card-grid">
+          ${CELESTIAL_TECHNIQUES.map(t => {
+            const owned = p.techniques.includes(t.id);
+            return `<div class="card celestial-technique${owned ? '' : ' card-locked-dim'}" ${!owned ? 'onclick="toast(\'🔒 Complete Chapter 10 to unlock Celestial Techniques\',\'warn\')"' : ''}>
+              <div class="tech-rarity" style="color:#b388ff">COSMIC · ${t.rarity.toUpperCase()}</div>
+              <h3>${t.icon} ${t.name}</h3>
+              <div class="card-desc">${t.desc}</div>
+              ${owned ? '<span style="color:var(--ok);font-size:12px">✓ Unlocked</span>' : '<span style="color:var(--dim);font-size:12px">🔒 Locked</span>'}
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+    </details>` : '';
+
+  container.innerHTML = `
+    <div class="heritage-columns">${catHtml}</div>
+    ${bonusSummary}
+    ${celestialHtml}
+    ${oddsHtml}`;
 }
+
+function _fmtGold(n) {
+  if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
+  if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+  return String(n);
+}
+
+// ── Heritage CSS Injection ──
+(function _injectHeritageCSS() {
+  if (document.getElementById('heritage-dice-css')) return;
+  const style = document.createElement('style');
+  style.id = 'heritage-dice-css';
+  style.textContent = `
+.heritage-reel-item-passed{filter:brightness(0.3);transition:filter 0.2s}
+.heritage-reel-stopped{animation:reelBounce 0.4s ease}
+@keyframes reelBounce{0%{transform:scale(1)}40%{transform:scale(1.15)}100%{transform:scale(1)}}
+`;
+  document.head.appendChild(style);
+})();

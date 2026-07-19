@@ -49,13 +49,34 @@ function recalcStats() {
   const sm = p.statMult || 1;
   const b  = getSkillTreeBonuses();
   const hb = getHeritageBonuses();
-  const oldMaxHp = p.maxHp;
-  p.maxHp      = Math.floor((30 + p.level * 8) * sm) + b.maxHp + hb.maxHp;
-  p.maxStamina = Math.floor((40 + p.level * 3) * sm) + b.maxStamina;
-  p.atk        = Math.floor((2 + p.level * 1.2) * sm) + b.atk + hb.atk;
-  p.def        = Math.floor((1 + p.level * 0.6) * sm) + b.def + hb.def;
-  p.spd        = Math.floor((2 + p.level * 0.5) * sm) + b.spd + hb.spd;
-  p.regenBonus = b.regenBonus;
+  // Compute current formula values (level + skill tree + heritage)
+  const fAtk   = Math.floor((2 + p.level * 1.2) * sm) + b.atk + hb.atk;
+  const fDef   = Math.floor((1 + p.level * 0.6) * sm) + b.def + hb.def;
+  const fSpd   = Math.floor((2 + p.level * 0.5) * sm) + b.spd + hb.spd;
+  const fHp    = Math.floor((30 + p.level * 8) * sm) + b.maxHp + hb.maxHp;
+  const fStam  = Math.floor((40 + p.level * 3) * sm) + b.maxStamina;
+  const fRegen = b.regenBonus;
+  // Initialize snapshot on first call — before computing delta
+  if (!p._prevFormula) {
+    p._prevFormula = { atk: fAtk, def: fDef, spd: fSpd, maxHp: fHp, maxStamina: fStam, regenBonus: fRegen };
+  }
+  // Compute total accumulated external bonuses (potions, training, dojo)
+  // Delta = current stat − previous formula output = external gains since last recalc
+  const extAtk   = Math.max(0, (p.atk || 0)       - (p._prevFormula.atk || 0));
+  const extDef   = Math.max(0, (p.def || 0)       - (p._prevFormula.def || 0));
+  const extSpd   = Math.max(0, (p.spd || 0)       - (p._prevFormula.spd || 0));
+  const extHp    = Math.max(0, (p.maxHp || 0)     - (p._prevFormula.maxHp || 0));
+  const extStam  = Math.max(0, (p.maxStamina || 0) - (p._prevFormula.maxStamina || 0));
+  const extRegen = Math.max(0, (p.regenBonus || 0) - (p._prevFormula.regenBonus || 0));
+  // Apply formula + external bonuses
+  p.atk        = fAtk   + extAtk;
+  p.def        = fDef   + extDef;
+  p.spd        = fSpd   + extSpd;
+  p.maxHp      = fHp    + extHp;
+  p.maxStamina = fStam  + extStam;
+  p.regenBonus = Math.min(fRegen + extRegen, 0.40);
+  // Snapshot formula output for next recalc
+  p._prevFormula = { atk: fAtk, def: fDef, spd: fSpd, maxHp: fHp, maxStamina: fStam, regenBonus: fRegen };
   // Always clamp HP to new maxHp — never let it exceed or go below 1
   p.hp = Math.max(1, Math.min(p.hp, p.maxHp));
 }
@@ -81,29 +102,39 @@ function onLevelUp() {
   spawnFloatingText(`Lv.${p.level}!`, 'float-xp');
   const hdr = document.getElementById('header');
   if (hdr) { hdr.classList.add('level-up-flash'); setTimeout(() => hdr.classList.remove('level-up-flash'), 700); }
+  if (typeof updateTabLockStates === 'function') updateTabLockStates();
 
-  // Level up particle burst from header
   const hdrEl = document.getElementById('hdr-level');
   if (hdrEl) {
     const rect = hdrEl.getBoundingClientRect();
     const cx = rect.left + rect.width / 2;
     const cy = rect.top + rect.height / 2;
-    const colors = ['#f5c542','#ffdd66','#ff9900','#fff','#b388ff','#42a5f5'];
-    for (let i = 0; i < 25; i++) {
+
+    // Particle burst — 30 particles
+    const colors = ['#f5c542','#ffdd66','#ff9900','#fff','#b388ff','#42a5f5','#66ffaa'];
+    for (let i = 0; i < 30; i++) {
       const el = document.createElement('div');
-      const angle = (Math.PI * 2 * i / 25) + Math.random() * 0.5;
-      const dist = 40 + Math.random() * 60;
-      const size = 4 + Math.random() * 7;
+      const angle = (Math.PI * 2 * i / 30) + Math.random() * 0.4;
+      const dist = 50 + Math.random() * 80;
+      const size = 3 + Math.random() * 6;
       const color = colors[Math.floor(Math.random() * colors.length)];
       el.style.cssText = `position:fixed;z-index:9999;pointer-events:none;border-radius:50%;width:${size}px;height:${size}px;background:${color};left:${cx}px;top:${cy}px;--dx:${Math.cos(angle)*dist}px;--dy:${Math.sin(angle)*dist}px;animation:digBurst 0.8s ease-out forwards;`;
       document.body.appendChild(el);
       setTimeout(() => el.remove(), 1000);
     }
-    // Gold flash
+
+    // Level number scale-up text
+    const lvlText = document.createElement('div');
+    lvlText.textContent = `LV ${p.level}`;
+    lvlText.style.cssText = `position:fixed;z-index:10000;pointer-events:none;left:${cx}px;top:${cy}px;transform:translate(-50%,-50%) scale(0.3);font-size:48px;font-weight:900;color:#f5c542;text-shadow:0 0 20px rgba(245,197,66,0.8),0 0 40px rgba(245,197,66,0.4);animation:lvLevelNum 1.2s ease-out forwards;font-family:var(--font-body);`;
+    document.body.appendChild(lvlText);
+    setTimeout(() => lvlText.remove(), 1400);
+
+    // Screen-wide golden flash
     const f = document.createElement('div');
-    f.style.cssText = `position:fixed;inset:0;z-index:9997;pointer-events:none;background:rgba(245,197,66,0.15);animation:digFlash 0.5s ease-out forwards;`;
+    f.style.cssText = `position:fixed;inset:0;z-index:9997;pointer-events:none;background:radial-gradient(circle at ${cx}px ${cy}px,rgba(245,197,66,0.3),rgba(245,197,66,0.05));animation:lvScreenFlash 0.8s ease-out forwards;`;
     document.body.appendChild(f);
-    setTimeout(() => f.remove(), 600);
+    setTimeout(() => f.remove(), 900);
   }
 
   // Level gates — re-render any tab whose unlock threshold was just crossed

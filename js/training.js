@@ -122,14 +122,39 @@ const QUICK_TRAIN_GAMES = [
   (a, cb) => showMinigame('sequence',  2, `⚡ ${a.icon} Quick Train — follow the pattern!`, cb),
   (a, cb) => showMinigame('draw_line', 2, `⚡ ${a.icon} Quick Train — slash straight!`,  cb),
   (a, cb) => showMinigame('dual_zone', 2, `⚡ ${a.icon} Quick Train — hit both zones!`,  cb),
+  (a, cb) => showMinigame('reaction',  2, `⚡ ${a.icon} Quick Train — test your reflexes!`, cb),
+  (a, cb) => showMinigame('rhythm',    2, `⚡ ${a.icon} Quick Train — keep the beat!`,   cb),
+  (a, cb) => showMinigame('balance',   2, `⚡ ${a.icon} Quick Train — hold steady!`,     cb),
+  (a, cb) => showMinigame('countdown', 2, `⚡ ${a.icon} Quick Train — hit on zero!`,     cb),
+  (a, cb) => showMinigame('dodge_tap', 2, `⚡ ${a.icon} Quick Train — dodge and strike!`, cb),
+  (a, cb) => showMinigame('quick_tap', 2, `⚡ ${a.icon} Quick Train — lightning taps!`, cb),
+  (a, cb) => showMinigame('dice_rolling', 2, `🎲 ${a.icon} Quick Train — roll for power!`, cb),
 ];
 let quickTrainIndex = 0;
+
+function getTrainingTier(action) {
+  const lv = action.levelReq;
+  if (lv >= 50) return 6;
+  if (lv >= 35) return 5;
+  if (lv >= 20) return 4;
+  if (lv >= 10) return 3;
+  if (lv >= 5)  return 2;
+  return 1;
+}
 
 function quickTrain(actionId) {
   const action = TRAINING_ACTIONS.find(a => a.id === actionId);
   if (!action) return;
   const p = G.player;
   if (p.level < action.levelReq) { toast(`Requires level ${action.levelReq}`, 'warn'); return; }
+  const tier = getTrainingTier(action);
+  if (tier >= 2) {
+    const reqChapter = 'ch' + (tier - 1);
+    if (!p.completedChapters || !p.completedChapters.includes(reqChapter)) {
+      toast(`🔒 Complete Story Chapter ${tier - 1} to Quick Train this action!`, 'warn');
+      return;
+    }
+  }
   if (!spendStamina(action.staminaCost)) {
     toast(`⚡ Not enough stamina! Need ${action.staminaCost}, have ${Math.floor(p.stamina)}.`, 'warn');
     return;
@@ -139,6 +164,10 @@ function quickTrain(actionId) {
   quickTrainIndex++;
 
   game(action, (mult) => {
+    if (mult < 0.5) {
+      toast(`Quick Train failed! (${mult.toFixed(1)}x) — no gains.`, 'warn');
+      return;
+    }
     const ascBonus = typeof getAscensionBonus === 'function' ? getAscensionBonus().trainMult : 1;
     const gainMult = getUpgradeValue('train_gain_mult') * mult * ascBonus;
     const sm = p.statMult;
@@ -160,7 +189,6 @@ function quickTrain(actionId) {
 }
 
 function updateTrainingBanner() {
-  // In-tab banner (only visible on training tab)
   const banner = document.getElementById('training-banner');
   if (banner) {
     if (!G.activeTraining) { banner.classList.add('hidden'); }
@@ -178,25 +206,6 @@ function updateTrainingBanner() {
       }
     }
   }
-
-  // Global banner (visible on ALL tabs, like job banner)
-  const gb = document.getElementById('training-global-banner');
-  if (!gb) return;
-  if (!G.activeTraining) { gb.classList.add('hidden'); return; }
-  const action = TRAINING_ACTIONS.find(a => a.id === G.activeTraining);
-  if (!action) { gb.classList.add('hidden'); return; }
-  gb.classList.remove('hidden');
-  const needed = getTrainingTicksNeeded(action);
-  const noStamina = G.player.stamina < action.staminaCost;
-  const pct = Math.floor((G.trainingTick / needed) * 100);
-  const iconEl   = document.getElementById('tgb-icon');
-  const nameEl   = document.getElementById('tgb-name');
-  const barEl    = document.getElementById('tgb-bar');
-  const statusEl = document.getElementById('tgb-status');
-  if (iconEl)   iconEl.textContent   = action.icon;
-  if (nameEl)   nameEl.textContent   = action.name;
-  if (barEl)    barEl.style.width    = pct + '%';
-  if (statusEl) statusEl.textContent = noStamina ? '⏸ waiting…' : '';
 }
 
 function renderTraining() {
@@ -220,7 +229,7 @@ function renderTraining() {
       .join(', ');
 
     return `
-      <div class="card${active ? ' card-active' : ''}${locked ? ' card-locked-dim' : ''}">
+      <div class="card${active ? ' card-active' : ''}${locked ? ' card-locked-dim' : ''}" ${locked ? `onclick="toast('🔒 Requires Level ${action.levelReq}','warn')"` : ''}>
         <div class="card-top-row">
           <h3>${action.icon} ${action.name}${active ? ' <span class="active-dot">●</span>' : ''}</h3>
           <span class="cycle-badge">${cycleTime}s</span>
@@ -238,10 +247,15 @@ function renderTraining() {
         ${active ? `<div class="bar-track session-bar"><div id="session-bar-${action.id}" class="bar stamina-bar" style="width:${tickPct}%"></div></div>` : ''}
         ${locked
           ? `<div class="card-locked">🔒 Level ${action.levelReq}</div>`
-          : `<div style="display:flex;gap:6px;flex-wrap:wrap">
-               <button class="btn-primary${active ? ' btn-stop' : ''}" onclick="startTraining('${action.id}')">${active ? '■ Stop' : '▶ Start'}</button>
-               ${!active ? `<button class="btn-small" onclick="quickTrain('${action.id}')" title="Instant training with a minigame">⚡ Quick</button>` : ''}
-             </div>`
+          : (() => {
+              const tier = getTrainingTier(action);
+              const qkOk = tier < 2 || (p.completedChapters && p.completedChapters.includes('ch' + (tier - 1)));
+              return `<div style="display:flex;gap:6px;flex-wrap:wrap">
+                <button class="btn-primary" onclick="startTraining('${action.id}')">${active ? '■ Stop' : '▶ Start'}</button>
+                ${!active && qkOk ? `<button class="btn-small" onclick="quickTrain('${action.id}')" title="Instant training with a minigame">⚡ Quick</button>` : ''}
+                ${!active && !qkOk ? `<span class="card-locked" style="font-size:10px;padding:0">⚡ Quick: Ch.${tier - 1}</span>` : ''}
+              </div>`;
+            })()
         }
       </div>
     `;

@@ -1,7 +1,95 @@
 // ===== UI SYSTEM =====
 
-const TAB_ORDER = ['training','jobs','raids','dig','shop','dojo','library','inventory','story','alchemy','rebirth','garden','heritage','achievements','settings'];
+const TAB_ORDER = ['training','story','jobs','raids','dig','shop','inventory','dojo','library','alchemy','garden','heritage','rebirth','achievements','settings'];
 let activeTab = 'training';
+
+// ===== NUMBER FORMATTING =====
+const _NUM_SUFFIXES = ['','K','M','B','T','Qa','Qi','Sx','Sp','Oc','No','Dc'];
+function formatNum(n) {
+  const s = typeof getSettings === 'function' ? getSettings() : {};
+  if (!s.compactNumbers) return Math.floor(n).toLocaleString();
+  if (n < 1000) return Math.floor(n).toString();
+  let tier = 0;
+  let val = n;
+  while (val >= 1000 && tier < _NUM_SUFFIXES.length - 1) { val /= 1000; tier++; }
+  return val.toFixed(val < 10 ? 1 : 0) + _NUM_SUFFIXES[tier];
+}
+
+// ===== TAB LOCKING SYSTEM =====
+// Each tab has an unlock condition: { type: 'level'|'story'|'rebirth', value }
+const TAB_UNLOCK = {
+  training:    null, // always unlocked
+  story:       null, // always unlocked
+  jobs:        { type: 'level', value: 3 },
+  raids:       { type: 'level', value: 5 },
+  dig:         { type: 'level', value: 8 },
+  shop:        { type: 'level', value: 5 },
+  inventory:   { type: 'level', value: 3 },
+  dojo:        { type: 'level', value: 10 },
+  library:     { type: 'level', value: 10 },
+  alchemy:     { type: 'level', value: 15 },
+  garden:      { type: 'level', value: 12 },
+  heritage:    { type: 'level', value: 15 },
+  rebirth:     { type: 'level', value: 30 },
+  achievements: null, // always unlocked
+  settings:    null, // always unlocked
+};
+
+function isTabUnlocked(tab) {
+  const cond = TAB_UNLOCK[tab];
+  if (!cond) return true;
+  if (cond.type === 'level') return G.player.level >= cond.value;
+  if (cond.type === 'rebirth') return G.player.rebirthCount >= cond.value;
+  return true;
+}
+
+function getTabUnlockLabel(tab) {
+  const cond = TAB_UNLOCK[tab];
+  if (!cond) return '';
+  if (cond.type === 'level') return `Unlocks at Lv.${cond.value}`;
+  if (cond.type === 'rebirth') return `Unlocks at ${cond.value}× Ascend`;
+  return '';
+}
+
+// Build sorted tab list: unlocked tabs in TAB_ORDER, then locked tabs to the right
+function buildTabList() {
+  const unlocked = [];
+  const locked = [];
+  for (const t of TAB_ORDER) {
+    if (isTabUnlocked(t)) unlocked.push(t);
+    else locked.push(t);
+  }
+  return [...unlocked, ...locked];
+}
+
+function updateTabLockStates() {
+  const sorted = buildTabList();
+  const nav = document.getElementById('tabs');
+  if (!nav) return;
+
+  // Re-order DOM buttons
+  sorted.forEach(tab => {
+    const btn = nav.querySelector(`[data-tab="${tab}"]`);
+    if (btn) nav.appendChild(btn);
+  });
+
+  // Apply lock/unlock classes
+  nav.querySelectorAll('.tab-btn').forEach(btn => {
+    const tab = btn.dataset.tab;
+    const unlocked = isTabUnlocked(tab);
+    btn.classList.toggle('locked', !unlocked);
+    if (!unlocked) {
+      btn.title = getTabUnlockLabel(tab);
+    } else {
+      btn.title = '';
+    }
+  });
+
+  // If current tab is now locked, force switch to training
+  if (!isTabUnlocked(activeTab)) {
+    switchTab('training');
+  }
+}
 
 function initUI() {
   document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -26,10 +114,18 @@ function initUI() {
     btn.classList.add('ripple');
     setTimeout(() => btn.classList.remove('ripple'), 400);
   });
+
+  // Initial tab lock setup
+  updateTabLockStates();
 }
 
 function switchTab(tab) {
   if (tab === activeTab) return;
+  if (!isTabUnlocked(tab)) {
+    const label = getTabUnlockLabel(tab);
+    toast(label || 'This tab is locked!', 'warn');
+    return;
+  }
 
   const oldIdx = TAB_ORDER.indexOf(activeTab);
   const newIdx = TAB_ORDER.indexOf(tab);
@@ -128,27 +224,41 @@ function _hdrEl(id) {
   return _hdrEls[id];
 }
 
+// Dirty-flag cache to avoid unnecessary DOM writes
+const _hdrCache = {};
+function _setIfChanged(id, val) {
+  if (_hdrCache[id] === val) return;
+  _hdrCache[id] = val;
+  const el = _hdrEl(id);
+  if (el) el.textContent = val;
+}
+function _setWIfChanged(id, pct) {
+  const w = Math.max(0, Math.min(100, pct)) + '%';
+  if (_hdrCache[id] === w) return;
+  _hdrCache[id] = w;
+  const el = _hdrEl(id);
+  if (el) el.style.width = w;
+}
+
 function updateHeader() {
   const p = G.player;
-  const set = (id, val) => { const el = _hdrEl(id); if (el) el.textContent = val; };
-  const setW = (id, pct) => { const el = _hdrEl(id); if (el) el.style.width = Math.max(0, Math.min(100, pct)) + '%'; };
 
-  set('hdr-name', p.name);
-  set('hdr-level', `Lv.${p.level}`);
-  set('hdr-rebirth', `✦ R${p.rebirthCount}`);
+  _setIfChanged('hdr-name', p.name);
+  _setIfChanged('hdr-level', `Lv.${p.level}`);
+  _setIfChanged('hdr-rebirth', `✦ R${p.rebirthCount}`);
 
-  setW('bar-hp', (p.hp / p.maxHp) * 100);
-  set('txt-hp', `${Math.floor(p.hp)}/${p.maxHp}`);
-  setW('bar-xp', (p.xp / p.xpNeeded) * 100);
-  set('txt-xp', `${Math.floor(p.xp)}/${p.xpNeeded}`);
-  setW('bar-stamina', (p.stamina / p.maxStamina) * 100);
+  _setWIfChanged('bar-hp', (p.hp / p.maxHp) * 100);
+  _setIfChanged('txt-hp', `${Math.floor(p.hp)}/${p.maxHp}`);
+  _setWIfChanged('bar-xp', (p.xp / p.xpNeeded) * 100);
+  _setIfChanged('txt-xp', `${Math.floor(p.xp)}/${p.xpNeeded}`);
+  _setWIfChanged('bar-stamina', (p.stamina / p.maxStamina) * 100);
   const regenPerSec = ((1 + (p.spd / 10) * 0.1) / 8 * (1000 / G.tickRate)).toFixed(1);
-  set('txt-stamina', `${Math.floor(p.stamina)}/${p.maxStamina} (+${regenPerSec}/s)`);
+  _setIfChanged('txt-stamina', `${Math.floor(p.stamina)}/${p.maxStamina} (+${regenPerSec}/s)`);
 
-  set('res-gold', Math.floor(p.gold));
-  set('res-atk', Math.floor(p.atk));
-  set('res-def', Math.floor(p.def));
-  set('res-spd', Math.floor(p.spd));
+  _setIfChanged('res-gold', typeof formatNum === 'function' ? formatNum(p.gold) : Math.floor(p.gold));
+  _setIfChanged('res-atk', typeof formatNum === 'function' ? formatNum(p.atk) : Math.floor(p.atk));
+  _setIfChanged('res-def', typeof formatNum === 'function' ? formatNum(p.def) : Math.floor(p.def));
+  _setIfChanged('res-spd', typeof formatNum === 'function' ? formatNum(p.spd) : Math.floor(p.spd));
 }
 
 // ===== FLOATING TEXT VFX =====
@@ -210,17 +320,22 @@ function playBgMusic() {
           _musicStarted = true;
         }).catch(() => {
           // Autoplay blocked — wait for first user interaction
-          if (!_musicStarted) {
-            const onInteract = () => {
-              _bgMusic.play().catch(() => {});
-              _musicStarted = true;
+          if (!_musicStarted && !_bgMusic._interactListenerAdded) {
+            _bgMusic._interactListenerAdded = true;
+            const cleanup = () => {
               document.removeEventListener('click', onInteract);
               document.removeEventListener('keydown', onInteract);
               document.removeEventListener('touchstart', onInteract);
             };
-            document.addEventListener('click', onInteract, { once: true });
-            document.addEventListener('keydown', onInteract, { once: true });
-            document.addEventListener('touchstart', onInteract, { once: true });
+            const onInteract = () => {
+              _bgMusic.play().then(() => {
+                _musicStarted = true;
+                cleanup();
+              }).catch(() => {});
+            };
+            document.addEventListener('click', onInteract);
+            document.addEventListener('keydown', onInteract);
+            document.addEventListener('touchstart', onInteract);
           }
         });
       };
@@ -252,7 +367,8 @@ function toast(msg, type = 'info') {
   el.textContent = msg;
   el.style.cursor = 'pointer';
   el.title = 'Click to dismiss';
-  const timer = setTimeout(() => el.remove(), 3000);
+  const dur = (typeof getSettings === 'function' ? getSettings().toastDuration : 2500) || 2500;
+  const timer = setTimeout(() => el.remove(), dur);
   el.addEventListener('click', () => { clearTimeout(timer); el.remove(); });
   container.appendChild(el);
 }
@@ -267,6 +383,9 @@ document.addEventListener('keydown', function(e) {
   // Skip if typing in a field
   const tag = (document.activeElement || {}).tagName;
   if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+
+  // Skip if tutorial is active
+  if (typeof tutorialActive !== 'undefined' && tutorialActive) return;
 
   // Skip if admin panel already open
   const panel = document.getElementById('admin-panel');
@@ -295,17 +414,17 @@ function openAdminPanel() {
 
   const modal = document.createElement('div');
   modal.id = 'admin-pw-modal';
-  modal.style.cssText = `position:fixed;inset:0;z-index:4000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px)`;
+  modal.style.cssText = `position:fixed;inset:0;z-index:4000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0);backdrop-filter:blur(0px);transition:background 0.3s,backdrop-filter 0.3s`;
   modal.innerHTML = `
-    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:28px 32px;min-width:280px;box-shadow:0 8px 40px rgba(0,0,0,0.6)">
+    <div class="admin-pw-card" style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:28px 32px;min-width:280px;box-shadow:0 8px 40px rgba(0,0,0,0.6);transform:scale(0.85) translateY(20px);opacity:0;transition:transform 0.35s cubic-bezier(0.34,1.56,0.64,1),opacity 0.25s ease">
       <div style="font-size:22px;font-weight:800;color:var(--gold);margin-bottom:6px">🔧 Admin Panel</div>
       <div style="font-size:12px;color:var(--dim);margin-bottom:18px">Enter password to continue</div>
       <div style="position:relative;margin-bottom:16px">
         <input id="admin-pw-input" type="password"
-          style="width:100%;box-sizing:border-box;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 40px 10px 12px;color:var(--text);font-size:15px;outline:none;letter-spacing:3px"
+          style="width:100%;box-sizing:border-box;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 40px 10px 12px;color:var(--text);font-size:15px;outline:none;letter-spacing:3px;transition:border-color 0.2s"
           placeholder="••••••" autocomplete="off" maxlength="32"
           oncopy="return false" onpaste="return false" oncut="return false">
-        <button id="admin-pw-eye" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:var(--dim);padding:0">👁</button>
+        <button id="admin-pw-eye" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:var(--dim);padding:0;transition:color 0.15s">👁</button>
       </div>
       <div id="admin-pw-err" style="font-size:12px;color:var(--danger);margin-bottom:12px;min-height:16px"></div>
       <div style="display:flex;gap:8px">
@@ -315,11 +434,22 @@ function openAdminPanel() {
     </div>`;
   document.body.appendChild(modal);
 
+  // Animate in
+  requestAnimationFrame(() => {
+    modal.style.background = 'rgba(0,0,0,0.7)';
+    modal.style.backdropFilter = 'blur(4px)';
+    const card = modal.querySelector('.admin-pw-card');
+    if (card) {
+      card.style.transform = 'scale(1) translateY(0)';
+      card.style.opacity = '1';
+    }
+  });
+
   const input  = modal.querySelector('#admin-pw-input');
   const errEl  = modal.querySelector('#admin-pw-err');
   const eyeBtn = modal.querySelector('#admin-pw-eye');
 
-  setTimeout(() => input.focus(), 50);
+  setTimeout(() => input.focus(), 100);
 
   // Toggle show/hide password
   eyeBtn.addEventListener('click', () => {
@@ -329,15 +459,42 @@ function openAdminPanel() {
 
   function submit() {
     if (input.value === 'm@ango') {
-      modal.remove();
-      renderAdminPanel();
-      document.getElementById('admin-panel')?.classList.remove('hidden');
-      toast('🔧 Admin panel opened', 'warn');
+      // Animate out then open panel
+      const card = modal.querySelector('.admin-pw-card');
+      if (card) {
+        card.style.transform = 'scale(0.9)';
+        card.style.opacity = '0';
+        card.style.transition = 'transform 0.2s ease, opacity 0.15s ease';
+      }
+      modal.style.background = 'rgba(0,0,0,0)';
+      modal.style.backdropFilter = 'blur(0px)';
+      setTimeout(() => {
+        modal.remove();
+        renderAdminPanel();
+        const panel = document.getElementById('admin-panel');
+        if (panel) {
+          panel.classList.remove('hidden');
+          // Animate admin panel in
+          const box = panel.querySelector('.admin-modal');
+          if (box) {
+            box.style.animation = 'adminModalIn 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards';
+          }
+        }
+        toast('🔧 Admin panel opened', 'warn');
+      }, 250);
     } else {
       errEl.textContent = '❌ Wrong password.';
       input.value = '';
       input.focus();
       input.style.borderColor = 'var(--danger)';
+      // Shake animation
+      const card = modal.querySelector('.admin-pw-card');
+      if (card) {
+        card.style.animation = 'none';
+        void card.offsetWidth;
+        card.style.animation = 'adminShake 0.4s ease';
+        setTimeout(() => { card.style.animation = ''; }, 500);
+      }
       setTimeout(() => { input.style.borderColor = 'var(--border)'; }, 800);
     }
   }
@@ -348,6 +505,21 @@ function openAdminPanel() {
     if (e.key === 'Enter') submit();
     if (e.key === 'Escape') modal.remove();
   });
+}
+
+function closeAdminPanel() {
+  const panel = document.getElementById('admin-panel');
+  if (!panel) return;
+  const box = panel.querySelector('.admin-modal');
+  if (box) {
+    box.style.animation = 'adminModalOut 0.25s ease forwards';
+    setTimeout(() => {
+      panel.classList.add('hidden');
+      box.style.animation = '';
+    }, 250);
+  } else {
+    panel.classList.add('hidden');
+  }
 }
 
 function renderAdminPanel() {
@@ -366,13 +538,21 @@ function renderAdminPanel() {
     .map(s => `<option value="${s.id}" ${(p.heritage?.style === s.id) ? 'selected' : ''}>${s.icon} ${s.name} (${s.rarity})</option>`)
     .join('');
 
-  // Build technique options
   const techOpts = (typeof TECHNIQUES !== 'undefined' ? TECHNIQUES : [])
     .map(t => `<option value="${t.id}">${t.icon} ${t.name}</option>`)
     .join('');
 
   container.innerHTML = `
-    <div class="admin-grid">
+    <div class="admin-tabs">
+      <button class="admin-tab active" data-atab="resources" onclick="switchAdminTab('resources',this)">💰 Resources</button>
+      <button class="admin-tab" data-atab="stats" onclick="switchAdminTab('stats',this)">⚔️ Stats</button>
+      <button class="admin-tab" data-atab="heritage" onclick="switchAdminTab('heritage',this)">🏛️ Heritage</button>
+      <button class="admin-tab" data-atab="techniques" onclick="switchAdminTab('techniques',this)">🎒 Techniques</button>
+      <button class="admin-tab" data-atab="dig" onclick="switchAdminTab('dig',this)">⛏️ Dig</button>
+      <button class="admin-tab" data-atab="danger" onclick="switchAdminTab('danger',this)">⚠️ Danger</button>
+    </div>
+
+    <div class="admin-tab-panel active" id="atab-resources">
       <div class="admin-section">
         <div class="admin-section-title">💰 Resources</div>
         <div class="admin-row">
@@ -390,8 +570,15 @@ function renderAdminPanel() {
           <input id="admin-level-input" type="number" value="${p.level}" min="1" max="100">
           <button class="btn-small" onclick="adminSetLevel()">Set</button>
         </div>
+        <div class="admin-row">
+          <label>Stamina</label>
+          <input id="admin-stamina-input" type="number" value="${p.maxStamina}" min="0">
+          <button class="btn-small" onclick="G.player.stamina=parseInt(document.getElementById('admin-stamina-input')?.value)||0;G.player.maxStamina=G.player.stamina;toast('Stamina set','success')">Set</button>
+        </div>
       </div>
+    </div>
 
+    <div class="admin-tab-panel" id="atab-stats">
       <div class="admin-section">
         <div class="admin-section-title">⚔️ Stats</div>
         <div class="admin-row">
@@ -414,52 +601,77 @@ function renderAdminPanel() {
           <input id="admin-hp" type="number" value="${p.maxHp}" min="1">
           <button class="btn-small" onclick="adminSetStat('maxHp','admin-hp')">Set</button>
         </div>
-        <button class="btn-small" style="margin-top:6px;width:100%" onclick="adminMaxStats()">⚡ Max All Stats</button>
+        <button class="btn-small" style="margin-top:8px;width:100%" onclick="adminMaxStats()">⚡ Max All Stats</button>
       </div>
+    </div>
 
+    <div class="admin-tab-panel" id="atab-heritage">
       <div class="admin-section">
         <div class="admin-section-title">🏛️ Heritage</div>
         <div class="admin-row">
           <label>Clan</label>
-          <select id="admin-clan" style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:3px;color:var(--text);font-size:11px">${clanOpts}</select>
+          <select id="admin-clan">${clanOpts}</select>
           <button class="btn-small" onclick="adminSetClan()">Set</button>
         </div>
         <div class="admin-row">
           <label>Weapon</label>
-          <select id="admin-weapon" style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:3px;color:var(--text);font-size:11px">${weaponOpts}</select>
+          <select id="admin-weapon">${weaponOpts}</select>
           <button class="btn-small" onclick="adminSetWeapon()">Set</button>
         </div>
         <div class="admin-row">
           <label>Style</label>
-          <select id="admin-style" style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:3px;color:var(--text);font-size:11px">${styleOpts}</select>
+          <select id="admin-style">${styleOpts}</select>
           <button class="btn-small" onclick="adminSetStyle()">Set</button>
         </div>
       </div>
+    </div>
 
+    <div class="admin-tab-panel" id="atab-techniques">
       <div class="admin-section">
         <div class="admin-section-title">🎒 Techniques</div>
         <div class="admin-row">
-          <select id="admin-tech-select" style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:3px;color:var(--text);font-size:11px">${techOpts}</select>
+          <select id="admin-tech-select">${techOpts}</select>
           <button class="btn-small" onclick="adminGrantTech()">Grant</button>
         </div>
-        <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
+        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
           <button class="btn-small" onclick="adminAllTechs()">All Techniques</button>
-          <button class="btn-small" onclick="adminGrantSukuna()">🩸 Sukuna Set</button>
-          <button class="btn-small" onclick="adminGrantGojo()">🔵 Gojo Set</button>
           <button class="btn-small" onclick="adminClearTechs()">Clear All</button>
         </div>
       </div>
+    </div>
 
+    <div class="admin-tab-panel" id="atab-dig">
       <div class="admin-section">
         <div class="admin-section-title">⛏️ Dig</div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
           <button class="btn-small" onclick="adminFillCharges()">Fill Charges</button>
           <button class="btn-small" onclick="adminSonarAll()">Reveal All</button>
-          <button class="btn-small" onclick="adminGrantFinger()">🩸 Sukuna Finger</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-tab-panel" id="atab-danger">
+      <div class="admin-section" style="border-color:rgba(255,80,80,0.3)">
+        <div class="admin-section-title" style="color:var(--danger)">⚠️ Danger Zone</div>
+        <div class="admin-row">
+          <button class="btn-small" onclick="if(confirm('Reset ALL progress?')){resetGame();location.reload()}">🗑️ Wipe Save</button>
+          <button class="btn-small" onclick="adminMaxStats()">⚡ Max Stats</button>
         </div>
       </div>
     </div>
   `;
+}
+
+function switchAdminTab(tabId, btn) {
+  // Update buttons
+  btn.closest('.admin-tabs').querySelectorAll('.admin-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  // Update panels
+  const body = btn.closest('.admin-body') || btn.closest('#admin-panel-body');
+  if (!body) return;
+  body.querySelectorAll('.admin-tab-panel').forEach(p => p.classList.remove('active'));
+  const panel = document.getElementById('atab-' + tabId);
+  if (panel) panel.classList.add('active');
 }
 
 function adminAddGold() {
@@ -525,10 +737,6 @@ function adminSetClan() {
     if (clan.bonus.maxHp) { G.player.maxHp += clan.bonus.maxHp; G.player.hp = Math.min(G.player.hp + clan.bonus.maxHp, G.player.maxHp); }
   }
   if (clan.techs) clan.techs.forEach(t => grantTechnique(t));
-  if (clan._gojo && typeof GOJO_TECHNIQUES !== 'undefined') {
-    GOJO_TECHNIQUES.forEach(t => { if (!TECHNIQUES.find(x => x.id === t.id)) TECHNIQUES.push(t); });
-    ['infinity','reversal_red','lapse_blue','hollow_purple','domain_infinite_void'].forEach(id => grantTechnique(id));
-  }
   renderHeritage();
   toast(`Clan set to ${clan.name}!`, 'success');
 }
@@ -563,26 +771,9 @@ function adminGrantTech() {
   const id = document.getElementById('admin-tech-select')?.value;
   if (id) { grantTechnique(id); toast(`Granted: ${id}`, 'success'); }
 }
-function adminGrantSukuna() {
-  ['vessel_switch','dismantle','cleave','fuga','domain_expansion'].forEach(id => grantTechnique(id));
-  renderInventory();
-  toast('🩸 Sukuna techniques granted!', 'success');
-}
-function adminGrantGojo() {
-  if (typeof GOJO_TECHNIQUES !== 'undefined') {
-    GOJO_TECHNIQUES.forEach(t => { if (!TECHNIQUES.find(x => x.id === t.id)) TECHNIQUES.push(t); });
-  }
-  ['infinity','reversal_red','lapse_blue','hollow_purple','domain_infinite_void'].forEach(id => grantTechnique(id));
-  renderInventory();
-  toast('🔵 Gojo techniques granted!', 'success');
-}
 function adminClearTechs() {
   G.player.techniques = [];
   G.player.equipped = [null,null,null,null];
   renderInventory();
   toast('All techniques cleared!', 'warn');
-}
-function adminGrantFinger() {
-  grantTechnique('vessel_switch');
-  toast('🩸 Sukuna\'s Finger found!', 'rare');
 }

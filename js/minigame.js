@@ -48,6 +48,9 @@ function showMinigame(type, difficulty, label, callback, forcedPhrase) {
     case 'countdown':      buildCountdownGame(overlay, difficulty, label); break;
     case 'multi_mash':     buildMultiMashGame(overlay, difficulty, label); break;
     case 'stir':           buildStirGame(overlay, difficulty, label); break;
+    case 'water_drop':     buildWaterDropGame(overlay, difficulty, label); break;
+    case 'dice_rolling':   buildDiceRollingGame(overlay, difficulty, label); break;
+    case 'power_charge':  buildPowerChargeGame(overlay, difficulty, label); break;
     default:          resolveMinigame(1);
   }
 }
@@ -108,7 +111,7 @@ function buildTimingGame(el, difficulty, label) {
     const inZone = pos >= zoneStart && pos <= zoneStart + zoneW;
     const center = Math.abs(pos - (zoneStart + zoneW / 2)) / (zoneW / 2);
     let mult, msg;
-    if (inZone) { mult = center < 0.3 ? 2.0 : 1.5; msg = center < 0.3 ? '💥 PERFECT!' : '✅ Good hit!'; }
+    if (inZone) { mult = center < 0.4 ? 1.5 : 1.0; msg = center < 0.4 ? '💥 PERFECT TIMING!' : '✅ Good timing!'; }
     else        { mult = 0.4; msg = '❌ Missed!'; }
     showMgResult(el, mult, msg, () => resolveMinigame(mult));
   }
@@ -170,15 +173,16 @@ function buildDualZoneGame(el, difficulty, label) {
         cancelAnimationFrame(raf);
         clearTimeout(timeout);
         document.removeEventListener('keydown', onKey);
-        showMgResult(el, 0.4, '❌ Missed zone 1!', () => resolveMinigame(0.4));
+        showMgResult(el, 0.3, '❌ Missed zone 1!', () => resolveMinigame(0.3));
       }
     } else {
       cancelAnimationFrame(raf);
       clearTimeout(timeout);
       document.removeEventListener('keydown', onKey);
       const inZ2 = pos >= zone2Start && pos <= zone2Start + zoneW;
-      const mult = inZ2 ? 2.2 : 0.8;
-      const msg  = inZ2 ? '💥 DOUBLE HIT!' : '⚠️ Missed zone 2!';
+      const nearCenter = inZ2 && Math.abs(pos - (zone2Start + zoneW / 2)) / (zoneW / 2) < 0.4;
+      const mult = nearCenter ? 1.6 : inZ2 ? 1.0 : 0.7;
+      const msg  = nearCenter ? '💥 PERFECT DOUBLE!' : inZ2 ? '✅ Double Strike!' : '⚠️ Missed zone 2!';
       showMgResult(el, mult, msg, () => resolveMinigame(mult));
     }
   }
@@ -233,9 +237,9 @@ function buildReactionGame(el, difficulty, label) {
     const rt = Date.now() - startTime;
     zone.classList.remove('mg-react-active');
     let mult, msg;
-    if (rt < windowMs * 0.3)      { mult = 2.2; msg = `💥 LIGHTNING FAST! (${rt}ms)`; }
-    else if (rt < windowMs * 0.65) { mult = 1.6; msg = `✅ Quick! (${rt}ms)`; }
-    else                           { mult = 1.0; msg = `👍 In time! (${rt}ms)`; }
+    if (rt < 300)                   { mult = 1.5; msg = `💥 Lightning fast! (${rt}ms)`; }
+    else if (rt < windowMs * 0.65)  { mult = 1.0; msg = `✅ In time! (${rt}ms)`; }
+    else                            { mult = 0.4; msg = `⚠️ Slow! (${rt}ms)`; }
     showMgResult(el, mult, msg, () => resolveMinigame(mult));
   }
 
@@ -304,8 +308,8 @@ function buildSequenceGame(el, difficulty, label) {
       highlight();
       if (idx >= seq.length) {
         cleanup();
-        const mult = errors === 0 ? 2.0 : errors <= 1 ? 1.4 : 1.0;
-        showMgResult(el, mult, errors === 0 ? '💥 FLAWLESS!' : '✅ Complete!', () => resolveMinigame(mult));
+        const mult = errors === 0 && idx === len ? 1.5 : errors <= 1 ? 1.0 : 0.8;
+        showMgResult(el, mult, errors === 0 ? '💥 Fast and flawless!' : errors <= 1 ? '✅ Complete!' : '⚠️ Complete with errors', () => resolveMinigame(mult));
       }
     } else {
       errors++;
@@ -351,8 +355,8 @@ function buildMashGame(el, difficulty, label) {
       clearInterval(interval);
       document.removeEventListener('keydown', onKey);
       const ratio = count / target;
-      const mult = ratio >= 1 ? 1.8 : ratio >= 0.6 ? 1.2 : 0.5;
-      showMgResult(el, mult, ratio >= 1 ? '💥 Max power!' : ratio >= 0.6 ? '✅ Decent!' : '❌ Too slow!', () => resolveMinigame(mult));
+      const mult = ratio >= 1 ? 1.5 : ratio >= 0.6 ? 1.2 : ratio >= 0.3 ? 1.0 : 0.5;
+      showMgResult(el, mult, ratio >= 1 ? '💥 PERFECT MASH!' : ratio >= 0.6 ? '✅ Great!' : ratio >= 0.3 ? '👍 Good!' : '❌ Too slow!', () => resolveMinigame(mult));
     }
   }, 50);
 
@@ -364,7 +368,7 @@ function buildMashGame(el, difficulty, label) {
       done = true;
       clearInterval(interval);
       document.removeEventListener('keydown', onKey);
-      showMgResult(el, 1.8, '💥 Max power!', () => resolveMinigame(1.8));
+      showMgResult(el, 1.5, '💥 PERFECT MASH!', () => resolveMinigame(1.5));
     }
   }
 
@@ -418,8 +422,8 @@ function buildHoldGame(el, difficulty, label) {
     const inZone = fill >= zoneStart && fill <= zoneEnd;
     const center = Math.abs(fill - (zoneStart + (zoneEnd - zoneStart) / 2)) / ((zoneEnd - zoneStart) / 2);
     let mult, msg;
-    if (inZone) { mult = center < 0.3 ? 2.0 : 1.5; msg = center < 0.3 ? '💥 PERFECT!' : '✅ Good!'; }
-    else        { mult = fill < zoneStart ? 0.6 : 0.4; msg = fill < zoneStart ? '⚠️ Too early!' : '❌ Overcharged!'; }
+    if (inZone) { mult = center < 0.3 ? 1.4 : 1.0; msg = center < 0.3 ? '💥 PERFECT!' : '✅ Good!'; }
+    else        { mult = fill < zoneStart ? 0.4 : 0.4; msg = fill < zoneStart ? '⚠️ Too early!' : '❌ Overcharged!'; }
     showMgResult(el, mult, msg, () => resolveMinigame(mult));
   }
 
@@ -582,8 +586,8 @@ function buildDragCrushGame(el, difficulty, label) {
     done = true;
     const dist = Math.abs(stoneY - targetY);
     let mult, msg;
-    if (dist <= tolerance * 0.3)      { mult = 2.2; msg = '💥 PERFECT CRUSH!'; stone.textContent = '💥'; }
-    else if (dist <= tolerance)        { mult = 1.6; msg = '✅ Good crush!';     stone.textContent = '💢'; }
+    if (dist <= tolerance * 0.3)      { mult = 1.5; msg = '💥 PERFECT CRUSH!'; stone.textContent = '💥'; }
+    else if (dist <= tolerance)        { mult = 1.2; msg = '✅ Good crush!';     stone.textContent = '💢'; }
     else if (dist <= tolerance * 2)    { mult = 1.0; msg = '⚠️ Close enough!';  stone.textContent = '😬'; }
     else                               { mult = 0.4; msg = '❌ Missed!';         stone.textContent = '😅'; }
     showMgResult(el, mult, msg, () => resolveMinigame(mult));
@@ -639,7 +643,7 @@ function buildQuickTapGame(el, difficulty, label) {
     if (count >= taps) {
       done = true;
       clearTimeout(currentTimeout);
-      const mult = misses === 0 ? 2.0 : misses <= 2 ? 1.5 : 1.0;
+      const mult = misses === 0 ? 1.5 : misses <= 2 ? 1.0 : 0.7;
       showMgResult(el, mult, misses === 0 ? '💥 FLAWLESS!' : '✅ Done!', () => resolveMinigame(mult));
     } else {
       placeTarget();
@@ -666,6 +670,7 @@ const QUICK_JOB_GAMES = [
   (job, cb) => showMinigame('balance',   2, `⚡ ${job.icon} Quick Work — keep balance!`,       cb),
   (job, cb) => showMinigame('countdown', 2, `⚡ ${job.icon} Quick Work — hit on zero!`,        cb),
   (job, cb) => showMinigame('multi_mash',2, `⚡ ${job.icon} Quick Work — multi-mash!`,         cb),
+  (job, cb) => showMinigame('dice_rolling',2, `🎲 ${job.icon} Quick Work — roll for fortune!`, cb),
 ];
 let quickJobIndex = 0;
 
@@ -678,8 +683,8 @@ function quickJobMinigame(job, callback) {
 function buildTypingGame(el, difficulty, label, forcedPhrase) {
   const phrases = {
     1: ['attack', 'strike', 'slash'],
-    2: ['domain expansion', 'malevolent shrine', 'cursed technique'],
-    3: ['domain expansion', 'infinite void', 'hollow purple'],
+    2: ['cosmic storm', 'void collapse', 'chrono shift'],
+    3: ['nexus storm', 'celestial wrath', 'astral slash'],
   };
   const pool = phrases[Math.min(3, difficulty)] || phrases[2];
   const phrase = forcedPhrase || pool[Math.floor(Math.random() * pool.length)];
@@ -727,7 +732,7 @@ function buildTypingGame(el, difficulty, label, forcedPhrase) {
     const elapsed = Date.now() - start;
     const timePct = elapsed / timeLimit;
     if (typed === phrase) {
-      const mult = timePct < 0.4 ? 2.2 : timePct < 0.7 ? 1.8 : 1.4;
+      const mult = timePct < 0.4 ? 1.5 : timePct < 0.7 ? 1.0 : 0.8;
       const msg = timePct < 0.4 ? '💥 BLAZING FAST!' : timePct < 0.7 ? '✅ Perfect!' : '👍 Done!';
       showMgResult(el, mult, msg, () => resolveMinigame(mult));
     } else {
@@ -838,8 +843,8 @@ function buildXSlashGame(el, difficulty, label) {
       const s1 = scoreSlash(points1, 1);
       const s2 = scoreSlash(points2, -1);
       const combined = (s1 + s2) / 2;
-      const mult = Math.min(2.2, combined * 2.2);
-      const msg = mult >= 1.8 ? '💥 PERFECT X!' : mult >= 1.2 ? '✅ Good X!' : mult >= 0.6 ? '⚠️ Wobbly X' : '❌ Too crooked!';
+      const mult = Math.min(1.5, 0.5 + combined * 1.5);
+      const msg = mult >= 1.3 ? '💥 PERFECT X!' : mult >= 1.0 ? '✅ Good X!' : mult >= 0.6 ? '⚠️ Wobbly X' : '❌ Too crooked!';
       showMgResult(el, mult, msg, () => resolveMinigame(mult));
     }
   }
@@ -911,8 +916,8 @@ function buildTripleSlashGame(el, difficulty, label) {
     if (phase >= 3) {
       done = true;
       const avg = scores.reduce((a,b)=>a+b,0)/3;
-      const mult = Math.min(2.2, avg * 2.2);
-      const msg = mult >= 1.8 ? '💥 TRIPLE CLEAVE!' : mult >= 1.2 ? '✅ Good cleave!' : '⚠️ Sloppy...';
+      const mult = Math.min(1.5, 0.5 + avg * 1.5);
+      const msg = mult >= 1.3 ? '💥 TRIPLE SLASH!' : mult >= 1.0 ? '✅ Good slash!' : '⚠️ Sloppy...';
       showMgResult(el, mult, msg, () => resolveMinigame(mult));
     } else {
       status.textContent = `Slash ${phase+1} / 3`;
@@ -964,8 +969,8 @@ function buildArrowChargeGame(el, difficulty, label) {
     const inZone = charge >= TARGET - 10 && charge <= TARGET + 5;
     const center = Math.abs(charge - TARGET) / 10;
     let mult, msg;
-    if (inZone) { mult = center < 0.3 ? 2.2 : 1.7; msg = center < 0.3 ? '💥 PERFECT SHOT!' : '✅ Good shot!'; }
-    else if (charge < TARGET - 10) { mult = 0.5; msg = '⚠️ Undercharged!'; }
+    if (inZone) { mult = center < 0.3 ? 1.5 : 1.0; msg = center < 0.3 ? '💥 PERFECT SHOT!' : '✅ Good shot!'; }
+    else if (charge < TARGET - 10) { mult = 0.4; msg = '⚠️ Undercharged!'; }
     else { mult = 0.3; msg = '❌ Overcharged!'; }
     showMgResult(el, mult, msg, () => resolveMinigame(mult));
   }
@@ -1006,7 +1011,7 @@ function buildPushMashGame(el, difficulty, label) {
     if (elapsed >= timeMs && !done) {
       done = true; clearInterval(interval); document.removeEventListener('keydown', onKey);
       const ratio = count / target;
-      const mult = ratio >= 1 ? 2.0 : ratio >= 0.6 ? 1.3 : 0.5;
+      const mult = ratio >= 1 ? 1.5 : ratio >= 0.6 ? 1.2 : 0.5;
       showMgResult(el, mult, ratio >= 1 ? '💥 MAXIMUM REPULSION!' : ratio >= 0.6 ? '✅ Pushed!' : '❌ Too weak!', () => resolveMinigame(mult));
     }
   }, 50);
@@ -1019,7 +1024,7 @@ function buildPushMashGame(el, difficulty, label) {
     enemy.style.right = (10 + pct) + 'px';
     if (count >= target && !done) {
       done = true; clearInterval(interval); document.removeEventListener('keydown', onKey);
-      showMgResult(el, 2.0, '💥 MAXIMUM REPULSION!', () => resolveMinigame(2.0));
+      showMgResult(el, 1.5, '💥 MAXIMUM REPULSION!', () => resolveMinigame(1.5));
     }
   }
 
@@ -1056,8 +1061,8 @@ function buildDoublePushGame(el, difficulty, label) {
     fill.style.width = Math.max(0, 100 - (elapsed/timeMs)*100) + '%';
     if (elapsed >= timeMs && !done) {
       done = true; clearInterval(interval); document.removeEventListener('keydown', onKey);
-      const mult = phase === 2 && count >= target ? 2.2 : 0.6;
-      showMgResult(el, mult, mult >= 2 ? '💥 DOUBLE REPULSION!' : '⚠️ Incomplete!', () => resolveMinigame(mult));
+      const mult = phase === 2 && count >= target ? 1.5 : 0.6;
+      showMgResult(el, mult, mult >= 1.5 ? '💥 DOUBLE REPULSION!' : '⚠️ Incomplete!', () => resolveMinigame(mult));
     }
   }, 50);
 
@@ -1077,7 +1082,7 @@ function buildDoublePushGame(el, difficulty, label) {
         enemy.textContent = '😡';
       } else {
         done = true; clearInterval(interval); document.removeEventListener('keydown', onKey);
-        showMgResult(el, 2.2, '💥 DOUBLE REPULSION! OBLITERATED!', () => resolveMinigame(2.2));
+        showMgResult(el, 1.5, '💥 DOUBLE REPULSION! OBLITERATED!', () => resolveMinigame(1.5));
       }
     }
   }
@@ -1126,8 +1131,8 @@ function buildPullHoldGame(el, difficulty, label) {
     const inZone = pull >= TARGET - 8 && pull <= TARGET + 8;
     const center = Math.abs(pull - TARGET) / 8;
     let mult, msg;
-    if (inZone) { mult = center < 0.3 ? 2.2 : 1.7; msg = center < 0.3 ? '💥 PERFECT PULL!' : '✅ Good pull!'; }
-    else if (pull < TARGET - 8) { mult = 0.6; msg = '⚠️ Not enough pull!'; }
+    if (inZone) { mult = center < 0.3 ? 1.5 : 1.0; msg = center < 0.3 ? '💥 PERFECT PULL!' : '✅ Good pull!'; }
+    else if (pull < TARGET - 8) { mult = 0.4; msg = '⚠️ Not enough pull!'; }
     else { mult = 0.3; msg = '❌ Pulled too hard!'; }
     showMgResult(el, mult, msg, () => resolveMinigame(mult));
   }
@@ -1169,8 +1174,8 @@ function buildGravityCrushGame(el, difficulty, label) {
     if (!dragging||done) return; dragging = false; done = true;
     const dist = Math.abs(enemyY - targetY);
     let mult, msg;
-    if (dist <= tolerance * 0.3) { mult = 2.2; msg = '💥 GRAVITATIONAL COLLAPSE!'; enemy.textContent = '💥'; }
-    else if (dist <= tolerance)   { mult = 1.7; msg = '✅ Crushed!'; enemy.textContent = '💢'; }
+    if (dist <= tolerance * 0.3) { mult = 1.5; msg = '💥 GRAVITATIONAL COLLAPSE!'; enemy.textContent = '💥'; }
+    else if (dist <= tolerance)   { mult = 1.2; msg = '✅ Crushed!'; enemy.textContent = '💢'; }
     else if (dist <= tolerance*2) { mult = 1.0; msg = '⚠️ Close!'; enemy.textContent = '😬'; }
     else                          { mult = 0.4; msg = '❌ Missed!'; enemy.textContent = '😅'; }
     showMgResult(el, mult, msg, () => resolveMinigame(mult));
@@ -1178,6 +1183,80 @@ function buildGravityCrushGame(el, difficulty, label) {
 
   area.addEventListener('mouseup', release); area.addEventListener('touchend', release);
   setTimeout(() => { if (!done) { done = true; showMgResult(el, 0.3, '⏰ Too slow!', () => resolveMinigame(0.3)); } }, 5000);
+}
+
+// ── POWER CHARGE — tap to stop the charging bar in the golden zone (Celestial Wrath) ──
+function buildPowerChargeGame(el, difficulty, label) {
+  const speed = 1.2 + difficulty * 0.35;
+  let pos = 0, dir = 1, raf, done = false;
+
+  const goldenStart = 68, goldenEnd = 82;
+  const silverStart = 55, silverEnd = 90;
+
+  el.innerHTML = `<div class="mg-box">
+    <div class="mg-label">${label}</div>
+    <div class="mg-hint">⭐ Stop the energy in the <span style="color:#f5c542">golden zone</span> for max power!</div>
+    <div class="mg-timing-track" id="mg-track">
+      <div style="position:absolute;left:${silverStart}%;width:${silverEnd - silverStart}%;height:100%;background:rgba(108,159,255,0.2);border:1px solid rgba(108,159,255,0.4);border-radius:3px"></div>
+      <div style="position:absolute;left:${goldenStart}%;width:${goldenEnd - goldenStart}%;height:100%;background:rgba(245,197,66,0.35);border:1px solid #f5c542;border-radius:3px"></div>
+      <div class="mg-indicator" id="mg-ind"></div>
+    </div>
+    <div style="text-align:center;margin-top:8px">
+      <div style="font-size:11px;color:var(--dim)" id="mg-charge-hint">⚡ Energy charging…</div>
+      <button class="mg-btn" id="mg-charge-btn" style="background:rgba(245,197,66,0.15);border-color:#f5c542;margin-top:8px">⚡ Release! [Space]</button>
+    </div>
+  </div>`;
+
+  const ind = el.querySelector('#mg-ind');
+  const hintEl = el.querySelector('#mg-charge-hint');
+  const btn = el.querySelector('#mg-charge-btn');
+
+  function animate() {
+    pos += speed * dir;
+    if (pos >= 100) { pos = 100; dir = -1; }
+    if (pos <= 0) { pos = 0; dir = 1; }
+    ind.style.left = pos + '%';
+    raf = requestAnimationFrame(animate);
+  }
+
+  const timeout = setTimeout(() => {
+    if (done) return;
+    done = true;
+    cancelAnimationFrame(raf);
+    document.removeEventListener('keydown', onKey);
+    showMgResult(el, 0.3, 'Too slow! Energy dissipated…', () => resolveMinigame(0.3));
+  }, 6000);
+
+  function fire() {
+    if (done) return;
+    done = true;
+    cancelAnimationFrame(raf);
+    clearTimeout(timeout);
+    document.removeEventListener('keydown', onKey);
+
+    let mult;
+    if (pos >= goldenStart && pos <= goldenEnd) {
+      mult = 1.0;
+      hintEl.textContent = '⭐ PERFECT RELEASE! Maximum cosmic fury!';
+      hintEl.style.color = '#f5c542';
+    } else if (pos >= silverStart && pos <= silverEnd) {
+      mult = 0.8;
+      hintEl.textContent = '💪 Good release! Strong power!';
+      hintEl.style.color = '#6c9fff';
+    } else {
+      mult = 0.4;
+      hintEl.textContent = '💨 Released too early/late…';
+      hintEl.style.color = '#8b95a5';
+    }
+    btn.disabled = true;
+    showMgResult(el, mult, `${mult >= 0.9 ? 'Star Unleashed!' : mult >= 0.6 ? 'Partial Release' : 'Dissipated'} (${mult.toFixed(1)}x)`, () => resolveMinigame(mult));
+  }
+
+  function onKey(e) { if (e.code === 'Space' || e.key === ' ') { e.preventDefault(); fire(); } }
+  document.addEventListener('keydown', onKey);
+  btn.addEventListener('click', fire);
+
+  raf = requestAnimationFrame(animate);
 }
 
 // ── COLOR MERGE — hit red zone then blue zone to create purple (Hollow Purple) ──
@@ -1234,8 +1313,8 @@ function buildColorMergeGame(el, difficulty, label) {
       const inBlue = pos >= blueStart && pos <= blueStart + zoneW;
       if (inBlue) {
         // Purple explosion!
-        phaseEl.textContent = '🟣 HOLLOW PURPLE!'; phaseEl.style.color = '#ce93d8';
-        showMgResult(el, 2.2, '🟣 HOLLOW PURPLE!', () => resolveMinigame(2.2));
+        phaseEl.textContent = '🟣 CELESTIAL FUSION!'; phaseEl.style.color = '#ce93d8';
+        showMgResult(el, 1.0, '🟣 CELESTIAL FUSION!', () => resolveMinigame(1.0));
       } else {
         showMgResult(el, 0.6, '⚠️ Missed BLUE — incomplete!', () => resolveMinigame(0.6));
       }
@@ -1269,7 +1348,7 @@ function buildDodgeTapGame(el, difficulty, label) {
     if (round > rounds) {
       done = true;
       const ratio = hits / rounds;
-      const mult = ratio >= 1 ? 2.0 : ratio >= 0.6 ? 1.4 : 0.6;
+      const mult = ratio >= 1 ? 1.5 : ratio >= 0.6 ? 1.0 : 0.5;
       showMgResult(el, mult, ratio >= 1 ? '💥 PERFECT COUNTER!' : ratio >= 0.6 ? '✅ Good!' : '❌ Too slow!', () => resolveMinigame(mult));
       return;
     }
@@ -1372,7 +1451,7 @@ function buildRhythmGame(el, difficulty, label) {
   function finish() {
     document.removeEventListener('keydown', onKey);
     const ratio = hits / beats;
-    const mult = ratio >= 0.8 ? 2.0 : ratio >= 0.5 ? 1.4 : 0.6;
+    const mult = ratio >= 0.8 ? 1.5 : ratio >= 0.5 ? 1.0 : 0.5;
     showMgResult(el, mult, ratio >= 0.8 ? '💥 PERFECT RHYTHM!' : ratio >= 0.5 ? '✅ Good beat!' : '❌ Off beat!', () => resolveMinigame(mult));
   }
 
@@ -1425,7 +1504,7 @@ function buildBalanceGame(el, difficulty, label) {
   function finish() {
     document.removeEventListener('keydown', onKey);
     const ratio = inZoneFrames / Math.max(1, totalFrames);
-    const mult = ratio >= 0.7 ? 2.0 : ratio >= 0.4 ? 1.4 : 0.6;
+    const mult = ratio >= 0.7 ? 1.5 : ratio >= 0.4 ? 1.0 : 0.5;
     showMgResult(el, mult, ratio >= 0.7 ? '💥 PERFECT BALANCE!' : ratio >= 0.4 ? '✅ Balanced!' : '❌ Too wobbly!', () => resolveMinigame(mult));
   }
 
@@ -1461,7 +1540,7 @@ function buildCountdownGame(el, difficulty, label) {
     numEl.textContent = count;
     numEl.style.color = count <= 2 ? 'var(--danger)' : count <= 3 ? 'var(--warn)' : 'var(--gold)';
     numEl.style.textShadow = count <= 2 ? '0 0 20px var(--danger)' : '0 0 20px var(--gold)';
-    if (count <= 0) {
+    if (count < 0) {
       clearInterval(interval);
       if (!done) {
         done = true;
@@ -1479,9 +1558,9 @@ function buildCountdownGame(el, difficulty, label) {
     document.removeEventListener('keydown', onKey);
     const diff = Math.abs(count);
     let mult, msg;
-    if (count === 0)      { mult = 2.2; msg = '💥 PERFECT ZERO!'; }
-    else if (count === 1) { mult = 1.8; msg = '✅ Almost perfect!'; }
-    else if (count === 2) { mult = 1.3; msg = '👍 Close enough!'; }
+    if (count === 0)      { mult = 1.8; msg = '💥 PERFECT ZERO!'; }
+    else if (count === 1) { mult = 1.2; msg = '✅ Almost perfect!'; }
+    else if (count === 2) { mult = 1.0; msg = '👍 Close enough!'; }
     else                  { mult = 0.5; msg = `⚠️ Too early! (${count} left)`; }
     numEl.textContent = count === 0 ? '💥' : count;
     showMgResult(el, mult, msg, () => resolveMinigame(mult));
@@ -1536,7 +1615,7 @@ function buildMultiMashGame(el, difficulty, label) {
       idx++; highlight();
       if (idx >= seq.length) {
         done = true; clearInterval(timer); document.removeEventListener('keydown', onKey);
-        const mult = errors === 0 ? 2.0 : errors <= 2 ? 1.5 : 1.0;
+        const mult = errors === 0 ? 1.5 : errors <= 2 ? 1.0 : 0.7;
         showMgResult(el, mult, errors === 0 ? '💥 FLAWLESS!' : '✅ Complete!', () => resolveMinigame(mult));
       }
     } else {
@@ -1556,11 +1635,14 @@ function buildMultiMashGame(el, difficulty, label) {
 }
 
 function showMgResult(el, mult, msg, cb) {
-  const color = mult >= 1.8 ? 'var(--gold)' : mult >= 1.4 ? 'var(--ok)' : mult >= 0.9 ? 'var(--accent)' : 'var(--danger)';
+  const color = mult >= 1.4 ? 'var(--gold)' : mult >= 1.1 ? 'var(--ok)' : mult >= 0.8 ? 'var(--accent)' : 'var(--danger)';
+  const stars = mult >= 1.4 ? '★★★' : mult >= 1.1 ? '★★☆' : mult >= 0.8 ? '★☆☆' : '☆☆☆';
   const resultDiv = document.createElement('div');
   resultDiv.className = 'mg-result';
-  resultDiv.innerHTML = `<span style="color:${color};font-size:22px;font-weight:800">${msg}</span><br>
-    <span style="color:var(--dim);font-size:13px">${mult >= 1 ? mult.toFixed(1) + '× damage' : Math.floor(mult * 100) + '% damage'}</span>`;
+  resultDiv.innerHTML = `
+    <div class="mg-result-stars" style="color:${color};font-size:16px;letter-spacing:2px;margin-bottom:4px">${stars}</div>
+    <div style="color:${color};font-size:22px;font-weight:800;animation:resultPopIn 0.3s cubic-bezier(0.34,1.56,0.64,1) forwards">${msg}</div>
+    <div style="color:var(--dim);font-size:13px;margin-top:4px">${mult >= 1 ? mult.toFixed(1) + '× damage' : Math.floor(mult * 100) + '% damage'}</div>`;
   el.querySelector('.mg-box')?.appendChild(resultDiv);
   setTimeout(cb, 800);
 }
@@ -1637,24 +1719,19 @@ const TECHNIQUE_MINIGAMES = {
   'soul_drain':      ['hold',      'reaction',  3, '💀 Soul Drain!',          '💀 Soul Drain — react!'],
   'star_fall':       ['mash',      'dual_zone', 3, '🌟 Star Fall!',           '🌟 Star Fall — double!'],
   'divine_wrath':    ['sequence',  'mash',      3, '⚡ Divine Wrath!',        '⚡ Divine Wrath — obliterate!'],
-  // JJK secret techniques — each has a unique custom minigame
-  'vessel_switch':        ['reaction',      'dual_zone',    3, '🩸 Vessel Switch — react instantly!',        '🩸 Vessel Switch — double strike!'],
-  'dismantle':            ['x_slash',       'x_slash',      3, '✂️ Dismantle — draw the X!',                 '✂️ Dismantle — draw the X!'],
-  'cleave':               ['triple_slash',  'triple_slash', 3, '🔪 Cleave — draw 3 slashes!',                '🔪 Cleave — draw 3 slashes!'],
-  'fuga':                 ['arrow_charge',  'arrow_charge', 3, '🏹 Fuga — charge the Giant Flame Arrow!',    '🏹 Fuga — charge the Giant Flame Arrow!'],
-  'domain_expansion':     ['typing',        'typing',       3, '🏯 Domain Expansion — type it!',             '🏯 Domain Expansion — type it!'],
-  'reversal_red':         ['push_mash',     'push_mash',    3, '🔴 Reversal Red — PUSH!',                    '🔴 Reversal Red — PUSH!'],
-  'reversal_red_max':     ['double_push',   'double_push',  3, '🔴 Reversal Red MAX — DOUBLE PUSH!',         '🔴 Reversal Red MAX — DOUBLE PUSH!'],
-  'lapse_blue':           ['pull_hold',     'pull_hold',    3, '🔵 Lapse Blue — PULL!',                      '🔵 Lapse Blue — PULL!'],
-  'lapse_blue_max':       ['gravity_crush', 'gravity_crush',3, '🔵 Lapse Blue MAX — Gravitational Collapse!','🔵 Lapse Blue MAX — Gravitational Collapse!'],
-  'hollow_purple':        ['color_merge',   'color_merge',  3, '🟣 Hollow Purple — merge Red and Blue!',     '🟣 Hollow Purple — merge Red and Blue!'],
-  'domain_infinite_void': ['typing',        'typing',       3, '🌌 Domain Expansion: Infinite Void!',        '🌌 Domain Expansion: Infinite Void!'],
+  // Celestial clan techniques
+  'astral_slash':          ['reaction',      'dual_zone',    3, '✨ Astral Slash — react instantly!',        '✨ Astral Slash — double strike!'],
+  'chrono_strike':         ['push_mash',     'push_mash',    3, '⏳ Chrono Strike — PUSH!',                   '⏳ Chrono Strike — PUSH!'],
+  'chrono_strike_max':     ['double_push',   'double_push',  3, '⏳ Chrono Strike MAX — DOUBLE PUSH!',        '⏳ Chrono Strike MAX — DOUBLE PUSH!'],
+  'void_nova':             ['pull_hold',     'pull_hold',    3, '🌑 Void Nova — PULL!',                       '🌑 Void Nova — PULL!'],
+  'void_nova_max':         ['gravity_crush', 'gravity_crush',3, '🌑 Void Nova MAX — Gravitational Collapse!', '🌑 Void Nova MAX — Gravitational Collapse!'],
+  'celestial_wrath':       ['power_charge',  'power_charge',  3, '⚡ Celestial Wrath — charge the dying star!', '⚡ Celestial Wrath — unleash cosmic fury!'],
+  'nexus_storm':           ['typing',        'typing',       3, '🌀 Nexus Storm — type it!',                  '🌀 Nexus Storm — type it!'],
 };
 
 // Forced phrases for specific techniques — always type exactly this
 const TECHNIQUE_FORCED_PHRASES = {
-  'domain_expansion': 'malevolent shrine',
-  'domain_infinite_void': 'infinite void',
+  'nexus_storm': 'nexus storm',
 };
 
 function techniqueMinigame(tech, callback) {
@@ -1817,9 +1894,9 @@ function buildStirGame(el, difficulty, label) {
     const elapsed = Date.now() - start;
     const timePct = elapsed / timeMs;
     let mult, msg;
-    if (ratio >= 1 && timePct < 0.5)      { mult = 2.2; msg = '💥 PERFECT BREW!'; }
-    else if (ratio >= 1)                   { mult = 1.8; msg = '✅ Well stirred!'; }
-    else if (ratio >= 0.6)                 { mult = 1.2; msg = '⚠️ Partially stirred…'; }
+    if (ratio >= 1 && timePct < 0.5)      { mult = 2.0; msg = '💥 PERFECT BREW!'; }
+    else if (ratio >= 1)                   { mult = 1.0; msg = '✅ Well stirred!'; }
+    else if (ratio >= 0.6)                 { mult = 0.8; msg = '⚠️ Partially stirred…'; }
     else                                   { mult = 0.5; msg = '❌ Barely stirred!'; }
     showMgResult(el, mult, msg, () => resolveMinigame(mult));
   }
@@ -1829,4 +1906,165 @@ function buildStirGame(el, difficulty, label) {
   // Reset angle tracking on mouse leave/re-enter
   area.addEventListener('mouseleave', () => { lastAngle = null; });
   area.addEventListener('mouseenter', () => { lastAngle = null; });
+}
+
+// ── WATER DROP GAME — bouncing droplet, tap when near the plant ──
+function buildWaterDropGame(el, difficulty, label) {
+  const trackH = 200;
+  const dropSize = 32;
+  let pos = 0;
+  let dir = 1;
+  const speed = 1.2 + difficulty * 0.4;
+  let raf;
+  let done = false;
+  const timeLimit = 5000;
+
+  el.innerHTML = `<div class="mg-box">
+    <div class="mg-label">${label}</div>
+    <div class="mg-hint">Tap when the 💧 is near the 🌱 at the bottom!</div>
+    <div style="position:relative;height:${trackH}px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;margin:12px 0;overflow:hidden;cursor:pointer" id="mg-wdrop-area">
+      <div style="position:absolute;bottom:6px;left:50%;transform:translateX(-50%);font-size:28px;opacity:0.6;pointer-events:none">🌱</div>
+      <div id="mg-wdrop-drop" style="position:absolute;left:50%;transform:translateX(-50%);font-size:${dropSize}px;pointer-events:none;transition:none">💧</div>
+      <div style="position:absolute;bottom:0;left:0;right:0;height:30%;background:rgba(39,174,96,0.08);border-top:1px dashed rgba(39,174,96,0.25);pointer-events:none"></div>
+    </div>
+    <button class="btn-primary mg-btn" id="mg-wdrop-btn">💧 Water! [Space]</button>
+  </div>`;
+
+  const drop = el.querySelector('#mg-wdrop-drop');
+  const area = el.querySelector('#mg-wdrop-area');
+
+  function animate() {
+    if (done) return;
+    pos += speed * dir;
+    if (pos >= 100) { pos = 100; dir = -1; }
+    if (pos <= 0)   { pos = 0;   dir = 1; }
+    const px = (pos / 100) * (trackH - dropSize);
+    drop.style.top = px + 'px';
+    raf = requestAnimationFrame(animate);
+  }
+  raf = requestAnimationFrame(animate);
+
+  const timeout = setTimeout(() => {
+    if (done) return;
+    done = true;
+    cancelAnimationFrame(raf);
+    document.removeEventListener('keydown', onKey);
+    showMgResult(el, 0.3, '⏰ Too slow!', () => resolveMinigame(0.3));
+  }, timeLimit);
+
+  function fire() {
+    if (done) return;
+    done = true;
+    cancelAnimationFrame(raf);
+    clearTimeout(timeout);
+    document.removeEventListener('keydown', onKey);
+
+    // pos: 100 = bottom (near plant), 0 = top
+    const fromBottom = 100 - pos;
+    let mult, msg;
+    if (fromBottom <= 8)       { mult = 1.8; msg = '💥 PERFECT splash!'; }
+    else if (fromBottom <= 20) { mult = 1.0; msg = '✅ Good soak!'; }
+    else                       { mult = 0.4; msg = '❌ Missed the roots!'; }
+    showMgResult(el, mult, msg, () => resolveMinigame(mult));
+  }
+
+  function onKey(e) { if (e.code === 'Space') { e.preventDefault(); fire(); } }
+  document.addEventListener('keydown', onKey);
+  el.querySelector('#mg-wdrop-btn').addEventListener('click', fire);
+  area.addEventListener('click', fire);
+}
+
+// ── DICE ROLLING — number cycles 1-20, tap to stop at the peak ──
+function buildDiceRollingGame(el, difficulty, label) {
+  const cycleSpeed = Math.max(40, 90 - difficulty * 10);
+  let current = 1;
+  let rolling = false;
+  let timer = null;
+  let done = false;
+
+  el.innerHTML = `<div class="mg-box">
+    <div class="mg-label">${label}</div>
+    <div class="mg-hint">Stop the number at its peak! Higher = more power!</div>
+    <div class="mg-dice-stage">
+      <div class="mg-dice-display" id="mg-dice-num">1</div>
+    </div>
+    <div style="text-align:center;margin-top:8px">
+      <div style="display:flex;justify-content:center;gap:8px;font-size:11px;color:var(--dim)">
+        <span style="color:#f5c542">18-20: 1.0x</span>
+        <span style="color:#a855f7">14-17: 0.8x</span>
+        <span style="color:#6c9fff">10-13: 0.6x</span>
+        <span>1-9: 0.3x</span>
+      </div>
+      <button class="mg-btn" id="mg-dice-btn" style="background:rgba(168,85,247,0.15);border-color:#a855f7;margin-top:10px">🎲 Stop! [Space]</button>
+    </div>
+  </div>`;
+
+  // Inject dice minigame CSS
+  if (!document.getElementById('mg-dice-css')) {
+    const s = document.createElement('style');
+    s.id = 'mg-dice-css';
+    s.textContent = `
+      .mg-dice-stage{width:140px;height:140px;margin:12px auto;display:flex;align-items:center;justify-content:center;perspective:400px}
+      .mg-dice-display{font-size:80px;font-weight:900;color:var(--text);line-height:1;min-width:100px;text-align:center}
+      .mg-dice-spinning{animation:mgDiceFlash 0.1s linear infinite}
+      @keyframes mgDiceFlash{0%{transform:scale(1) rotateX(0deg)}50%{transform:scale(0.92) rotateX(20deg)}100%{transform:scale(1) rotateX(0deg)}}
+      .mg-dice-landed{animation:mgDiceLand 0.35s cubic-bezier(0.34,1.56,0.64,1)}
+      @keyframes mgDiceLand{0%{transform:scale(0.4) rotateX(180deg)}60%{transform:scale(1.2) rotateX(-10deg)}100%{transform:scale(1) rotateX(0deg)}}
+    `;
+    document.head.appendChild(s);
+  }
+
+  const numEl = el.querySelector('#mg-dice-num');
+  const btn = el.querySelector('#mg-dice-btn');
+
+  function startRolling() {
+    if (rolling || done) return;
+    rolling = true;
+    btn.textContent = 'Rolling…';
+    numEl.classList.add('mg-dice-spinning');
+    tick();
+  }
+
+  function tick() {
+    if (done) return;
+    current = Math.floor(Math.random() * 20) + 1;
+    numEl.textContent = current;
+    // Color shift while spinning
+    const hue = (current * 18) % 360;
+    numEl.style.color = `hsl(${hue}, 60%, 65%)`;
+    timer = setTimeout(tick, cycleSpeed);
+  }
+
+  function stop() {
+    if (done) return;
+    done = true;
+    clearTimeout(timer);
+    rolling = false;
+    numEl.classList.remove('mg-dice-spinning');
+    numEl.classList.add('mg-dice-landed');
+
+    // Final color
+    let color = '#8b95a5';
+    let mult = 0.3;
+    if (current >= 18) { color = '#f5c542'; mult = 1.0; }
+    else if (current >= 14) { color = '#a855f7'; mult = 0.8; }
+    else if (current >= 10) { color = '#6c9fff'; mult = 0.6; }
+    numEl.style.color = color;
+    btn.disabled = true;
+
+    const mgLabel = mult >= 0.9 ? 'Perfect Stop!' : mult >= 0.6 ? 'Good Timing!' : 'Weak Stop…';
+    showMgResult(el, mult, `${mgLabel} — ${current} (${mult.toFixed(1)}x)`, () => {
+      numEl.classList.remove('mg-dice-landed');
+      resolveMinigame(mult);
+    });
+  }
+
+  function onKey(e) { if (e.code === 'Space') { e.preventDefault(); if (!rolling) startRolling(); else stop(); } }
+  document.addEventListener('keydown', onKey);
+  btn.addEventListener('click', () => { if (!rolling) startRolling(); else stop(); });
+
+  // Auto-start after a short delay
+  setTimeout(startRolling, 300);
+
+  const timeout = setTimeout(() => { if (!done) { done = true; clearTimeout(timer); document.removeEventListener('keydown', onKey); showMgResult(el, 0.3, 'Too slow!', () => resolveMinigame(0.3)); } }, 5000);
 }

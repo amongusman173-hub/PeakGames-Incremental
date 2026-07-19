@@ -24,6 +24,11 @@ const STORY_CHAPTERS = [
     narrative: ['The village of Ashford burns.', 'Bandits swarm the streets.', 'Fight through 10 waves to escape!'],
     xpReward: 80, goldReward: 30, techReward: null,
     outro: 'You escaped the burning village. Your journey begins.',
+    dialog: [
+      { speaker: 'Village Elder', text: 'The darkness stirs beyond the walls. You must prepare yourself.', icon: '👴' },
+      { speaker: 'You', text: 'I\'m ready. What must I do?', icon: '🗡️' },
+      { speaker: 'Village Elder', text: 'Clear the bandits from the forest. Show them the strength of the Ascendant.', icon: '👴' },
+    ],
     stageLines: [
       'A bandit scout blocks the road.',
       'A torch-wielding thug charges.',
@@ -46,6 +51,10 @@ const STORY_CHAPTERS = [
     narrative: ['The trees twist and groan.', 'Dark spirits haunt every shadow.', 'Survive 10 encounters to reach the heart.'],
     xpReward: 200, goldReward: 80, techReward: 'quick_step',
     outro: 'The wraith dissolves. You find a scroll teaching Quick Step.',
+    dialog: [
+      { speaker: 'Forest Guide', text: 'The forest was not always like this. A corruption has taken root.', icon: '🧝' },
+      { speaker: 'You', text: 'I can feel it. The trees are crying out.', icon: '🗡️' },
+    ],
     stageLines: [
       'A glowing sprite darts at you.',
       'Thorned vines lash out.',
@@ -68,6 +77,11 @@ const STORY_CHAPTERS = [
     narrative: ['The ruins of Valdris stretch before you.', 'Automated constructs patrol the streets.', 'Destroy 10 sentinels to reach the core.'],
     xpReward: 500, goldReward: 200, techReward: 'war_cry',
     outro: 'The guardian crumbles. You find an ancient war manual.',
+    dialog: [
+      { speaker: 'Ghost of Valdris', text: 'This city once thrived. Now only machines remain to guard its bones.', icon: '👻' },
+      { speaker: 'You', text: 'What happened here?', icon: '🗡️' },
+      { speaker: 'Ghost of Valdris', text: 'The same darkness you fight now. It consumed us all. Do not let it consume you.', icon: '👻' },
+    ],
     stageLines: [
       'A stone sentinel activates.',
       'Two patrol drones converge.',
@@ -90,6 +104,11 @@ const STORY_CHAPTERS = [
     narrative: ['Master Kael\'s disciples block your path.', 'Each one fights with your own techniques.', 'Defeat 10 to face your former master.'],
     xpReward: 1000, goldReward: 400, techReward: 'holy_slash',
     outro: 'Kael falls. "The demon lord awaits in the Abyss."',
+    dialog: [
+      { speaker: 'Kael', text: 'You were my greatest student. And my greatest mistake.', icon: '🔮' },
+      { speaker: 'You', text: 'You taught me everything — so I could surpass you.', icon: '🗡️' },
+      { speaker: 'Kael', text: 'Surpass me? You cannot even fathom the power I wield now.', icon: '🔮' },
+    ],
     stageLines: [
       'A hooded disciple attacks.',
       'A shadow mage casts a curse.',
@@ -112,6 +131,10 @@ const STORY_CHAPTERS = [
     narrative: ['The sky tears open above the mountain.', 'Demon soldiers pour through the rift.', 'Fight through 10 waves to reach the Herald.'],
     xpReward: 2500, goldReward: 1000, techReward: 'shadow_clone',
     outro: 'The Herald shatters. The gate swings open.',
+    dialog: [
+      { speaker: 'Herald', text: 'Welcome, mortal. You stand before the gate of eternity.', icon: '🔱' },
+      { speaker: 'You', text: 'I didn\'t come here to talk. Open the gate or I\'ll open it myself.', icon: '🗡️' },
+    ],
     stageLines: [
       'A demon scout charges.',
       'A hellhound leaps.',
@@ -134,6 +157,11 @@ const STORY_CHAPTERS = [
     narrative: ['The demon realm burns around you.', "Vael's champions stand between you and him.", 'Defeat all 10 to face the Demon Lord himself.'],
     xpReward: 10000, goldReward: 5000, techReward: 'hellfire',
     outro: 'Vael dissolves into light. The world is saved. But a new darkness stirs...',
+    dialog: [
+      { speaker: 'Demon Sentry', text: 'The master has been expecting you, hero.', icon: '😈' },
+      { speaker: 'You', text: 'Then he won\'t be disappointed.', icon: '🗡️' },
+      { speaker: 'Demon Sentry', text: 'Oh, he won\'t. He will feast on your soul tonight.', icon: '😈' },
+    ],
     stageLines: [
       'A demon champion attacks.',
       'A void knight charges.',
@@ -156,6 +184,10 @@ const STORY_CHAPTERS = [
     narrative: ['The demon realm smolders.', "Vael's generals refuse to surrender.", 'You must destroy them all.'],
     xpReward: 18000, goldReward: 8000, techReward: 'void_rend',
     outro: 'Malachar falls. Two generals remain.',
+    dialog: [
+      { speaker: 'Wounded Soldier', text: 'The generals are gathering their forces. We cannot hold them.', icon: '🩸' },
+      { speaker: 'You', text: 'You won\'t have to. Leave them to me.', icon: '🗡️' },
+    ],
     stageLines: [
       'An ash soldier rises from the embers.',
       'A lava beast erupts.',
@@ -178,6 +210,11 @@ const STORY_CHAPTERS = [
     narrative: ['Reality fractures around you.', 'Void creatures pour through the rift.', 'The Void Sovereign watches from the darkness.'],
     xpReward: 30000, goldReward: 14000, techReward: 'divine_heal',
     outro: 'The Void Sovereign shatters. The rift begins to close.',
+    dialog: [
+      { speaker: 'Void Seer', text: 'You peer into the void... and the void peers back.', icon: '🌑' },
+      { speaker: 'You', text: 'Then let it look. It will see only fire.', icon: '🗡️' },
+      { speaker: 'Void Seer', text: 'The Void Sovereign does not fear fire. It fears nothing.', icon: '🌑' },
+    ],
     stageLines: [
       'A void spawn tears through reality.',
       'A null beast phases in.',
@@ -200,6 +237,10 @@ const STORY_CHAPTERS = [
     narrative: ['The sky tears open with divine light.', 'Fallen angels descend with righteous fury.', 'Even heaven has been corrupted.'],
     xpReward: 55000, goldReward: 25000, techReward: 'holy_slash',
     outro: 'Zephyros falls. The celestial war ends. One final threat remains.',
+    dialog: [
+      { speaker: 'Fallen Seraph', text: 'You dare challenge the heavens themselves?', icon: '🪽' },
+      { speaker: 'You', text: 'Heaven or hell, I will cut through anything that threatens the world.', icon: '🗡️' },
+    ],
     stageLines: [
       'A fallen seraph dives.',
       'A divine construct activates.',
@@ -222,6 +263,11 @@ const STORY_CHAPTERS = [
     narrative: ['Beyond the void, beyond heaven.', 'The Origin — the source of all evil — waits.', 'This is the true final battle.', 'Everything has led to this moment.'],
     xpReward: 150000, goldReward: 80000, techReward: 'elixir_of_gods',
     outro: 'The Origin dissolves into pure light. The darkness is gone forever. You are the greatest hero who ever lived. (Rebirth to transcend even further)',
+    dialog: [
+      { speaker: 'The Origin', text: 'Every battle you fought, I orchestrated. Every victory, mine to grant.', icon: '✨' },
+      { speaker: 'You', text: 'Then I\'ll make this one count. The final victory is mine.', icon: '🗡️' },
+      { speaker: 'The Origin', text: 'So bold. So naive. Let us see if heroism can survive infinity.', icon: '✨' },
+    ],
     stageLines: [
       'An origin fragment tears reality.',
       'A primordial beast awakens.',
@@ -233,6 +279,140 @@ const STORY_CHAPTERS = [
       'A reality anchor breaks.',
       'The Origin\'s avatar descends.',
       'The Origin itself awakens.',
+    ],
+  },
+  {
+    id: 'ch11', title: 'The Shattered Timeline', num: 'Chapter 11',
+    desc: 'Time fractures around you. Past, present, and future collide.',
+    levelReq: 75,
+    baseEnemy: { name: 'Time Wraith', icon: '⏳', hp: 800, atk: 200, def: 60, spd: 50 },
+    bossEnemy: { name: 'Chronarch', icon: '🕰️', hp: 2400, atk: 400, def: 90, spd: 60, intro: 'Your past, present, and future all end at my hands.' },
+    narrative: ['The timeline shatters like glass.', 'Echoes of battles past and future swirl around you.', 'Defeat the Time Wraiths to mend the fractures.', 'The Chronarch waits at the end of time itself.'],
+    xpReward: 200000, goldReward: 100000, techReward: 'chrono_strike',
+    outro: 'The Chronarch falls and the timeline stabilizes. You master Chrono Strike.',
+    stageLines: [
+      'A time wraith flickers into view.',
+      'A temporal echo charges.',
+      'A past-self variant attacks.',
+      'A future specter phases in.',
+      'A chronoshard explodes.',
+      'A loop guardian blocks the path.',
+      'A paradox beast roars.',
+      'A timeline fragment crumbles.',
+      'The Chronarch\'s sentinel steps forward.',
+      'The Chronarch emerges from the timestream.',
+    ],
+    dialog: [
+      { speaker: 'Temporal Guide', text: 'The timeline is fracturing. Every moment is becoming a battlefield.', icon: '⏳' },
+      { speaker: 'You', text: 'I can see it — versions of myself, fighting in wars that haven\'t happened yet.', icon: '🗡️' },
+      { speaker: 'Temporal Guide', text: 'Only you can walk between them. Only you can stop the Chronarch.', icon: '⏳' },
+    ],
+  },
+  {
+    id: 'ch12', title: 'The Void\'s Heart', num: 'Chapter 12',
+    desc: 'You descend into the deepest void, where darkness itself is alive.',
+    levelReq: 80,
+    baseEnemy: { name: 'Void Colossus', icon: '🕳️', hp: 1200, atk: 280, def: 90, spd: 40 },
+    bossEnemy: { name: 'Void Mother', icon: '🌑', hp: 3600, atk: 560, def: 135, spd: 48, intro: 'I am the heart of all voids. You stand in my domain now, mortal.' },
+    narrative: ['The void deepens beyond comprehension.', 'Colossal void beings guard the darkness.', 'Every step forward is a step into oblivion.', 'The Void Mother pulses at the center of everything.'],
+    xpReward: 350000, goldReward: 180000, techReward: 'void_nova',
+    outro: 'The Void Mother implodes, creating a burst of pure energy. You master Void Nova.',
+    stageLines: [
+      'A void colossus trembles awake.',
+      'A dark matter wave crashes.',
+      'A null titan rises.',
+      'A shadow of nothing lunges.',
+      'A void parasite latches on.',
+      'A gravity well distorts the air.',
+      'A void leviathan emerges.',
+      'A darkness elemental swarms.',
+      'The Void Mother\'s herald appears.',
+      'The Void Mother manifests fully.',
+    ],
+    dialog: [
+      { speaker: 'Void Walker', text: 'You\'ve gone deeper than any mortal has survived. Turn back.', icon: '🕳️' },
+      { speaker: 'You', text: 'I\'ve come too far to turn back. The heart of the void must be destroyed.', icon: '🗡️' },
+    ],
+  },
+  {
+    id: 'ch13', title: 'Celestial Ascension', num: 'Chapter 13',
+    desc: 'Ascend beyond mortality. The celestial realm opens its gates — and its guardians.',
+    levelReq: 85,
+    baseEnemy: { name: 'Celestial Guardian', icon: '🌟', hp: 1600, atk: 350, def: 120, spd: 55 },
+    bossEnemy: { name: 'Solarius', icon: '☀️', hp: 4800, atk: 700, def: 180, spd: 66, intro: 'Mortal flesh cannot endure this light. You will be purified... or destroyed.' },
+    narrative: ['The gates of the celestial realm swing open.', 'Guardians of pure light block your ascent.', 'Only the worthy may reach the summit.', 'Solarius judges all who dare approach.'],
+    xpReward: 500000, goldReward: 300000, techReward: 'celestial_wrath',
+    outro: 'Solarius bows before your strength. You master Celestial Wrath.',
+    stageLines: [
+      'A celestial guardian descends.',
+      'A starfire knight attacks.',
+      'A solar golem rises.',
+      'A light conduit fires.',
+      'A constellation beast roars.',
+      'A nova striker charges.',
+      'A divine wind blasts.',
+      'A cosmos sentinel blocks.',
+      'Solarius\'s chosen champion steps forth.',
+      'Solarius awakens in blinding light.',
+    ],
+    dialog: [
+      { speaker: 'Celestial Herald', text: 'Few mortals have reached these heights. Your power is... unexpected.', icon: '🌟' },
+      { speaker: 'You', text: 'I\'m not here for glory. I\'m here because the void threatened everything.', icon: '🗡️' },
+      { speaker: 'Celestial Herald', text: 'Then prove your resolve. Solarius will test every fiber of your being.', icon: '🌟' },
+    ],
+  },
+  {
+    id: 'ch14', title: 'The Nexus Point', num: 'Chapter 14',
+    desc: 'All realities converge at the Nexus Point. The multiverse hangs in the balance.',
+    levelReq: 90,
+    baseEnemy: { name: 'Nexus Watcher', icon: '🔮', hp: 2000, atk: 420, def: 150, spd: 60 },
+    bossEnemy: { name: 'Nexus Arbiter', icon: '💎', hp: 6000, atk: 840, def: 225, spd: 72, intro: 'I am the keeper of all realities. You will not unbalance the scales.' },
+    narrative: ['The Nexus Point draws all realities together.', 'Watchers guard the convergence.', 'Each reality bleeds into the next.', 'The Arbiter maintains the balance of everything that exists.'],
+    xpReward: 750000, goldReward: 500000, techReward: 'nexus_storm',
+    outro: 'The Arbiter falls. The Nexus destabilizes. You master Nexus Storm.',
+    stageLines: [
+      'A nexus watcher phases in.',
+      'A reality shard strikes.',
+      'A multiverse echo charges.',
+      'A dimensional rip tears open.',
+      'A convergence golem forms.',
+      'A plane walker attacks.',
+      'A reality anchor shatters.',
+      'A dimensional titan emerges.',
+      'The Arbiter\'s sentinel stands firm.',
+      'The Nexus Arbiter manifests across realities.',
+    ],
+    dialog: [
+      { speaker: 'Nexus Arbiter', text: 'Every reality, every timeline — I have seen them all. You are but one thread.', icon: '💎' },
+      { speaker: 'You', text: 'One thread is all I need to unravel your control.', icon: '🗡️' },
+      { speaker: 'Nexus Arbiter', text: 'Bold words from a speck of dust. Let us see if you can survive infinity.', icon: '💎' },
+    ],
+  },
+  {
+    id: 'ch15', title: 'Beyond Infinity', num: 'Chapter 15 — THE END',
+    desc: 'The final frontier. Beyond time, beyond void, beyond everything. This is the end of all things.',
+    levelReq: 95,
+    baseEnemy: { name: 'The Infinite', icon: '♾️', hp: 3000, atk: 600, def: 200, spd: 80 },
+    bossEnemy: { name: 'Omega', icon: '🌀', hp: 9000, atk: 1200, def: 300, spd: 96, intro: 'I am Omega. I am the end. Every story ends with me. Even yours.' },
+    narrative: ['Beyond infinity, there is only silence.', 'The Infinite stretches in every direction.', 'This is where all journeys end.', 'Face Omega — the end of all things.'],
+    xpReward: 1000000, goldReward: 800000, techReward: null,
+    outro: 'Omega dissolves into nothingness. You have gone beyond infinity itself. The ultimate Ascendant. Your legend is eternal.',
+    stageLines: [
+      'The Infinite manifests before you.',
+      'An endless wave crashes.',
+      'A boundless entity attacks.',
+      'A formless void screams.',
+      'An eternal guardian stands.',
+      'A limitless titan rises.',
+      'An absolute zero freezes.',
+      'A total collapse begins.',
+      'Omega\'s final herald appears.',
+      'Omega awakens at the end of everything.',
+    ],
+    dialog: [
+      { speaker: 'The Infinite', text: 'There is no beyond. I am everything. I am nothing. I am forever.', icon: '♾️' },
+      { speaker: 'You', text: 'I\'ve fought through darkness, void, heaven, and time itself. I don\'t stop.', icon: '🗡️' },
+      { speaker: 'The Infinite', text: 'Then come, Ascendant. Let us see if your story truly has no end.', icon: '♾️' },
     ],
   },
 ];
@@ -313,11 +493,43 @@ function startChapter(chapterId) {
 
   if (log) {
     log.innerHTML = '';
-    chapter.narrative.forEach(line => appendLog(log, line, 'log-story'));
+    // Styled narrative intro
+    const introHtml = chapter.narrative.map(line => `<div class="story-narrative-line">${line}</div>`).join('');
+    log.innerHTML = `<div class="story-intro-block">${introHtml}</div>`;
   }
 
-  updateStageUI(chapter);
-  startStageEnemy(chapter);
+  if (chapter.dialog && chapter.dialog.length > 0) {
+    showDialogSequence(chapter.dialog, 0, chapter);
+  } else {
+    updateStageUI(chapter);
+    startStageEnemy(chapter);
+  }
+}
+
+function showDialogSequence(dialog, index, chapter) {
+  const log = document.getElementById('battle-log');
+  if (!log || index >= dialog.length) {
+    updateStageUI(chapter);
+    startStageEnemy(chapter);
+    return;
+  }
+
+  const entry = dialog[index];
+  const remaining = dialog.length - index;
+  const box = document.createElement('div');
+  box.className = 'story-dialog-box';
+  box.innerHTML = `
+    <div class="story-dialog-speaker"><span>${entry.icon}</span> ${entry.speaker}</div>
+    <div class="story-dialog-text">${entry.text}</div>
+    <button class="btn-primary story-dialog-continue" id="dialog-continue-btn">Continue${remaining > 1 ? ` (${remaining - 1} left)` : ''}</button>
+  `;
+  log.appendChild(box);
+  log.scrollTop = log.scrollHeight;
+
+  document.getElementById('dialog-continue-btn').addEventListener('click', () => {
+    box.remove();
+    showDialogSequence(dialog, index + 1, chapter);
+  });
 }
 
 function updateStageUI(chapter) {
@@ -409,7 +621,7 @@ function renderStoryChapters() {
     const stagePct = Math.floor((savedStage / STAGES_PER_CHAPTER) * 100);
 
     return `
-      <div class="card chapter-card ${completed ? 'completed' : ''} ${!available ? 'locked' : ''}">
+      <div class="card chapter-card ${completed ? 'completed' : ''} ${!available ? 'locked' : ''}" ${!available ? `onclick="toast('🔒 ${locked ? 'Requires Level ' + ch.levelReq : 'Complete previous chapter first'}','warn')"` : ''}>
         <div class="chapter-num">${ch.num}</div>
         <h3>${ch.title}</h3>
         <div class="card-desc">${ch.desc}</div>
@@ -440,11 +652,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('story-chapters').classList.remove('hidden');
     document.getElementById('battle-result').classList.add('hidden');
     combatActive = false;
-    // Reset vessel switch when returning to chapter select
-    vesselSwitchActive = false;
-    vesselSwitchCharges = 0;
-    // Clear domain carryover when leaving story
-    _storyDomainCarryover = [];
     renderStoryChapters();
   });
 });

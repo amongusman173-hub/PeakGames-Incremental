@@ -375,159 +375,339 @@ function brewHintedRecipe(recipeId) {
   useKnownRecipe(recipeId);
 }
 
+const RARITY_COLORS = { common: '#66bb6a', uncommon: '#6c9fff', rare: '#b06aff', legendary: '#f5c542' };
+const RARITY_BG = { common: 'rgba(102,187,106,0.08)', uncommon: 'rgba(108,159,255,0.08)', rare: 'rgba(176,106,255,0.08)', legendary: 'rgba(245,197,66,0.08)' };
+const ALCH_RARITY_ORDER = { common: 0, uncommon: 1, rare: 2, legendary: 3 };
+
+function brewAllRecipes() {
+  const p = G.player;
+  if (p.alchemyRecipes.length === 0) { toast('No recipes discovered!', 'warn'); return; }
+  let totalBrewed = 0;
+  for (const rid of p.alchemyRecipes) {
+    const recipe = ALCHEMY_RECIPES.find(r => r.id === rid);
+    if (!recipe) continue;
+    const needed = {};
+    for (const id of recipe.ingredients) needed[id] = (needed[id] || 0) + 1;
+    let batches = Infinity;
+    for (const [id, cnt] of Object.entries(needed)) {
+      batches = Math.min(batches, Math.floor(getIngredientCount(id) / cnt));
+    }
+    if (batches <= 0) continue;
+    for (const [id, cnt] of Object.entries(needed)) {
+      G.player.alchemyInv[id] = (G.player.alchemyInv[id] || 0) - cnt * batches;
+    }
+    addPotion(recipe.id, batches);
+    gainXP(50 * batches);
+    totalBrewed += batches;
+  }
+  if (totalBrewed > 0) {
+    toast(`\u2397\uFE0F Brewed ${totalBrewed} potions across all recipes!`, 'success');
+    spawnFloatingText(`+${totalBrewed} \u{1F9EA}`, 'float-xp');
+  } else {
+    toast('Not enough ingredients to brew anything!', 'warn');
+  }
+  renderAlchemy();
+}
+
+function _injectAlchemyCSS() {
+  if (document.getElementById('alchemy-rework-css')) return;
+  const s = document.createElement('style');
+  s.id = 'alchemy-rework-css';
+  s.textContent = `
+.alch-wrap{display:flex;flex-direction:column;gap:20px}
+.alch-sec{display:flex;flex-direction:column;gap:8px}
+.alch-sec-title{font-size:15px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:8px}
+.alch-sec-title span{font-size:12px;color:var(--dim);font-weight:400}
+#brew-status{display:flex;flex-direction:column;gap:8px}
+#brew-status.hidden{display:none}
+.alch-brew-card{background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:10px;padding:12px}
+.alch-brew-top{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.alch-brew-icon{font-size:24px}
+.alch-brew-info{flex:1}
+.alch-brew-rarity{font-size:12px;font-weight:700}
+.alch-brew-meta{font-size:10px;color:var(--dim)}
+.alch-brew-timer{font-size:12px;color:var(--dim);font-weight:700;min-width:36px;text-align:right}
+.alch-brew-bar{height:8px;background:rgba(255,255,255,0.06);border-radius:99px;overflow:hidden}
+.alch-brew-fill{height:100%;width:0%;border-radius:99px;transition:none}
+.alch-ing-row{display:flex;gap:8px;overflow-x:auto;padding:4px 0 8px;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+.alch-ing-row::-webkit-scrollbar{height:4px}
+.alch-ing-row::-webkit-scrollbar-track{background:transparent}
+.alch-ing-row::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.alch-ing-chip{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:64px;padding:8px 6px;background:var(--card);border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:all 0.15s;flex-shrink:0}
+.alch-ing-chip:hover{border-color:var(--border-h);background:var(--card-h)}
+.alch-ing-chip.empty{opacity:0.3}
+.alch-ing-chip.selected{border-color:var(--accent);background:rgba(108,159,255,0.1);box-shadow:0 0 8px rgba(108,159,255,0.2)}
+.alch-ing-icon{font-size:22px;line-height:1}
+.alch-ing-name{font-size:9px;color:var(--dim);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:58px}
+.alch-ing-count{font-size:11px;font-weight:700;color:var(--text)}
+.alch-ing-count.zero{color:var(--dim)}
+.alch-brew-row{display:flex;gap:8px;align-items:center;justify-content:center;padding:12px 0;flex-wrap:wrap}
+.alch-slot{width:52px;height:52px;border:2px dashed var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--dim);cursor:pointer;transition:all 0.15s;position:relative;background:rgba(0,0,0,0.2)}
+.alch-slot:hover{border-color:var(--border-h)}
+.alch-slot.filled{border-style:solid;border-color:var(--accent);background:rgba(108,159,255,0.08)}
+.alch-slot.filled .alch-slot-icon{font-size:22px}
+.alch-slot.filled .alch-slot-name{position:absolute;bottom:-14px;font-size:8px;color:var(--dim);white-space:nowrap}
+.alch-slot-plus{font-size:16px;color:var(--dim);opacity:0.3}
+.alch-actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.alch-recipe-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media(max-width:900px){.alch-recipe-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.alch-recipe-grid{grid-template-columns:1fr}}
+.alch-recipe-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:6px;transition:border-color 0.15s,background 0.15s,transform 0.15s;position:relative;overflow:hidden}
+.alch-recipe-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(108,159,255,0.3),transparent);opacity:0;transition:opacity 0.2s}
+.alch-recipe-card:hover{background:var(--card-h);border-color:var(--border-h);transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,0.3)}
+.alch-recipe-card:hover::before{opacity:1}
+.alch-r-header{display:flex;align-items:center;gap:8px}
+.alch-r-icon{font-size:24px}
+.alch-r-name{font-size:13px;font-weight:700;color:var(--text);flex:1}
+.alch-r-badge{font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;text-transform:uppercase;letter-spacing:0.5px}
+.alch-r-desc{font-size:11px;color:var(--dim);line-height:1.4}
+.alch-r-ings{display:flex;flex-wrap:wrap;gap:4px;margin:4px 0}
+.alch-r-ing{font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(255,255,255,0.04);border:1px solid var(--border);white-space:nowrap}
+.alch-r-ing.has{color:var(--ok);border-color:rgba(39,174,96,0.3)}
+.alch-r-ing.missing{color:var(--danger);border-color:rgba(231,76,60,0.3)}
+.alch-r-actions{display:flex;gap:6px;align-items:center;margin-top:4px;flex-wrap:wrap}
+.alch-potion-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px}
+.alch-potion-card{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--card);border:1px solid var(--border);border-radius:8px;transition:border-color 0.15s}
+.alch-potion-card:hover{border-color:var(--border-h)}
+.alch-p-icon{font-size:22px}
+.alch-p-info{flex:1;min-width:0}
+.alch-p-name{font-size:12px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.alch-p-count{font-size:11px;color:var(--dim)}
+.alch-hint-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.alch-hint-card{padding:12px;background:var(--card);border:1px solid var(--border);border-radius:8px;display:flex;flex-direction:column;gap:6px}
+.alch-hint-card.owned{border-color:var(--ok)}
+.alch-hint-top{display:flex;align-items:center;gap:8px}
+.alch-hint-icon{font-size:20px}
+.alch-hint-name{font-size:12px;font-weight:700;color:var(--text)}
+.alch-hint-desc{font-size:10px;color:var(--dim)}
+.alch-undiscovered{margin-top:16px}
+.alch-unknown-card{text-align:center;padding:12px;opacity:0.5}
+.alch-unknown-card .alch-unk-icon{font-size:24px}
+.alch-unknown-card .alch-unk-txt{font-size:11px;color:var(--dim);margin-top:4px}
+.alch-recipe-count{font-size:12px;color:var(--dim);font-weight:400}
+`;
+  document.head.appendChild(s);
+}
+
+function _rarityStyle(rarity) {
+  const c = RARITY_COLORS[rarity] || RARITY_COLORS.common;
+  const bg = RARITY_BG[rarity] || RARITY_BG.common;
+  return 'color:' + c + ';background:' + bg;
+}
+
+function _getNeededIngredients(recipe) {
+  const needed = {};
+  for (const id of recipe.ingredients) needed[id] = (needed[id] || 0) + 1;
+  return needed;
+}
+
+function _canBrewRecipe(recipe) {
+  const needed = _getNeededIngredients(recipe);
+  return Object.entries(needed).every(([id, cnt]) => getIngredientCount(id) >= cnt);
+}
+
+function _renderIngredientRow() {
+  return ALCHEMY_INGREDIENTS.map(ing => {
+    const count = getIngredientCount(ing.id);
+    const selected = brewSlots.includes(ing.id);
+    const cls = 'alch-ing-chip' + (count === 0 ? ' empty' : '') + (selected ? ' selected' : '');
+    return '<div class="' + cls + '" onclick="toggleBrewSlot(\'' + ing.id + '\')" title="' + ing.desc + '">' +
+      '<span class="alch-ing-icon">' + ing.icon + '</span>' +
+      '<span class="alch-ing-name">' + ing.name + '</span>' +
+      '<span class="alch-ing-count' + (count === 0 ? ' zero' : '') + '">' + count + '</span>' +
+    '</div>';
+  }).join('');
+}
+
+function _renderBrewSlots() {
+  return brewSlots.map((id, i) => {
+    if (!id) return '<div class="alch-slot"><span class="alch-slot-plus">+</span></div>';
+    const ing = ALCHEMY_INGREDIENTS.find(x => x.id === id);
+    return '<div class="alch-slot filled" onclick="toggleBrewSlot(\'' + id + '\')">' +
+      '<span class="alch-slot-icon">' + (ing ? ing.icon : '?') + '</span>' +
+      '<span class="alch-slot-name">' + (ing ? ing.name : id) + '</span>' +
+    '</div>';
+  }).join('');
+}
+
+function _renderRecipeCard(recipe) {
+  const needed = _getNeededIngredients(recipe);
+  const canBrew = _canBrewRecipe(recipe);
+  const potionCount = getPotionCount(recipe.id);
+  const ingList = recipe.ingredients.map(id => {
+    const ing = ALCHEMY_INGREDIENTS.find(x => x.id === id);
+    const have = getIngredientCount(id);
+    const cls = have >= (needed[id] || 1) ? 'has' : 'missing';
+    return '<span class="alch-r-ing ' + cls + '">' + (ing ? ing.icon + ' ' + ing.name + ' (' + have + ')' : id) + '</span>';
+  }).join('');
+  const brewLabel = recipe.rarity === 'legendary' ? '(4 rounds)' : recipe.rarity === 'rare' ? '(3 rounds)' : recipe.rarity === 'uncommon' ? '(2 rounds)' : '(1 round)';
+  let html = '<div class="alch-recipe-card">';
+  html += '<div class="alch-r-header">';
+  html += '<span class="alch-r-icon">' + recipe.icon + '</span>';
+  html += '<span class="alch-r-name">' + recipe.name + '</span>';
+  html += '<span class="alch-r-badge" style="' + _rarityStyle(recipe.rarity) + '">' + recipe.rarity + '</span>';
+  html += '</div>';
+  html += '<div class="alch-r-desc">' + recipe.desc + '</div>';
+  html += '<div class="alch-r-ings">' + ingList + '</div>';
+  html += '<div class="alch-r-actions">';
+  html += '<button class="btn-primary" onclick="useKnownRecipe(\'' + recipe.id + '\')" ' + (canBrew ? '' : 'disabled') + '>';
+  html += canBrew ? '\u{1F9EA} Brew ' + brewLabel : '\u274C Missing';
+  html += '</button>';
+  if (potionCount > 0) {
+    html += '<button class="btn-small" onclick="drinkPotion(\'' + recipe.id + '\')" style="background:rgba(39,174,96,0.15);border-color:var(--ok)">\u{1F376} Drink (' + potionCount + ')</button>';
+  } else {
+    html += '<span style="font-size:11px;color:var(--dim)">\u{1F376} 0 potions</span>';
+  }
+  html += '</div></div>';
+  return html;
+}
+
+function _renderPotionInventory() {
+  const p = G.player;
+  const ownedRecipes = p.alchemyRecipes.filter(rid => getPotionCount(rid) > 0);
+  if (ownedRecipes.length === 0) return '';
+  const cards = ownedRecipes.map(rid => {
+    const r = ALCHEMY_RECIPES.find(x => x.id === rid);
+    if (!r) return '';
+    const cnt = getPotionCount(rid);
+    return '<div class="alch-potion-card">' +
+      '<span class="alch-p-icon">' + r.icon + '</span>' +
+      '<div class="alch-p-info"><div class="alch-p-name">' + r.name + '</div>' +
+      '<div class="alch-p-count">' + cnt + 'x \u{1F376} owned</div></div>' +
+      '<button class="btn-small" onclick="drinkPotion(\'' + r.id + '\')" style="background:rgba(39,174,96,0.15);border-color:var(--ok)">Drink</button>' +
+    '</div>';
+  }).join('');
+  return '<div class="alch-sec">' +
+    '<div class="alch-sec-title">\u{1F376} Potion Inventory</div>' +
+    '<div class="alch-potion-grid">' + cards + '</div>' +
+  '</div>';
+}
+
+function _renderHintUpgrades() {
+  const p = G.player;
+  const cards = ALCHEMY_HINT_UPGRADES.map(upg => {
+    const owned = !!(p.shopPurchases && p.shopPurchases[upg.id]);
+    const canBuy = !owned && p.gold >= upg.cost;
+    let html = '<div class="alch-hint-card' + (owned ? ' owned' : '') + '">';
+    html += '<div class="alch-hint-top"><span class="alch-hint-icon">' + upg.icon + '</span>';
+    html += '<div class="alch-hint-name">' + upg.name + '</div></div>';
+    html += '<div class="alch-hint-desc">' + upg.desc + '</div>';
+    if (owned) {
+      html += '<span style="color:var(--ok);font-size:11px">\u2713 Unlocked</span>';
+    } else {
+      html += '<button class="btn-small" onclick="buyAlchemyHint(\'' + upg.id + '\')" ' + (canBuy ? '' : 'disabled') + '>\u{1F4B0}' + upg.cost + '</button>';
+    }
+    html += '</div>';
+    return html;
+  }).join('');
+  return '<div class="alch-sec">' +
+    '<div class="alch-sec-title">\u{1F4A1} Recipe Hints <span>Buy hints to reveal undiscovered recipes</span></div>' +
+    '<div class="alch-hint-grid">' + cards + '</div>' +
+  '</div>';
+}
+
+function _renderUndiscoveredRecipes() {
+  const p = G.player;
+  const discoveredSet = new Set(p.alchemyRecipes);
+  const undiscovered = ALCHEMY_RECIPES.filter(r => !discoveredSet.has(r.id));
+  if (undiscovered.length === 0) return '';
+  const sorted = undiscovered.sort((a, b) => (ALCH_RARITY_ORDER[a.rarity] || 0) - (ALCH_RARITY_ORDER[b.rarity] || 0));
+  const cards = sorted.map(r => {
+    const showHint = hasHintFor(r.rarity);
+    if (!showHint) {
+      return '<div class="alch-recipe-card alch-unknown-card">' +
+        '<div class="alch-unk-icon">\u2753</div>' +
+        '<div class="alch-unk-txt">' + r.rarity + ' recipe \u2014 buy hint to reveal</div></div>';
+    }
+    const needed = _getNeededIngredients(r);
+    const canBrew = _canBrewRecipe(r);
+    const allIngs = r.ingredients.map(id => {
+      const ing = ALCHEMY_INGREDIENTS.find(x => x.id === id);
+      const have = getIngredientCount(id);
+      const cls = have >= (needed[id] || 1) ? 'has' : 'missing';
+      return '<span class="alch-r-ing ' + cls + '">' + (ing ? ing.icon + ' ' + ing.name + ' (' + have + ')' : '?') + '</span>';
+    }).join('');
+    let html = '<div class="alch-recipe-card"' + (canBrew ? ' style="border-color:var(--ok);background:rgba(39,174,96,0.07)"' : '') + '>';
+    html += '<div class="alch-r-header">';
+    html += '<span class="alch-r-icon">' + r.icon + '</span>';
+    html += '<span class="alch-r-name">' + r.name + '</span>';
+    html += '<span class="alch-r-badge" style="' + _rarityStyle(r.rarity) + '">' + r.rarity + '</span>';
+    html += '</div>';
+    html += '<div class="alch-r-ings">' + allIngs + '</div>';
+    if (canBrew) {
+      html += '<button class="btn-primary" style="width:100%;background:rgba(39,174,96,0.2);border-color:var(--ok)" onclick="brewHintedRecipe(\'' + r.id + '\')">\u{1F525} Brew it!</button>';
+    } else {
+      html += '<div style="font-size:11px;color:var(--dim)">Gather ingredients to brew</div>';
+    }
+    html += '</div>';
+    return html;
+  }).join('');
+  return '<div class="alch-undiscovered">' +
+    '<div class="alch-sec-title">\u{1F50D} Undiscovered Recipes</div>' +
+    '<div class="alch-recipe-grid" style="margin-top:8px">' + cards + '</div>' +
+  '</div>';
+}
+
 function renderAlchemy() {
   const container = document.getElementById('alchemy-container');
   if (!container) return;
   const p = G.player;
 
   if (p.level < 18) {
-    container.innerHTML = `<div class="locked-section"><div class="locked-icon">⚗️</div><h3>Alchemy Locked</h3><p>Reach <strong>Level 18</strong> to unlock Alchemy.</p></div>`;
+    container.innerHTML = '<div class="locked-section"><div class="locked-icon">\u2697\uFE0F</div><h3>Alchemy Locked</h3><p>Reach <strong>Level 18</strong> to unlock Alchemy.</p></div>';
     return;
   }
 
-  // Ingredient inventory
-  const invHtml = ALCHEMY_INGREDIENTS.map(ing => {
-    const count = getIngredientCount(ing.id);
-    const selected = brewSlots.includes(ing.id);
-    return `<div class="ing-card${selected ? ' ing-selected' : ''}${count === 0 ? ' ing-empty' : ''}"
-         onclick="toggleBrewSlot('${ing.id}')" title="${ing.desc}">
-      <span class="ing-icon">${ing.icon}</span>
-      <span class="ing-name">${ing.name}</span>
-      <span class="ing-count${count === 0 ? ' zero' : ''}">${count}</span>
-    </div>`;
-  }).join('');
+  _injectAlchemyCSS();
 
-  // Brew slots
-  const slotsHtml = brewSlots.map((id, i) => {
-    if (!id) return `<div class="brew-slot empty">+</div>`;
-    const ing = ALCHEMY_INGREDIENTS.find(x => x.id === id);
-    return `<div class="brew-slot filled" onclick="toggleBrewSlot('${id}')">${ing ? ing.icon : '?'}<span>${ing ? ing.name : id}</span></div>`;
-  }).join('');
-
-  // Hint upgrades panel
-  const hintsHtml = ALCHEMY_HINT_UPGRADES.map(upg => {
-    const owned = !!(p.shopPurchases && p.shopPurchases[upg.id]);
-    const canBuy = !owned && p.gold >= upg.cost;
-    return `<div class="card" style="padding:10px;${owned ? 'border-color:var(--ok)' : ''}">
-      <div style="display:flex;align-items:center;gap:8px">
-        <span style="font-size:20px">${upg.icon}</span>
-        <div>
-          <div style="font-weight:700;font-size:13px">${upg.name}</div>
-          <div style="font-size:11px;color:var(--dim)">${upg.desc}</div>
-        </div>
-      </div>
-      ${owned
-        ? `<span style="color:var(--ok);font-size:11px;margin-top:6px;display:block">✓ Unlocked</span>`
-        : `<button class="btn-small" style="margin-top:6px" onclick="buyAlchemyHint('${upg.id}')" ${canBuy ? '' : 'disabled'}>💰${upg.cost}</button>`
-      }
-    </div>`;
-  }).join('');
-
-  // Known recipes with hint system + drink button
-  const knownHtml = p.alchemyRecipes.length === 0
-    ? `<div class="alchemy-hint">No recipes discovered yet. Experiment by combining ingredients!</div>`
-    : p.alchemyRecipes.map(rid => {
-        const r = ALCHEMY_RECIPES.find(x => x.id === rid);
-        if (!r) return '';
-        const needed = {};
-        for (const id of r.ingredients) needed[id] = (needed[id] || 0) + 1;
-        const canBrew = Object.entries(needed).every(([id, cnt]) => getIngredientCount(id) >= cnt);
-        const potionCount = getPotionCount(r.id);
-        const ingList = r.ingredients.map(id => {
-          const ing = ALCHEMY_INGREDIENTS.find(x => x.id === id);
-          const have = getIngredientCount(id);
-          const color = have >= (needed[id] || 1) ? 'var(--ok)' : 'var(--danger)';
-          return ing ? `<span style="color:${color}">${ing.icon}${ing.name}(${have})</span>` : id;
-        }).join(' + ');
-        return `<div class="card recipe-card">
-          <h3>${r.icon} ${r.name} <span class="tech-rarity ${r.rarity}">${r.rarity}</span></h3>
-          <div class="card-desc">${r.desc}</div>
-          <div class="recipe-ingredients" style="font-size:11px;margin:6px 0">${ingList}</div>
-          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-            <button class="btn-primary" onclick="useKnownRecipe('${r.id}')" ${canBrew ? '' : 'disabled'}>
-              ${canBrew ? `🧪 Brew ${r.rarity === 'legendary' ? '(4 rounds)' : r.rarity === 'rare' ? '(3 rounds)' : r.rarity === 'uncommon' ? '(2 rounds)' : '(1 round)'}` : '❌ Missing'}
-            </button>
-            ${potionCount > 0
-              ? `<button class="btn-small" onclick="drinkPotion('${r.id}')" style="background:rgba(39,174,96,0.15);border-color:var(--ok)">🍶 Drink (${potionCount})</button>`
-              : `<span style="font-size:11px;color:var(--dim)">🍶 0 potions</span>`
-            }
-          </div>
-        </div>`;
-      }).join('');
-
-  // Undiscovered recipes with hints — strictly exclude anything already in alchemyRecipes
-  const discoveredSet = new Set(p.alchemyRecipes);
-  const undiscovered = ALCHEMY_RECIPES.filter(r => !discoveredSet.has(r.id));
-  const hintedHtml = undiscovered.length === 0 ? '' : `
-    <h3 style="margin-top:20px">🔍 Undiscovered Recipes</h3>
-    <div class="card-grid" style="margin-top:8px">
-      ${undiscovered.map(r => {
-        const showHint = hasHintFor(r.rarity);
-        if (!showHint) return `<div class="card" style="opacity:0.5;text-align:center;padding:12px">
-          <div style="font-size:24px">❓</div>
-          <div style="font-size:11px;color:var(--dim);margin-top:4px">${r.rarity} recipe — buy hint to reveal</div>
-        </div>`;
-        // Show all ingredients, check if brewable
-        const needed = {};
-        for (const id of r.ingredients) needed[id] = (needed[id] || 0) + 1;
-        const canBrew = Object.entries(needed).every(([id, cnt]) => getIngredientCount(id) >= cnt);
-        const allIngs = r.ingredients.map(id => {
-          const ing = ALCHEMY_INGREDIENTS.find(x => x.id === id);
-          const have = getIngredientCount(id);
-          const color = have >= (needed[id] || 1) ? 'var(--ok)' : 'var(--danger)';
-          return ing ? `<span style="color:${color}">${ing.icon} ${ing.name}(${have})</span>` : '?';
-        });
-        const rarityColors = { common:'var(--ok)', uncommon:'var(--accent)', rare:'var(--accent2)', legendary:'var(--gold)' };
-        const borderColor = canBrew ? 'var(--ok)' : (rarityColors[r.rarity] || 'var(--border)');
-        return `<div class="card" style="padding:10px;border-color:${borderColor};${canBrew ? 'background:rgba(39,174,96,0.07);' : ''}">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-            <div style="font-size:11px;color:var(--dim)">🔍 ${r.rarity} · ${r.ingredients.length} ingredients</div>
-            ${canBrew ? `<span style="font-size:10px;color:var(--ok);font-weight:700">✓ Ready!</span>` : ''}
-          </div>
-          <div style="font-size:12px;margin:4px 0;line-height:1.6">${allIngs.join(' + ')}</div>
-          ${canBrew
-            ? `<button class="btn-primary" style="margin-top:6px;width:100%;background:rgba(39,174,96,0.2);border-color:var(--ok)" onclick="brewHintedRecipe('${r.id}')">🔥 Brew it!</button>`
-            : `<div style="font-size:11px;color:var(--dim);margin-top:4px">Gather ingredients to brew</div>`
-          }
-        </div>`;
-      }).join('')}
-    </div>`;
-
-  // Preserve active brew cards across re-renders
   const existingBrewStatus = document.getElementById('brew-status');
-  const savedBrewHtml   = existingBrewStatus ? existingBrewStatus.innerHTML : '';
+  const savedBrewHtml = existingBrewStatus ? existingBrewStatus.innerHTML : '';
   const brewStatusHidden = existingBrewStatus ? existingBrewStatus.classList.contains('hidden') : true;
 
-  container.innerHTML = `
-    <div class="alchemy-layout">
-      <div class="alchemy-left">
-        <h3>🧴 Ingredients</h3>
-        <p class="tab-desc">Click to add to brew slots.</p>
-        <div class="ing-grid">${invHtml}</div>
-        <h3 style="margin-top:16px">💡 Recipe Hints</h3>
-        <p class="tab-desc" style="font-size:11px">Buy hints to reveal undiscovered recipes.</p>
-        <div class="card-grid" style="margin-top:8px">${hintsHtml}</div>
-      </div>
-      <div class="alchemy-right">
-        <h3>⚗️ Brewing Cauldron</h3>
-        <p class="tab-desc">Select 2–4 ingredients, then brew. A minigame determines quality!</p>
-        <div class="brew-slots">${slotsHtml}</div>
-        <div class="brew-actions">
-          <button class="btn-primary" onclick="attemptBrew()">🔥 Brew!</button>
-          <button class="btn-small" onclick="clearBrewSlots()">Clear</button>
-        </div>
-        <div id="brew-status" class="hidden"></div>
-        <h3 style="margin-top:20px">📜 Known Recipes (${p.alchemyRecipes.length}/${ALCHEMY_RECIPES.length})</h3>
-        <div class="card-grid" style="margin-top:10px">${knownHtml}</div>
-        ${hintedHtml}
-      </div>
-    </div>`;
+  const ingredientRow = _renderIngredientRow();
+  const brewSlotsHtml = _renderBrewSlots();
+  const recipeCards = p.alchemyRecipes.length === 0
+    ? '<div style="text-align:center;padding:16px;color:var(--dim);font-size:13px">No recipes discovered yet. Experiment by combining ingredients!</div>'
+    : p.alchemyRecipes.map(rid => {
+        const r = ALCHEMY_RECIPES.find(x => x.id === rid);
+        return r ? _renderRecipeCard(r) : '';
+      }).join('');
+  const potionHtml = _renderPotionInventory();
+  const hintsHtml = _renderHintUpgrades();
+  const undiscoveredHtml = _renderUndiscoveredRecipes();
 
-  // Restore active brew cards that were wiped by innerHTML reassignment
+  let html = '<div class="alch-wrap">';
+  html += '<div id="brew-status" class="hidden"></div>';
+
+  html += '<div class="alch-sec">';
+  html += '<div class="alch-sec-title">\u{1F9EA} Ingredients <span>Click to add to brew slots</span></div>';
+  html += '<div class="alch-ing-row">' + ingredientRow + '</div>';
+  html += '</div>';
+
+  html += '<div class="alch-sec" style="align-items:center">';
+  html += '<div class="alch-sec-title" style="justify-content:center">\u2697\uFE0F Brewing Cauldron</div>';
+  html += '<div class="alch-brew-row">' + brewSlotsHtml + '</div>';
+  html += '<div class="alch-actions">';
+  html += '<button class="btn-primary" onclick="attemptBrew()">\u{1F525} Brew!</button>';
+  html += '<button class="btn-small" onclick="brewAllRecipes()">\u{1F9EA} Brew All</button>';
+  html += '<button class="btn-small" onclick="clearBrewSlots()">Clear</button>';
+  html += '</div></div>';
+
+  html += '<div class="alch-sec">';
+  html += '<div class="alch-sec-title">\u{1F4DC} Known Recipes <span class="alch-recipe-count">' + p.alchemyRecipes.length + '/' + ALCHEMY_RECIPES.length + '</span></div>';
+  html += '<div class="alch-recipe-grid">' + recipeCards + '</div>';
+  html += '</div>';
+
+  html += potionHtml;
+  html += hintsHtml;
+  html += undiscoveredHtml;
+  html += '</div>';
+
+  container.innerHTML = html;
+
   const newBrewStatus = document.getElementById('brew-status');
   if (newBrewStatus && savedBrewHtml) {
     newBrewStatus.innerHTML = savedBrewHtml;
     if (!brewStatusHidden) newBrewStatus.classList.remove('hidden');
   }
 }
-

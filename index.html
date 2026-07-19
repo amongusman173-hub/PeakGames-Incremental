@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#0e1220" />
   <title>Ascendant — Incremental RPG</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="stylesheet" href="style.css" />
@@ -12,10 +15,18 @@
     <!-- Animated background canvas -->
     <canvas id="bg-canvas"></canvas>
     <header id="header">
-      <div id="player-info">
-        <span id="hdr-name">Hero</span>
-        <span id="hdr-level">Lv.1</span>
-        <span id="hdr-rebirth" class="rebirth-badge">✦ R0</span>
+      <div id="hdr-top">
+        <div id="player-info">
+          <span id="hdr-name" class="hdr-name">Hero</span>
+          <span id="hdr-level" class="hdr-level">Lv.1</span>
+          <span id="hdr-rebirth" class="rebirth-badge">✦ R0</span>
+        </div>
+        <div id="hdr-resources">
+          <div class="hdr-res" title="Gold"><span class="hdr-res-icon">💰</span><span id="res-gold">0</span></div>
+          <div class="hdr-res" title="Attack"><span class="hdr-res-icon">⚔️</span><span id="res-atk">5</span></div>
+          <div class="hdr-res" title="Defense"><span class="hdr-res-icon">🛡️</span><span id="res-def">2</span></div>
+          <div class="hdr-res" title="Speed"><span class="hdr-res-icon">💨</span><span id="res-spd">3</span></div>
+        </div>
       </div>
       <div id="hdr-bars">
         <div class="hdr-bar">
@@ -34,29 +45,23 @@
           <span id="txt-stamina" class="hdr-bar-val">100/100</span>
         </div>
       </div>
-      <div id="hdr-resources">
-        <div class="hdr-res">💰 <span id="res-gold">0</span></div>
-        <div class="hdr-res">⚔️ <span id="res-atk">5</span></div>
-        <div class="hdr-res">🛡️ <span id="res-def">2</span></div>
-        <div class="hdr-res">💨 <span id="res-spd">3</span></div>
-      </div>
     </header>
 
     <!-- Nav Tabs -->
     <nav id="tabs">
       <button class="tab-btn active" data-tab="training">🏋️ Train</button>
+      <button class="tab-btn" data-tab="story">📖 Story</button>
       <button class="tab-btn" data-tab="jobs">💼 Jobs</button>
       <button class="tab-btn" data-tab="raids">⚔️ Raids</button>
       <button class="tab-btn" data-tab="dig">⛏️ Dig</button>
       <button class="tab-btn" data-tab="shop">🌳 Upgrades</button>
+      <button class="tab-btn" data-tab="inventory">🎒 Gear</button>
       <button class="tab-btn" data-tab="dojo">🥋 Dojo</button>
       <button class="tab-btn" data-tab="library">📚 Library</button>
-      <button class="tab-btn" data-tab="inventory">🎒 Gear</button>
-      <button class="tab-btn" data-tab="story">📖 Story</button>
       <button class="tab-btn" data-tab="alchemy">⚗️ Alchemy</button>
-      <button class="tab-btn" data-tab="rebirth">✨ Ascend</button>
       <button class="tab-btn" data-tab="garden">🌱 Garden</button>
       <button class="tab-btn" data-tab="heritage">🏛️ Heritage</button>
+      <button class="tab-btn" data-tab="rebirth">✨ Ascend</button>
       <button class="tab-btn" data-tab="achievements">🏆 Achievements</button>
       <button class="tab-btn" data-tab="settings">⚙️ Settings</button>
     </nav>
@@ -70,12 +75,17 @@
     </div>
 
     <!-- Persistent Training Banner (visible on all tabs) -->
-    <div id="training-global-banner" class="hidden training-global-banner">
-      <span id="tgb-icon">💪</span>
-      <span id="tgb-name">Push-Ups</span>
-      <div class="banner-bar-wrap"><div class="bar-track banner-bar-bg"><div id="tgb-bar" class="bar stamina-bar"></div></div></div>
-      <span id="tgb-status"></span>
+    <div id="training-banner" class="hidden active-banner">
+      <span id="training-banner-text">💪 Push-Ups</span>
+      <div class="banner-bar-wrap"><div class="bar-track banner-bar-bg"><div id="training-banner-bar" class="bar stamina-bar"></div></div></div>
       <button class="banner-stop-btn" onclick="stopTraining()">■ Stop</button>
+    </div>
+
+    <!-- Persistent Dojo Training Banner -->
+    <div id="dojo-training-banner" class="hidden active-banner" style="background:rgba(231,76,60,0.08);border-color:rgba(231,76,60,0.25);">
+      <span id="dojo-training-banner-text">🥊 Bag Work</span>
+      <div class="banner-bar-wrap"><div class="bar-track banner-bar-bg"><div id="dojo-training-banner-bar" class="bar stamina-bar" style="background:linear-gradient(90deg,#e74c3c,#ff6b6b)"></div></div></div>
+      <button class="banner-stop-btn" onclick="stopDojoTraining()">■ Stop</button>
     </div>
 
     <!-- Tab Panels -->
@@ -85,12 +95,6 @@
       <section id="tab-training" class="tab-panel active">
         <h2>Training Grounds</h2>
         <p class="tab-desc">Select a routine — it runs automatically every 4 seconds until you stop it or run out of stamina.</p>
-        <!-- Active training banner -->
-        <div id="training-banner" class="hidden active-banner">
-          <span id="training-banner-text">💪 Push-Ups</span>
-          <div class="banner-bar-wrap"><div class="bar-track banner-bar-bg"><div id="training-banner-bar" class="bar stamina-bar"></div></div></div>
-          <button class="banner-stop-btn" onclick="stopTraining()">■ Stop</button>
-        </div>
         <div id="training-list" class="card-grid"></div>
       </section>
 
@@ -306,12 +310,15 @@
     <!-- Admin Panel (Konami code) -->
     <div id="admin-panel" class="hidden modal-overlay" style="z-index:3000">
       <div class="modal-box admin-modal">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-          <h3 style="color:var(--gold)">🔧 Admin Panel</h3>
-          <button class="btn-small" onclick="document.getElementById('admin-panel').classList.add('hidden')">✕ Close</button>
+        <div class="admin-header">
+          <div class="admin-header-title">
+            <span class="admin-header-icon">🔧</span>
+            <span>Admin Panel</span>
+          </div>
+          <button class="btn-small admin-close-btn" onclick="closeAdminPanel()">✕</button>
         </div>
-        <p style="color:var(--dim);font-size:11px;margin-bottom:12px">↑↑↓↓←→←→BA+Enter to open. Use responsibly.</p>
-        <div id="admin-panel-body"></div>
+        <div class="admin-subtitle">↑↑↓↓←→←→BA+Enter to open · Use responsibly</div>
+        <div class="admin-body" id="admin-panel-body"></div>
       </div>
     </div>
 
@@ -352,6 +359,7 @@
   <script src="js/story.js"></script>
   <script src="js/rebirth.js"></script>
   <script src="js/achievements.js"></script>
+  <script src="js/tutorial.js"></script>
   <script src="js/ui.js"></script>
   <script src="js/bgfx.js"></script>
 </body>

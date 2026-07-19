@@ -147,7 +147,6 @@ function tickGarden() {
     if (!seed) return;
 
     const elapsed = G.tickCount - plot.plantedTick;
-    const stageThreshold = seed.growTicks / 4; // 4 growth stages
 
     // Check wilting: if not watered in time (wilt resistance upgrade)
     const ticksSinceWater = G.tickCount - (plot.lastWateredTick || plot.plantedTick);
@@ -183,10 +182,10 @@ function waterPlot(plotIndex) {
   if (plot.ready) { toast('Already fully grown!', 'info'); return; }
 
   // Watering minigame — timing game, hit the zone to water well
-  showMinigame('timing', 1, '💧 Water the plant — hit the zone!', (mult) => {
+  showMinigame('water_drop', 1, '💧 Water the plant — time your splash!', (mult) => {
     p.waterCharges--;
     plot.lastWateredTick = G.tickCount;
-    playSound('waterplant', 0.8);
+    playSound('waterplant', 0.3);
     if (plot.wilted) {
       plot.wilted = false;
       gardenVFX('revive', plotIndex);
@@ -261,21 +260,22 @@ function updateGardenTimers() {
     const fillEl  = document.getElementById(`plot-fill-${i}`);
     const stageEl = document.getElementById(`plot-stage-${i}`);
     if (plot.ready) {
-      if (timerEl) timerEl.textContent = '✅ Ready!';
+      if (timerEl) timerEl.textContent = 'Ready!';
       if (fillEl)  fillEl.style.width = '100%';
       return;
     }
     if (plot.wilted) {
-      if (timerEl) timerEl.textContent = '🥀 Wilted!';
+      if (timerEl) timerEl.textContent = 'Wilted!';
       return;
     }
     const elapsed = G.tickCount - plot.plantedTick;
-    const pct = Math.min(100, Math.floor((elapsed / seed.growTicks) * 100));
-    const ticksLeft = seed.growTicks - elapsed;
-    const secsLeft = Math.ceil(ticksLeft * G.tickRate / 1000);
-    if (timerEl) timerEl.textContent = secsLeft > 60 ? `${Math.ceil(secsLeft/60)}m` : `${secsLeft}s`;
+    const effectiveGrowTicks = Math.floor(seed.growTicks * getGardenSpeedMult());
+    const pct = Math.min(100, Math.floor((elapsed / effectiveGrowTicks) * 100));
+    const ticksLeft = effectiveGrowTicks - elapsed;
+    const secsLeft = Math.max(0, Math.ceil(ticksLeft * G.tickRate / 1000));
+    if (timerEl) timerEl.textContent = secsLeft > 3600 ? `${Math.ceil(secsLeft/3600)}h` : secsLeft > 60 ? `${Math.ceil(secsLeft/60)}m` : `${secsLeft}s`;
     if (fillEl)  fillEl.style.width = pct + '%';
-    if (stageEl) stageEl.textContent = seed.stages[plot.stage] || '🌱';
+    if (stageEl) stageEl.textContent = seed.stages[plot.stage] || '\u{1F331}';
   });
 
   // Water charges timer
@@ -306,110 +306,244 @@ function clickPlot(plotIndex) {
   plantSeed(plotIndex, selectedSeed);
 }
 
+const RARITY_ORDER_G = { common: 0, uncommon: 1, rare: 2, legendary: 3 };
+
+function _injectGardenCSS() {
+  if (document.getElementById('garden-rework-css')) return;
+  const s = document.createElement('style');
+  s.id = 'garden-rework-css';
+  s.textContent = `
+.garden-wrap{display:flex;flex-direction:column;gap:20px}
+.garden-sec{display:flex;flex-direction:column;gap:8px}
+.garden-sec-title{font-size:15px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:8px}
+.garden-sec-title span{font-size:12px;color:var(--dim);font-weight:400}
+.garden-water-bar{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--card);border:1px solid var(--border);border-radius:10px}
+.garden-water-icon{font-size:20px}
+.garden-water-text{font-size:13px;font-weight:700;color:var(--text)}
+.garden-water-pips{display:flex;gap:4px;flex:1}
+.garden-water-pip{width:20px;height:8px;border-radius:4px;background:rgba(255,255,255,0.06);border:1px solid var(--border);transition:all 0.2s}
+.garden-water-pip.filled{background:linear-gradient(135deg,#29b6f6,#81d4fa);border-color:#29b6f6}
+.garden-water-timer{font-size:11px;color:var(--dim);white-space:nowrap}
+.garden-seed-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:rgba(39,174,96,0.1);border:1px solid rgba(39,174,96,0.3);border-radius:6px;font-size:12px;color:var(--ok);font-weight:600}
+.garden-plot-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media(max-width:900px){.garden-plot-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:560px){.garden-plot-grid{grid-template-columns:repeat(2,1fr)}}
+.garden-plot{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;transition:all 0.15s;position:relative;min-height:120px}
+.garden-plot:hover{background:var(--card-h);border-color:var(--border-h);transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,0.3)}
+.garden-plot.ready{border-color:var(--ok);background:rgba(39,174,96,0.06)}
+.garden-plot.ready:hover{border-color:var(--ok)}
+.garden-plot.wilted{border-color:var(--warn);background:rgba(230,126,34,0.06);opacity:0.7}
+.garden-plot-icon{font-size:32px;line-height:1}
+.garden-plot-name{font-size:11px;font-weight:600;color:var(--text);text-align:center}
+.garden-plot-status{font-size:10px;color:var(--dim)}
+.garden-plot-bar{width:100%;height:6px;background:rgba(255,255,255,0.06);border-radius:99px;overflow:hidden}
+.garden-plot-fill{height:100%;border-radius:99px;transition:width 0.4s ease;background:linear-gradient(90deg,#66bb6a,#a5d6a7)}
+.garden-plot-fill.wilted{background:linear-gradient(90deg,#8d6e63,#a1887f)}
+.garden-plot-fill.ready{background:linear-gradient(90deg,#66bb6a,#27ae60);width:100%!important}
+.garden-plot-actions{display:flex;gap:4px;margin-top:auto}
+.garden-plot-btn{background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:6px;padding:4px 8px;cursor:pointer;font-size:11px;transition:all 0.15s}
+.garden-plot-btn:hover{border-color:var(--accent);background:rgba(255,255,255,0.08)}
+.garden-plot-btn.water-btn:hover{border-color:#29b6f6;background:rgba(41,182,246,0.1)}
+.garden-plot-btn.remove-btn:hover{border-color:var(--danger);background:rgba(231,76,60,0.1);color:var(--danger)}
+.garden-plot-empty{border-style:dashed;opacity:0.5;justify-content:center}
+.garden-plot-empty.has-seed{opacity:0.8;border-color:rgba(39,174,96,0.3)}
+.garden-legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--dim);padding:8px 0}
+.garden-legend span{display:flex;align-items:center;gap:4px}
+.garden-seed-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
+.garden-seed-card{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--card);border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:all 0.15s}
+.garden-seed-card:hover{border-color:var(--border-h);background:var(--card-h)}
+.garden-seed-card.active{border-color:var(--accent);background:rgba(108,159,255,0.08);box-shadow:0 0 8px rgba(108,159,255,0.15)}
+.garden-seed-card.locked{opacity:0.35;cursor:not-allowed;pointer-events:none}
+.garden-seed-icon{font-size:22px}
+.garden-seed-info{flex:1;min-width:0}
+.garden-seed-name{font-size:12px;font-weight:700;color:var(--text)}
+.garden-seed-meta{font-size:10px;color:var(--dim)}
+.garden-upg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.garden-upg-card{padding:12px;background:var(--card);border:1px solid var(--border);border-radius:8px;display:flex;flex-direction:column;gap:6px;transition:border-color 0.15s}
+.garden-upg-card.maxed{border-color:var(--ok)}
+.garden-upg-top{display:flex;align-items:center;gap:8px}
+.garden-upg-icon{font-size:20px}
+.garden-upg-name{font-size:12px;font-weight:700;color:var(--text)}
+.garden-upg-desc{font-size:10px;color:var(--dim)}
+.garden-upg-pips{display:flex;gap:3px}
+.garden-upg-pip{width:10px;height:4px;border-radius:2px;background:rgba(255,255,255,0.06);border:1px solid var(--border)}
+.garden-upg-pip.owned{background:var(--accent);border-color:var(--accent)}
+.garden-upg-bottom{display:flex;align-items:center;justify-content:space-between}
+.garden-upg-maxed{font-size:11px;color:var(--ok)}
+`;
+  document.head.appendChild(s);
+}
+
+function _plotGrowthPct(plot) {
+  if (!plot) return 0;
+  const seed = SEEDS.find(s => s.id === plot.seedId);
+  if (!seed) return 0;
+  if (plot.ready) return 100;
+  const elapsed = G.tickCount - plot.plantedTick;
+  const effectiveGrowTicks = Math.floor(seed.growTicks * getGardenSpeedMult());
+  return Math.min(100, Math.floor((elapsed / effectiveGrowTicks) * 100));
+}
+
+function _plotTimeLeft(plot) {
+  if (!plot) return '';
+  const seed = SEEDS.find(s => s.id === plot.seedId);
+  if (!seed) return '';
+  if (plot.ready) return 'Ready!';
+  if (plot.wilted) return 'Wilted!';
+  const elapsed = G.tickCount - plot.plantedTick;
+  const effectiveGrowTicks = Math.floor(seed.growTicks * getGardenSpeedMult());
+  const ticksLeft = effectiveGrowTicks - elapsed;
+  const secsLeft = Math.max(0, Math.ceil(ticksLeft * G.tickRate / 1000));
+  if (secsLeft > 3600) return Math.ceil(secsLeft / 3600) + 'h';
+  if (secsLeft > 60) return Math.ceil(secsLeft / 60) + 'm';
+  return secsLeft + 's';
+}
+
+function _renderPlotCell(plot, i) {
+  if (!plot) {
+    const hasSeed = !!selectedSeed;
+    return '<div class="garden-plot garden-plot-empty' + (hasSeed ? ' has-seed' : '') + '" onclick="clickPlot(' + i + ')">' +
+      '<span class="garden-plot-icon">\u{1FAB4}</span>' +
+      '<span class="garden-plot-status">' + (hasSeed ? 'Click to plant' : 'Empty') + '</span>' +
+    '</div>';
+  }
+
+  const seed = SEEDS.find(s => s.id === plot.seedId);
+  const stageIcon = seed ? seed.stages[plot.stage] || '\u{1F331}' : '\u{1F331}';
+  const pct = _plotGrowthPct(plot);
+  const timeStr = _plotTimeLeft(plot);
+  const cls = plot.ready ? ' ready' : plot.wilted ? ' wilted' : '';
+
+  let html = '<div class="garden-plot' + cls + '" onclick="clickPlot(' + i + ')">';
+  html += '<span class="garden-plot-icon" id="plot-stage-' + i + '">' + stageIcon + '</span>';
+  html += '<span class="garden-plot-name">' + (seed ? seed.name : '?') + '</span>';
+  html += '<span class="garden-plot-status" id="plot-timer-' + i + '">' +
+    (plot.ready ? 'Ready!' : plot.wilted ? 'Wilted!' : timeStr) + '</span>';
+  html += '<div class="garden-plot-bar"><div class="garden-plot-fill' + (plot.wilted ? ' wilted' : plot.ready ? ' ready' : '') +
+    '" id="plot-fill-' + i + '" style="width:' + (plot.ready ? '100' : pct) + '%"></div></div>';
+  html += '<div class="garden-plot-actions">';
+  html += '<button class="garden-plot-btn water-btn" onclick="event.stopPropagation();waterPlot(' + i + ')" title="Water">\u{1F4A7}</button>';
+  html += '<button class="garden-plot-btn remove-btn" onclick="event.stopPropagation();removePlot(' + i + ')" title="Remove">\u2715</button>';
+  html += '</div></div>';
+  return html;
+}
+
+function _renderSeedGrid() {
+  const p = G.player;
+  return '<div class="garden-seed-grid">' + SEEDS.map(seed => {
+    const locked = p.level < seed.levelReq;
+    const active = selectedSeed === seed.id;
+    let cls = 'garden-seed-card';
+    if (active) cls += ' active';
+    if (locked) cls += ' locked';
+    return '<div class="' + cls + '" onclick="' + (locked ? '' : "selectSeed('" + seed.id + "')") + '">' +
+      '<span class="garden-seed-icon">' + seed.icon + '</span>' +
+      '<div class="garden-seed-info">' +
+        '<div class="garden-seed-name">' + seed.name + '</div>' +
+        '<div class="garden-seed-meta">\u{1F4B0}' + seed.cost + 'g \u00B7 Lv.' + seed.levelReq + '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('') + '</div>';
+}
+
+function _renderUpgradeGrid() {
+  const p = G.player;
+  return '<div class="garden-upg-grid">' + GARDEN_UPGRADES.map(upg => {
+    const owned = getGardenUpgradeLevel(upg.id);
+    const maxed = owned >= upg.maxLevel;
+    const cost = getGardenUpgradeCost(upg);
+    const canBuy = !maxed && p.gold >= cost;
+    let html = '<div class="garden-upg-card' + (maxed ? ' maxed' : '') + '">';
+    html += '<div class="garden-upg-top">';
+    html += '<span class="garden-upg-icon">' + upg.icon + '</span>';
+    html += '<div><div class="garden-upg-name">' + upg.name + '</div>';
+    html += '<div class="garden-upg-desc">' + upg.desc + '</div></div>';
+    html += '</div>';
+    html += '<div class="garden-upg-bottom">';
+    html += '<div class="garden-upg-pips">';
+    for (let j = 0; j < upg.maxLevel; j++) {
+      html += '<div class="garden-upg-pip' + (j < owned ? ' owned' : '') + '"></div>';
+    }
+    html += '</div>';
+    if (maxed) {
+      html += '<span class="garden-upg-maxed">\u2713 Max</span>';
+    } else {
+      html += '<button class="btn-small" onclick="buyGardenUpgrade(\'' + upg.id + '\')" ' + (canBuy ? '' : 'disabled') + '>\u{1F4B0}' + cost + '</button>';
+    }
+    html += '</div></div>';
+    return html;
+  }).join('') + '</div>';
+}
+
 function renderGarden() {
   const container = document.getElementById('garden-container');
   if (!container) return;
   const p = G.player;
 
-  if (p.level < 10) {
-    container.innerHTML = `<div class="locked-section"><div class="locked-icon">🌱</div><h3>Garden Locked</h3><p>Reach <strong>Level 10</strong> to unlock the Garden.</p></div>`;
+  if (p.level < 12) {
+    container.innerHTML = '<div class="locked-section"><div class="locked-icon">\u{1F331}</div><h3>Garden Locked</h3><p>Reach <strong>Level 12</strong> to unlock the Garden.</p></div>';
     return;
   }
 
+  _injectGardenCSS();
+
   const plots = getGardenPlots();
   const waterCharges = p.waterCharges !== undefined ? p.waterCharges : WATER_MAX;
-
-  // Build plot grid
-  const plotsHtml = plots.map((plot, i) => {
-    if (!plot) {
-      const hint = selectedSeed ? 'Click to plant' : '+ Empty';
-      return `<div class="garden-cell empty${selectedSeed ? ' plantable' : ''}" onclick="clickPlot(${i})">
-        <div class="garden-cell-icon">🟫</div>
-        <div class="garden-cell-hint">${hint}</div>
-      </div>`;
-    }
-    const seed = SEEDS.find(s => s.id === plot.seedId);
-    const elapsed = G.tickCount - plot.plantedTick;
-    const pct = Math.min(100, Math.floor((elapsed / (seed?.growTicks || 1)) * 100));
-    const stageIcon = seed?.stages[plot.stage] || '🌱';
-    const secsLeft = seed ? Math.ceil((seed.growTicks - elapsed) * G.tickRate / 1000) : 0;
-    const timeStr = plot.ready ? '✅ Ready!' : plot.wilted ? '🥀 Wilted!' : secsLeft > 60 ? `${Math.ceil(secsLeft/60)}m` : `${secsLeft}s`;
-    const cellClass = plot.ready ? 'ready' : plot.wilted ? 'wilted' : 'growing';
-
-    return `<div class="garden-cell ${cellClass}" onclick="clickPlot(${i})">
-      <div class="garden-cell-icon" id="plot-stage-${i}">${stageIcon}</div>
-      <div class="garden-cell-name">${seed?.name || '?'}</div>
-      <div class="garden-cell-timer" id="plot-timer-${i}">${timeStr}</div>
-      <div class="garden-cell-bar"><div class="garden-cell-fill" id="plot-fill-${i}" style="width:${pct}%"></div></div>
-      <div class="garden-cell-actions">
-        <button class="garden-btn water-btn" onclick="event.stopPropagation();waterPlot(${i})" title="Water">💧</button>
-        <button class="garden-btn remove-btn" onclick="event.stopPropagation();removePlot(${i})" title="Remove">✕</button>
-      </div>
-    </div>`;
-  }).join('');
-
-  // Seed selector
-  const seedsHtml = SEEDS.map(seed => {
-    const locked  = p.level < seed.levelReq;
-    const active  = selectedSeed === seed.id;
-    return `<div class="seed-item${active ? ' seed-selected' : ''}${locked ? ' seed-locked' : ''}"
-      onclick="${locked ? '' : `selectSeed('${seed.id}')`}">
-      <span class="seed-item-icon">${seed.icon}</span>
-      <div class="seed-item-info">
-        <div class="seed-item-name">${seed.name}</div>
-        <div class="seed-item-meta">💰${seed.cost}g · Lv.${seed.levelReq}</div>
-      </div>
-    </div>`;
-  }).join('');
-
   const maxWater = getMaxWaterCharges();
-  const upgradesHtml = GARDEN_UPGRADES.map(upg => {
-    const owned = getGardenUpgradeLevel(upg.id);
-    const maxed = owned >= upg.maxLevel;
-    const cost = getGardenUpgradeCost(upg);
-    const canBuy = !maxed && p.gold >= cost;
-    return `<div class="dig-upg-card${maxed ? ' dig-upg-maxed' : ''}">
-      <div class="dig-upg-top">
-        <span class="dig-upg-icon">${upg.icon}</span>
-        <div class="dig-upg-info">
-          <div class="dig-upg-name">${upg.name}</div>
-          <div class="dig-upg-desc">${upg.desc}</div>
-        </div>
-      </div>
-      <div class="dig-upg-bottom">
-        <div class="dig-upg-pips">${Array.from({length: upg.maxLevel}, (_,i) =>
-          `<div class="dig-upg-pip${i < owned ? ' pip-owned' : ''}"></div>`).join('')}</div>
-        ${maxed
-          ? `<span class="dig-upg-maxed-txt">✓ Max</span>`
-          : `<button class="btn-small dig-upg-btn" onclick="buyGardenUpgrade('${upg.id}')" ${canBuy ? '' : 'disabled'}>💰${cost}</button>`
-        }
-      </div>
-    </div>`;
-  }).join('');
 
-  container.innerHTML = `
-    <div class="garden-layout">
-      <div class="garden-main">
-        <div class="garden-toolbar">
-          <div class="water-display">
-            💧 <strong>${waterCharges}/${maxWater}</strong>
-            <span class="water-timer" id="water-timer"></span>
-          </div>
-          ${selectedSeed ? `<div class="selected-seed-badge">🌱 ${SEEDS.find(s=>s.id===selectedSeed)?.name} selected — click a plot</div>` : ''}
-        </div>
-        <div class="garden-grid-wrap">
-          <div class="garden-grid">${plotsHtml}</div>
-        </div>
-        <div class="garden-legend">
-          <span>🟫 Empty</span><span>🌱 Seed</span><span>🌿 Growing</span><span>✅ Ready</span><span>🥀 Wilted (needs water)</span>
-        </div>
-      </div>
-      <div class="garden-sidebar">
-        <h3>🌰 Seeds</h3>
-        <p style="font-size:11px;color:var(--dim);margin-bottom:8px">Select a seed, then click a plot to plant.</p>
-        <div class="seed-list">${seedsHtml}</div>
-        <h3 style="margin-top:16px">⬆️ Garden Upgrades</h3>
-        <div class="garden-upgrades-list">${upgradesHtml}</div>
-      </div>
-    </div>`;
+  const waterPips = [];
+  for (let i = 0; i < maxWater; i++) {
+    waterPips.push('<div class="garden-water-pip' + (i < waterCharges ? ' filled' : '') + '"></div>');
+  }
+
+  let waterTimerHtml = '';
+  if (waterCharges < maxWater) {
+    const secsLeft = Math.ceil((getWaterRegenRate() - (p.waterRegenTick || 0)) * G.tickRate / 1000);
+    waterTimerHtml = '<span class="garden-water-timer" id="water-timer">Next in ' + secsLeft + 's</span>';
+  } else {
+    waterTimerHtml = '<span class="garden-water-timer" id="water-timer">Full</span>';
+  }
+
+  const plotsHtml = plots.map((plot, i) => _renderPlotCell(plot, i)).join('');
+  const seedsHtml = _renderSeedGrid();
+  const upgradesHtml = _renderUpgradeGrid();
+
+  let selectedBadge = '';
+  if (selectedSeed) {
+    const sd = SEEDS.find(s => s.id === selectedSeed);
+    selectedBadge = '<div class="garden-seed-badge">\u{1F331} ' + (sd ? sd.name : '') + ' selected \u2014 click a plot</div>';
+  }
+
+  let html = '<div class="garden-wrap">';
+
+  html += '<div class="garden-sec">';
+  html += '<div class="garden-water-bar">';
+  html += '<span class="garden-water-icon">\u{1F4A7}</span>';
+  html += '<span class="garden-water-text">' + waterCharges + '/' + maxWater + '</span>';
+  html += '<div class="garden-water-pips">' + waterPips.join('') + '</div>';
+  html += waterTimerHtml;
+  html += '</div>';
+  if (selectedBadge) html += selectedBadge;
+  html += '</div>';
+
+  html += '<div class="garden-sec">';
+  html += '<div class="garden-sec-title">Plots</div>';
+  html += '<div class="garden-plot-grid">' + plotsHtml + '</div>';
+  html += '<div class="garden-legend">';
+  html += '<span>\u{1FAB4} Empty</span><span>\u{1F331} Seed</span><span>\u{1F33F} Growing</span><span>Ready</span><span>Wilted (needs water)</span>';
+  html += '</div></div>';
+
+  html += '<div class="garden-sec">';
+  html += '<div class="garden-sec-title">\u{1F330} Seeds <span>Select a seed, then click a plot</span></div>';
+  html += seedsHtml;
+  html += '</div>';
+
+  html += '<div class="garden-sec">';
+  html += '<div class="garden-sec-title">\u2B06\uFE0F Garden Upgrades</div>';
+  html += upgradesHtml;
+  html += '</div>';
+
+  html += '</div>';
+
+  container.innerHTML = html;
 }

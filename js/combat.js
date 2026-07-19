@@ -324,134 +324,81 @@ function playAttackVFX(techId, crit) {
       break;
 
     // ══════════════════════════════════════════
-    // 🩸 JJK EASTER EGG TECHNIQUES — special VFX
+    // ✨ CELESTIAL TECHNIQUES — cosmic VFX
     // ══════════════════════════════════════════
 
-    case 'vessel_switch':
-      // Blood-red full screen takeover
-      vfxFlash('rgba(180,0,0,0.55)', 700);
-      setTimeout(() => vfxFlash('rgba(180,0,0,0.3)', 500), 300);
-      vfxBurst(eEl, ['#b71c1c','#e53935','#ff1744','#fff'], 20, 70, 600);
-      vfxEmoji('🩸', eEl, '#ff1744');
-      vfxShake(8);
+    case 'astral_slash':
+      // Cosmic barrier shimmer on player
+      vfxBurst(pEl, ['#e3f2fd','#90caf9','#b388ff','#fff'], 24, 80, 700);
+      vfxFlash('rgba(179,136,255,0.25)', 500);
+      vfxEmoji('✨', pEl, '#b388ff');
       break;
 
-    case 'dismantle':
-      // Fast diagonal slashes — Sukuna's signature
-      for (let i = 0; i < 4; i++) setTimeout(() => {
-        vfxSlash(eEl, '#ff1744', 2);
-        vfxBurst(eEl, ['#b71c1c','#ff1744','#fff'], 8, 50, 350);
-      }, i * 60);
-      vfxFlash('rgba(183,28,28,0.35)', 400);
+    case 'chrono_strike':
+      // Time-distortion burst
+      vfxBurst(eEl, ['#ff6f00','#ffca28','#fff9c4','#fff'], 22, 85, 600);
+      vfxFlash('rgba(255,202,40,0.4)', 400);
       vfxShake(10);
-      vfxEmoji('✂️', eEl, '#ff1744');
+      vfxEmoji('⏳', eEl, '#ffca28');
       break;
 
-    case 'cleave':
-      // Three heavy slashes with shockwave
-      for (let i = 0; i < 3; i++) setTimeout(() => {
-        vfxSlash(eEl, '#ff6d00', 3);
-        vfxBurst(eEl, ['#e65100','#ff6d00','#ffab40','#fff'], 10, 55, 400);
-        vfxShake(7);
-      }, i * 120);
-      vfxFlash('rgba(230,81,0,0.3)', 500);
-      vfxEmoji('🔪', eEl, '#ff6d00');
-      break;
-
-    case 'fuga':
-      // Giant fire arrow — massive single impact
-      vfxFlash('rgba(255,87,34,0.5)', 300);
-      setTimeout(() => {
-        vfxBurst(eEl, ['#bf360c','#e64a19','#ff7043','#ffab40','#fff9c4','#fff'], 40, 120, 800);
-        vfxFlash('rgba(255,87,34,0.4)', 500);
-        vfxShake(16);
-        vfxEmoji('🏹', eEl, '#ff7043');
-        // Secondary explosion
-        setTimeout(() => {
-          vfxBurst(eEl, ['#ff6f00','#ffa000','#ffca28','#fff'], 20, 80, 600);
-          vfxShake(10);
-        }, 200);
-      }, 150);
-      break;
-
-    case 'domain_expansion':
-      // Malevolent Shrine — dark red domain with continuous slash waves
-      vfxFlash('rgba(0,0,0,0.7)', 400);
-      setTimeout(() => vfxFlash('rgba(120,0,0,0.5)', 600), 200);
-      setTimeout(() => {
-        for (let i = 0; i < 6; i++) setTimeout(() => {
-          vfxSlash(eEl, '#ff1744', 3);
-          vfxBurst(eEl, ['#7f0000','#b71c1c','#ff1744','#fff'], 12, 65, 500);
-          vfxShake(8);
-        }, i * 150);
-      }, 300);
-      vfxEmoji('🏯', eEl, '#ff1744');
-      break;
-
-    // ── Gojo techniques ──
-    case 'infinity':
-      // Blue-white barrier shimmer on player
-      vfxBurst(pEl, ['#e3f2fd','#90caf9','#42a5f5','#fff'], 24, 80, 700);
-      vfxFlash('rgba(66,165,245,0.25)', 500);
-      vfxEmoji('♾️', pEl, '#42a5f5');
-      break;
-
-    case 'reversal_red':
-      // Explosive red repulsion
-      vfxBurst(eEl, ['#b71c1c','#e53935','#ff5252','#fff'], 22, 85, 600);
-      vfxFlash('rgba(229,57,53,0.4)', 400);
-      vfxShake(10);
-      vfxEmoji('🔴', eEl, '#ff5252');
-      break;
-
-    case 'reversal_red_max':
-      // Amplified — bigger, redder, more shake
-      vfxBurst(eEl, ['#7f0000','#b71c1c','#ff1744','#ff8a80','#fff'], 35, 110, 700);
-      vfxFlash('rgba(183,28,28,0.55)', 500);
+    case 'chrono_strike_max':
+      // Amplified time distortion — bigger, more intense
+      vfxBurst(eEl, ['#e65100','#ff6f00','#ffca28','#fff9c4','#fff'], 35, 110, 700);
+      vfxFlash('rgba(255,111,0,0.55)', 500);
       vfxShake(16);
-      vfxEmoji('🔴', eEl, '#ff1744');
-      setTimeout(() => vfxBurst(eEl, ['#ff1744','#fff'], 15, 60, 400), 200);
+      vfxEmoji('⏳', eEl, '#ffca28');
+      setTimeout(() => vfxBurst(eEl, ['#ffca28','#fff'], 15, 60, 400), 200);
       break;
 
-    case 'lapse_blue':
-      // Blue gravitational pull — imploding particles
-      vfxBurst(eEl, ['#0d47a1','#1565c0','#42a5f5','#90caf9','#fff'], 22, 85, 600);
-      vfxFlash('rgba(21,101,192,0.35)', 400);
+    case 'void_nova':
+      // Singularity implosion
+      vfxBurst(eEl, ['#0d47a1','#1a237e','#7c4dff','#b388ff','#fff'], 22, 85, 600);
+      vfxFlash('rgba(29,29,80,0.35)', 400);
       vfxShake(10);
-      vfxEmoji('🔵', eEl, '#42a5f5');
+      vfxEmoji('🌑', eEl, '#7c4dff');
       break;
 
-    case 'lapse_blue_max':
-      vfxBurst(eEl, ['#0a237e','#0d47a1','#1976d2','#64b5f6','#fff'], 35, 110, 700);
-      vfxFlash('rgba(13,71,161,0.55)', 500);
+    case 'void_nova_max':
+      vfxBurst(eEl, ['#0a0a2e','#1a237e','#4a148c','#7c4dff','#b388ff','#fff'], 35, 110, 700);
+      vfxFlash('rgba(74,20,140,0.55)', 500);
       vfxShake(16);
-      vfxEmoji('🔵', eEl, '#1976d2');
-      setTimeout(() => vfxBurst(eEl, ['#42a5f5','#fff'], 15, 60, 400), 200);
+      vfxEmoji('🌑', eEl, '#7c4dff');
+      setTimeout(() => vfxBurst(eEl, ['#b388ff','#fff'], 15, 60, 400), 200);
       break;
 
-    case 'hollow_purple':
-      // Red + Blue merge = purple obliteration
-      vfxFlash('rgba(255,0,0,0.3)', 150);
-      setTimeout(() => vfxFlash('rgba(0,0,255,0.3)', 150), 150);
+    case 'celestial_wrath':
+      // Dying star cascade — white void → deep purple → golden explosion
+      vfxFlash('rgba(5,2,15,0.7)', 400);
       setTimeout(() => {
-        vfxFlash('rgba(128,0,128,0.6)', 600);
-        vfxBurst(eEl, ['#4a148c','#7b1fa2','#ce93d8','#ff80ab','#82b1ff','#fff'], 45, 130, 900);
-        vfxShake(18);
-        vfxEmoji('🟣', eEl, '#ce93d8');
-        for (let i = 0; i < 8; i++) setTimeout(() => vfxSlash(eEl, '#ce93d8', 2), i * 80);
-      }, 300);
+        vfxFlash('rgba(120,40,200,0.5)', 300);
+        vfxShake(10);
+      }, 400);
+      setTimeout(() => {
+        vfxFlash('rgba(255,255,255,0.8)', 200);
+        setTimeout(() => vfxFlash('rgba(245,197,66,0.6)', 500), 200);
+        vfxBurst(eEl, ['#fff','#f5c542','#ff9800','#ce93d8','#e040fb','#b388ff'], 60, 180, 1200);
+        vfxShake(22);
+        for (let i = 0; i < 12; i++) {
+          setTimeout(() => {
+            const emoji = ['⭐','✨','💫','🌟'][Math.floor(Math.random()*4)];
+            vfxEmoji(emoji, eEl, ['#f5c542','#ffca28','#fff'][Math.floor(Math.random()*3)]);
+          }, i * 60);
+        }
+        for (let i = 0; i < 6; i++) setTimeout(() => vfxSlash(eEl, '#f5c542', 3), i * 100);
+      }, 700);
       break;
 
-    case 'domain_infinite_void':
-      // Infinite Void — white flash then total darkness then stars
+    case 'nexus_storm':
+      // Cosmic tempest — white flash then starfield
       vfxFlash('rgba(255,255,255,0.9)', 200);
-      setTimeout(() => vfxFlash('rgba(0,0,0,0.85)', 800), 200);
+      setTimeout(() => vfxFlash('rgba(10,10,40,0.85)', 800), 200);
       setTimeout(() => {
-        vfxBurst(eEl, ['#e8eaf6','#9fa8da','#5c6bc0','#fff'], 40, 120, 1000);
+        vfxBurst(eEl, ['#b388ff','#e040fb','#7c4dff','#fff'], 40, 120, 1000);
         vfxShake(14);
-        vfxEmoji('🌌', eEl, '#9fa8da');
+        vfxEmoji('🌀', eEl, '#b388ff');
         for (let i = 0; i < 10; i++) setTimeout(() => {
-          vfxBurst(eEl, ['#fff','#e8eaf6'], 4, 50, 400);
+          vfxBurst(eEl, ['#fff','#b388ff'], 4, 50, 400);
         }, i * 100);
       }, 400);
       break;
@@ -706,10 +653,6 @@ function updateRaidBattleUI() {
 function renderRaidTechniqueActions() {
   const container = document.getElementById('raid-technique-actions');
   if (!container) return;
-  if (vesselSwitchActive) {
-    renderVesselTechniqueActions();
-    return;
-  }
   const equipped = G.player.equipped.filter(id => id !== null);
   container.innerHTML = equipped.map(techId => {
     const tech = TECHNIQUES.find(t => t.id === techId);
@@ -726,20 +669,6 @@ function useRaidTechnique(techId) {
   const tech = TECHNIQUES.find(t => t.id === techId);
   if (!tech) return;
   setBattleActionsEnabled(false, 'raid');
-  // Vessel switch has a minigame — fail = skip your turn, can try again next turn
-  if (tech.effect === 'vessel' || tech._vesselSwitch) {
-    techniqueMinigame(tech, (mult) => {
-      if (mult < 1.0) {
-        appendLog(combatLog, '🩸 Vessel Switch failed — Sukuna resists! Turn skipped.', 'log-enemy');
-        setTimeout(() => enemyTurnRaid(), 500);
-        return;
-      }
-      applyTechniqueEffect(tech, mult, () => {
-        if (combatEnemyHP > 0) setTimeout(() => enemyTurnRaid(), 500);
-      });
-    });
-    return;
-  }
   techniqueMinigame(tech, (mult) => {
     applyTechniqueEffect(tech, mult, () => {
       if (combatEnemyHP > 0) setTimeout(() => enemyTurnRaid(), 500);
@@ -848,7 +777,7 @@ function enemyTurnRaid() {
   updateRaidBattleUI();
   if (combatPlayerHP <= 0) { endRaidBattle(false); return; }
   tickTechCooldowns();
-  setBattleActionsEnabled(true, 'raid');
+  setTimeout(() => { setBattleActionsEnabled(true, 'raid'); }, 400);
 }
 
 function endRaidBattle(won) {
@@ -881,9 +810,6 @@ function endRaidBattle(won) {
   }, 1800);
 }
 
-// Domain expansion carry-over between story stages (cleared when leaving story)
-let _storyDomainCarryover = [];
-
 // ── STORY BATTLE (interactive, with minigames) ──
 function startStoryBattle(enemy, storyCallback) {
   if (combatActive) return;
@@ -896,13 +822,9 @@ function startStoryBattle(enemy, storyCallback) {
   combatEnemyHP = enemy.hp;
   combatTurn = 0;
   combatStatusPlayer = [];
-  // Carry over domain slash DOT to new enemy if still active
-  combatStatusEnemy = _storyDomainCarryover.filter(s => s.turns > 0);
-  _storyDomainCarryover = [];
+  combatStatusEnemy = [];
   resetMgCounts();
   resetTechCooldowns();
-  // Only reset vessel switch on a fresh story session (not when chaining enemies)
-  // vesselSwitchActive / vesselSwitchCharges are preserved across chained fights
 
   document.getElementById('story-chapters').classList.add('hidden');
   document.getElementById('story-battle').classList.remove('hidden');
@@ -916,9 +838,6 @@ function startStoryBattle(enemy, storyCallback) {
   if (enemy.intro) appendLog(combatLog, `"${enemy.intro}"`, 'log-story');
   if (combatEnemy.abilities?.length) {
     appendLog(combatLog, `⚠️ Abilities: ${combatEnemy.abilities.map(a=>a.icon+a.name).join(', ')}`, 'log-info');
-  }
-  if (vesselSwitchActive) {
-    appendLog(combatLog, `🩸 Sukuna mode carries over — ${vesselSwitchCharges} fight(s) remaining.`, 'log-crit');
   }
   setBattleActionsEnabled(true, 'story');
 }
@@ -943,21 +862,17 @@ function updateBattleUI() {
   if (beStatus) beStatus.innerHTML = combatStatusEnemy.map(s=>`<span class="status-badge">${s.icon} ${s.name}(${s.turns})</span>`).join('');
 }
 
-// Track vessel switch charges — declared here so renderTechniqueActions can reference them
-let vesselSwitchActive = false;
-let vesselSwitchCharges = 0;
-const VESSEL_SWITCH_CHARGES = 3;
-
 // ── TECHNIQUE COOLDOWNS ──
 // techId → turns remaining on cooldown (0 = ready)
 const techCooldowns = {};
+let _lastBasicAttackTime = 0;
 
 // Cooldown definitions: techId → turns before can use again (0 = no cooldown)
 const TECH_COOLDOWN_MAP = {
   // No cooldown — spammable
-  'slash': 0, 'iron_fist': 0, 'quick_step': 0, 'dismantle': 0, 'basic': 0,
+  'slash': 1, 'iron_fist': 0, 'quick_step': 0, 'basic': 0,
   // 1-turn cooldown
-  'block': 1, 'leg_sweep': 1, 'fang_strike': 1, 'earth_crush': 1, 'cleave': 1,
+  'block': 1, 'leg_sweep': 1, 'fang_strike': 1, 'earth_crush': 1,
   'spark': 1, 'frost_bolt': 1, 'flame_burst': 1, 'war_cry': 1, 'counter': 1,
   // 2-turn cooldown
   'power_strike': 2, 'holy_slash': 2, 'tidal_wave': 2, 'shadow_clone': 2,
@@ -965,16 +880,12 @@ const TECH_COOLDOWN_MAP = {
   'ancient_strike': 2, 'crystal_shard': 2,
   // 3-turn cooldown
   'hellfire': 3, 'void_rend': 3, 'divine_heal': 3, 'death_blow': 3,
-  'thousand_fists': 3, 'meteor': 3, 'fuga': 3,
+  'thousand_fists': 3, 'meteor': 3,
   // 4-turn cooldown — very powerful
-  'void_blast': 4, 'time_stop': 4, 'reversal_red': 4, 'lapse_blue': 4,
-  'reversal_red_max': 4, 'lapse_blue_max': 4, 'hollow_purple': 4,
-  // 5-turn cooldown — domain expansions
-  'domain_expansion': 5, 'domain_infinite_void': 5,
-  // Vessel switch: 3-turn cooldown after use
-  'vessel_switch': 3,
-  // Infinity: 4-turn cooldown
-  'infinity': 4,
+  'void_blast': 4, 'time_stop': 4, 'chrono_strike': 4, 'void_nova': 4,
+  'chrono_strike_max': 4, 'void_nova_max': 4, 'celestial_wrath': 4,
+  // 5-turn cooldown — cosmic
+  'nexus_storm': 5,
   // New magic spells
   'wind_slash': 1, 'stone_spike': 1, 'poison_cloud': 2, 'ice_lance': 2,
   'thunder_clap': 2, 'blizzard': 3, 'inferno': 3, 'gravity_well': 3,
@@ -998,43 +909,17 @@ function resetTechCooldowns() {
 function renderTechniqueActions() {
   const container = document.getElementById('technique-actions');
   if (!container) return;
-  if (vesselSwitchActive) {
-    renderVesselTechniqueActions();
-    return;
-  }
   const equipped = G.player.equipped.filter(id => id !== null);
   container.innerHTML = equipped.map(techId => {
     const tech = TECHNIQUES.find(t => t.id === techId);
     if (!tech) return '';
     const cd = techCooldowns[techId] || 0;
     const onCd = cd > 0;
-    return `<button class="btn-action${tech._jjk ? ' jjk-btn' : ''}${onCd ? ' btn-on-cd' : ''}"
+    return `<button class="btn-action${onCd ? ' btn-on-cd' : ''}"
       onclick="useTechnique('${tech.id}')" ${onCd ? 'disabled' : ''}>
       ${tech.icon} ${tech.name}${onCd ? ` <span class="cd-badge">${cd}</span>` : ''}
     </button>`;
   }).join('');
-}
-
-function renderVesselTechniqueActions() {
-  // Use the correct container based on context
-  const containerId = combatContext === 'raid' ? 'raid-technique-actions' : 'technique-actions';
-  const container = document.getElementById(containerId);
-  if (!container) return;
-  const jjkIds = ['dismantle', 'cleave', 'fuga', 'domain_expansion'];
-  const handler = combatContext === 'raid' ? 'useRaidTechnique' : 'useTechnique';
-  const buttons = jjkIds.map(id => {
-    const tech = TECHNIQUES.find(t => t.id === id);
-    const cd = techCooldowns[id] || 0;
-    const onCd = cd > 0;
-    const label = tech ? `${tech.icon} ${tech.name}` : id;
-    return `<button class="btn-action jjk-btn${onCd ? ' btn-on-cd' : ''}"
-      onclick="${handler}('${id}')" ${onCd ? 'disabled' : ''}>
-      ${label}${onCd ? ` <span class="cd-badge">${cd}</span>` : ''}
-    </button>`;
-  }).join('');
-  container.innerHTML =
-    `<div style="width:100%;font-size:10px;color:#ff3333;margin-bottom:4px">🩸 SUKUNA MODE — ${vesselSwitchCharges} fight(s) remaining</div>` +
-    buttons;
 }
 
 function applyTechniqueEffect(tech, mult, afterCb) {
@@ -1042,11 +927,9 @@ function applyTechniqueEffect(tech, mult, afterCb) {
 
   // ── Play technique sound ──
   const TECH_SOUNDS = {
-    'dismantle': 'dismantle', 'cleave': 'sukuna cleave', 'fuga': 'sukuna fuga',
-    'domain_expansion': 'sukuna domain', 'domain_infinite_void': 'gojo domain',
-    'reversal_red': 'reversal red', 'reversal_red_max': 'reversal red MAX',
-    'lapse_blue': 'lapse blue', 'lapse_blue_max': 'lapse blue MAX',
-    'hollow_purple': 'hollow purple',
+    'astral_slash': 'basicspell', 'chrono_strike': 'basicspell', 'chrono_strike_max': 'basicspell',
+    'void_nova': 'basicspell', 'void_nova_max': 'basicspell',
+    'celestial_wrath': 'basicspell', 'nexus_storm': 'basicspell',
     'heal': 'healingmagic', 'divine_heal': 'healingmagic', 'mana_shield': 'healingmagic',
     'spark': 'basicspell', 'frost_bolt': 'basicspell', 'arcane_bolt': 'basicspell',
     'chain_lightning': 'basicspell', 'flame_burst': 'basicspell',
@@ -1057,84 +940,13 @@ function applyTechniqueEffect(tech, mult, afterCb) {
   const snd = TECH_SOUNDS[tech.id] || (tech.effect === 'heal' ? 'healingmagic' : tech.effect === 'damage' ? 'basicattack' : null);
   if (snd) playSound(snd, 0.8);
 
-  // Set cooldown for this technique (vessel_switch uses charge system instead)
-  if (tech.id !== 'vessel_switch') {
-    const cd = getTechCooldown(tech.id);
-    if (cd > 0) techCooldowns[tech.id] = cd;
-  }
+  // Set cooldown for this technique
+  const cd = getTechCooldown(tech.id);
+  if (cd > 0) techCooldowns[tech.id] = cd;
 
-  // Track Gojo technique usage for Red/Blue MAX upgrades
-  if (typeof useGojoTech === 'function' && (tech.id === 'reversal_red' || tech.id === 'lapse_blue')) {
-    useGojoTech(tech.id);
-  }
-
-  // ── VESSEL SWITCH — swap moveset to JJK techniques for 3 enemy kills ──
-  if (tech.effect === 'vessel' || tech._vesselSwitch) {
-    vesselSwitchActive = true;
-    vesselSwitchCharges = VESSEL_SWITCH_CHARGES;
-    appendLog(combatLog, '🩸 VESSEL SWITCH — Sukuna takes over!', 'log-crit');
-    appendLog(combatLog, `"This body... is mine now." — Active for ${VESSEL_SWITCH_CHARGES} enemies.`, 'log-story');
-    // Flash red
-    const flash = document.createElement('div');
-    flash.style.cssText = `position:fixed;inset:0;z-index:9997;pointer-events:none;
-      background:rgba(180,0,0,0.4);animation:digFlash 0.6s ease-out forwards;`;
-    document.body.appendChild(flash);
-    setTimeout(() => flash.remove(), 700);
-    renderVesselTechniqueActions();
-    if (combatContext === 'raid') updateRaidBattleUI(); else updateBattleUI();
-    // Enemy takes a turn, then re-enable the new vessel buttons
-    setTimeout(() => {
-      if (combatContext === 'raid') enemyTurnRaid(); else enemyTurn();
-    }, 500);
-    return;
-  }
-
-  // ── DOMAIN EXPANSION: MALEVOLENT SHRINE — continuous slashes for 4 turns ──
-  if (tech.effect === 'domain_slash') {
-    playAttackVFX('domain_expansion', false);
-    appendLog(combatLog, '🏯 DOMAIN EXPANSION: MALEVOLENT SHRINE!', 'log-crit');
-    appendLog(combatLog, '"Shrine of Carnage — everything within range will be slashed."', 'log-story');
-    // Apply domain slash status to enemy — deals damage each turn for 4 turns
-    const slashDmg = Math.floor(p.atk * tech.slashMult * mult);
-    combatStatusEnemy.push({
-      name: 'Malevolent Shrine',
-      icon: '🏯',
-      turns: tech.slashTurns,
-      dot: slashDmg, // damage per turn applied to enemy
-      isEnemyDot: true,
-    });
-    // Immediate hit too
-    const immediateDmg = Math.max(1, slashDmg - combatEnemy.def);
-    combatEnemyHP -= immediateDmg;
-    appendLog(combatLog, `💥 Initial slash: ${immediateDmg} dmg! Continuous slashes for ${tech.slashTurns} turns!`, 'log-crit');
-    updateBattleUI();
-    if (combatEnemyHP <= 0) { endBattle(true); return; }
-    afterCb();
-    return;
-  }
-
-  // ── GOJO DOMAIN: INFINITE VOID — immobilize + spawn new enemy ──
-  if (tech.id === 'domain_infinite_void') {
-    playAttackVFX('domain_infinite_void', false);
-    appendLog(combatLog, '🌌 DOMAIN EXPANSION: INFINITE VOID!', 'log-crit');
-    appendLog(combatLog, '"Trapped in infinite information. You cannot move."', 'log-story');
-    // Immobilize enemy for 4 turns
-    combatStatusEnemy.push({ name: 'Immobilized', icon: '🌌', turns: 4, skipTurn: true });
-    // Spawn a new enemy that attacks for 4 turns
-    combatStatusPlayer.push({
-      name: 'Void Spawn',
-      icon: '👁️',
-      turns: 4,
-      dot: Math.floor(p.atk * 0.5), // void spawn deals damage each turn
-      isVoidSpawn: true,
-    });
-    const dmg = Math.max(1, Math.floor(p.atk * tech.multiplier * mult) - combatEnemy.def);
-    combatEnemyHP -= dmg;
-    appendLog(combatLog, `💥 ${dmg} dmg! Enemy immobilized for 4 turns! A Void Spawn appears!`, 'log-crit');
-    updateBattleUI();
-    if (combatEnemyHP <= 0) { endBattle(true); return; }
-    afterCb();
-    return;
+  // Track Celestial technique usage for upgrade tracking
+  if (typeof useCelestialTech === 'function' && (tech.id === 'chrono_strike' || tech.id === 'void_nova')) {
+    useCelestialTech(tech.id);
   }
 
   if (tech.effect === 'damage') {
@@ -1181,33 +993,18 @@ function applyTechniqueEffect(tech, mult, afterCb) {
     appendLog(combatLog, `${tech.icon} ${tech.name}: ${tech.hits}x hits = ${total} total!`, 'log-crit');
   } else if (tech.effect === 'shield') {
     playAttackVFX(tech.id, false);
-    combatStatusPlayer.push({ name: 'Infinity', icon: '♾️', turns: tech.shieldTurns || 2, shield: true });
-    appendLog(combatLog, `♾️ Infinity activated! Immune for ${tech.shieldTurns} turns!`, 'log-heal');
+    combatStatusPlayer.push({ name: 'Astral Guard', icon: '✨', turns: tech.shieldTurns || 2, shield: true });
+    appendLog(combatLog, `✨ Astral Guard activated! Immune for ${tech.shieldTurns} turns!`, 'log-heal');
   }
-  updateBattleUI();
-  if (combatEnemyHP <= 0) { endBattle(true); return; }
+  if (combatContext === 'raid') updateRaidBattleUI(); else updateBattleUI();
+  if (combatEnemyHP <= 0) { if (combatContext === 'raid') endRaidBattle(true); else endBattle(true); return; }
   afterCb();
 }
 
 function useTechnique(techId) {
   const tech = TECHNIQUES.find(t => t.id === techId);
-  if (!tech) {
-    if (vesselSwitchActive) setBattleActionsEnabled(true, 'story');
-    return;
-  }
+  if (!tech) return;
   setBattleActionsEnabled(false, 'story');
-  // Vessel switch has a minigame — fail = skip your turn, can try again next turn
-  if (tech.effect === 'vessel' || tech._vesselSwitch) {
-    techniqueMinigame(tech, (mult) => {
-      if (mult < 1.0) {
-        appendLog(combatLog, '🩸 Vessel Switch failed — Sukuna resists! Turn skipped.', 'log-enemy');
-        setTimeout(enemyTurn, 500);
-        return;
-      }
-      applyTechniqueEffect(tech, mult, () => setTimeout(enemyTurn, 500));
-    });
-    return;
-  }
   techniqueMinigame(tech, (mult) => {
     applyTechniqueEffect(tech, mult, () => setTimeout(enemyTurn, 500));
   });
@@ -1215,6 +1012,9 @@ function useTechnique(techId) {
 
 function basicAttack() {
   if (!combatActive) return;
+  const now = Date.now();
+  if (now - _lastBasicAttackTime < 300) return;
+  _lastBasicAttackTime = now;
   setBattleActionsEnabled(false, 'story');
   basicAttackMinigame((mult) => {
     const p = G.player;
@@ -1276,35 +1076,11 @@ function enemyTurn() {
     return { ...s, turns: s.turns - 1 };
   }).filter(s => s.turns > 0);
 
-  // Tick enemy status effects (domain slash deals damage to enemy each turn)
-  // Also check if enemy is immobilized/stunned
+  // Tick enemy status effects (check if enemy is immobilized/stunned)
   let enemySkipTurn = false;
   combatStatusEnemy = combatStatusEnemy.map(s => {
-    if (s.dot && s.isEnemyDot) {
-      const dmg = Math.max(1, s.dot - combatEnemy.def);
-      combatEnemyHP -= dmg;
-      appendLog(combatLog, `🏯 Malevolent Shrine slashes for ${dmg} dmg!`, 'log-crit');
-    }
     if (s.skipTurn) enemySkipTurn = true;
-    if (s.isTimeFrozen) {
-      // Each turn the enemy is frozen, accumulate player ATK as stored damage
-      const tickDmg = Math.max(1, Math.floor(p.atk * 0.8) - Math.floor(combatEnemy.def * 0.3));
-      s.frozenDmg = (s.frozenDmg || 0) + tickDmg;
-      appendLog(combatLog, `⏰ Time frozen — storing ${tickDmg} dmg (total: ${s.frozenDmg})`, 'log-info');
-    }
     const newTurns = s.turns - 1;
-    if (newTurns <= 0 && s.isTimeFrozen && s.frozenDmg > 0) {
-      // Time resumes — release all stored damage in one burst
-      combatEnemyHP -= s.frozenDmg;
-      appendLog(combatLog, `⏰ TIME RESUMES! ${s.frozenDmg} stored damage RELEASED!`, 'log-crit');
-      // Big burst VFX
-      vfxFlash('rgba(255,255,255,0.9)', 150);
-      setTimeout(() => {
-        vfxFlash('rgba(100,150,255,0.4)', 600);
-        vfxBurst(getEnemyEl(), ['#e8eaf6','#9fa8da','#5c6bc0','#fff','#ffca28'], 35, 100, 700);
-        vfxShake(14);
-      }, 100);
-    }
     return { ...s, turns: newTurns };
   }).filter(s => s.turns > 0);
 
@@ -1314,10 +1090,10 @@ function enemyTurn() {
   if (skipTurn) { appendLog(combatLog, `${combatEnemy.name} is stunned/immobilized!`, 'log-info'); tickTechCooldowns(); setBattleActionsEnabled(true, 'story'); return; }
   if (enemySkipTurn) { appendLog(combatLog, `${combatEnemy.name} is immobilized — cannot act!`, 'log-info'); tickTechCooldowns(); setBattleActionsEnabled(true, 'story'); return; }
 
-  // Check Infinity shield
+  // Check Astral Guard shield
   const hasShield = combatStatusPlayer.some(s => s.shield);
   if (hasShield) {
-    appendLog(combatLog, `♾️ Infinity blocks the attack!`, 'log-heal');
+    appendLog(combatLog, `✨ Astral Guard blocks the attack!`, 'log-heal');
     tickTechCooldowns();
     setBattleActionsEnabled(true, 'story');
     return;
@@ -1361,36 +1137,13 @@ function enemyTurn() {
   updateBattleUI();
   if (combatPlayerHP <= 0) { endBattle(false); return; }
   tickTechCooldowns();
-  setBattleActionsEnabled(true, 'story');
+  setTimeout(() => { setBattleActionsEnabled(true, 'story'); }, 400);
 }
 
 function endBattle(won) {
   combatActive = false;
   G.player.hp = Math.max(1, Math.floor(combatPlayerHP));
   setBattleActionsEnabled(false, 'story');
-
-  // Save domain slash DOT to carry over to next story stage on win
-  if (won === true && combatContext === 'story') {
-    _storyDomainCarryover = combatStatusEnemy.filter(s => s.isEnemyDot && s.turns > 0);
-    if (_storyDomainCarryover.length > 0) {
-      appendLog(combatLog, `🏯 Domain Expansion carries over — ${_storyDomainCarryover[0].turns} turns remaining!`, 'log-crit');
-    }
-  } else {
-    _storyDomainCarryover = [];
-  }
-
-  // Decrement vessel switch charges on any fight end (win, lose, or flee)
-  if (vesselSwitchActive) {
-    vesselSwitchCharges--;
-    if (vesselSwitchCharges <= 0) {
-      vesselSwitchActive = false;
-      vesselSwitchCharges = 0;
-      appendLog(combatLog, '🩸 Sukuna recedes... Vessel Switch expired.', 'log-info');
-      // Swap buttons back to normal moveset immediately
-      if (combatContext === 'raid') renderRaidTechniqueActions();
-      else renderTechniqueActions();
-    }
-  }
 
   const resultEl = document.getElementById('battle-result');
   const resultText = document.getElementById('result-text');
@@ -1413,10 +1166,6 @@ function setBattleActionsEnabled(enabled, context) {
     const el = document.getElementById(id);
     if (el) el.disabled = !enabled;
   });
-  // If enabling story buttons while vessel switch is active, re-render vessel buttons first
-  if (enabled && vesselSwitchActive && (context === 'story' || context === 'raid')) {
-    renderVesselTechniqueActions();
-  }
   const techContainer = context === 'raid' ? '#raid-technique-actions' : '#technique-actions';
   document.querySelectorAll(`${techContainer} .btn-action`).forEach(btn => {
     if (!enabled) {

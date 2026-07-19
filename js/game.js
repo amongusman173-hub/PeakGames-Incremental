@@ -96,13 +96,13 @@ const G = {
 // ===== SAVE / LOAD =====
 function saveGame() {
   try {
-    localStorage.setItem('ascendant_save', JSON.stringify(G.player));
+    localStorage.setItem('ascendant_save_v2', JSON.stringify(G.player));
   } catch(e) {}
 }
 
 function loadGame() {
   try {
-    const raw = localStorage.getItem('ascendant_save');
+    const raw = localStorage.getItem('ascendant_save_v2');
     if (!raw) return; // fresh start, use defaults
     const saved = JSON.parse(raw);
     if (!saved || typeof saved !== 'object') return; // corrupted
@@ -205,11 +205,30 @@ function resetGame() {
     techniques: [],
     equipped: [null, null, null, null],
     lastSave: Date.now(),
+    sonarCharges: 3,
+    sonarRegenTick: 0,
+    regenBonus: 0,
+    _digCount: 0,
+    _harvestCount: 0,
+    _ranOutOfStamina: false,
+    _critCount: 0,
+    _fleeCount: 0,
+    _sonarCount: 0,
+    _quickJobCount: 0,
+    _trainCount: 0,
+    _potionsDrunk: 0,
+    ascensionHistory: [],
+    heritage: {},
+    heritageRerolls: {},
+    heritageSkipAnim: false,
+    achievements: [],
   };
   G.activeJob = null;
   G.jobTick = 0;
   G.activeTraining = null;
   G.trainingTick = 0;
+  G.activeStudy = null;
+  G.studyTick = 0;
 }
 
 // ===== GAME LOOP =====
@@ -245,29 +264,37 @@ function gameTick() {
     }
   }
 
-  // Dig charge regen
-  const digRegenRate = getDigRegenRate();
-  const maxDig = getMaxDigCharges();
-  if (p.digCharges < maxDig) {
-    p.digRegenTick = (p.digRegenTick || 0) + 1;
-    if (p.digRegenTick >= digRegenRate) {
+  // Dig charge regen — only check every 8 ticks (2s)
+  if (G.tickCount % 8 === 0) {
+    const digRegenRate = getDigRegenRate();
+    const maxDig = getMaxDigCharges();
+    if (p.digCharges < maxDig) {
+      p.digRegenTick = (p.digRegenTick || 0) + 8;
+      if (p.digRegenTick >= digRegenRate) {
+        p.digRegenTick = 0;
+        p.digCharges = Math.min(maxDig, p.digCharges + 1);
+      }
+    } else {
       p.digRegenTick = 0;
-      p.digCharges = Math.min(maxDig, p.digCharges + 1);
     }
-  } else {
-    p.digRegenTick = 0;
   }
 
-  // Training tick
+  // Training tick (cached action lookup)
   if (G.activeTraining) {
     G.trainingTick++;
-    const action = TRAINING_ACTIONS.find(a => a.id === G.activeTraining);
+    if (!G._cachedTrainingAction || G._cachedTrainingAction.id !== G.activeTraining) {
+      G._cachedTrainingAction = TRAINING_ACTIONS.find(a => a.id === G.activeTraining) || null;
+    }
+    const action = G._cachedTrainingAction;
     const needed = action ? getTrainingTicksNeeded(action) : 16;
     if (G.trainingTick >= needed) {
       G.trainingTick = 0;
       tickTraining(G.activeTraining);
     }
   }
+
+  // Dojo training tick
+  if (typeof dojoTickTraining === 'function') dojoTickTraining();
 
   // Library study tick (every 4 ticks)
   if (G.activeStudy) {
@@ -289,24 +316,26 @@ function gameTick() {
     tickGarden();
   }
 
-  // Sonar charge regen
-  const sonarLevel = (p.shopPurchases && p.shopPurchases['dig_reveal']) || 0;
-  if (sonarLevel > 0) {
-    const maxSonar = sonarLevel;
-    if ((p.sonarCharges || 0) < maxSonar) {
-      p.sonarRegenTick = (p.sonarRegenTick || 0) + 1;
-      if (p.sonarRegenTick >= getDigRegenRate() * 3) {
+  // Sonar charge regen — only check every 8 ticks (2s)
+  if (G.tickCount % 8 === 0) {
+    const sonarLevel = (p.shopPurchases && p.shopPurchases['dig_reveal']) || 0;
+    if (sonarLevel > 0) {
+      const maxSonar = sonarLevel;
+      if ((p.sonarCharges || 0) < maxSonar) {
+        p.sonarRegenTick = (p.sonarRegenTick || 0) + 8;
+        if (p.sonarRegenTick >= getDigRegenRate() * 3) {
+          p.sonarRegenTick = 0;
+          p.sonarCharges = Math.min(maxSonar, (p.sonarCharges || 0) + 1);
+          if (activeTab === 'dig') updateSonarButton();
+        }
+      } else {
         p.sonarRegenTick = 0;
-        p.sonarCharges = Math.min(maxSonar, (p.sonarCharges || 0) + 1);
-        if (activeTab === 'dig') updateSonarButton();
       }
-    } else {
-      p.sonarRegenTick = 0;
     }
   }
 
-  // Save every 10 seconds (40 ticks)
-  if (G.tickCount % 40 === 0) {
+  // Save every 15 seconds (60 ticks)
+  if (G.tickCount % 60 === 0) {
     saveGame();
     if (typeof checkAchievements === 'function') checkAchievements();
   }
@@ -320,24 +349,38 @@ function gameTick() {
     }
   }
 
-  // UI updates — header every tick, active tab every 2 ticks, banners every 4
-  updateHeader();
-  if (G.tickCount % 2 === 0) updateActiveTabUI();
-  if (G.tickCount % 4 === 0) {
-    updateJobBanner();
-    updateTrainingBanner();
+  // UI updates — skip when tab is not visible
+  if (!document.hidden) {
+    updateHeader();
+    if (G.tickCount % 2 === 0) updateActiveTabUI();
+    if (G.tickCount % 4 === 0) {
+      updateJobBanner();
+      updateTrainingBanner();
+      if (typeof updateDojoBanner === 'function') updateDojoBanner();
+    }
+  }
+
+  // FPS counter
+  if (G.tickCount % 40 === 0) {
+    const s = typeof getSettings === 'function' ? getSettings() : {};
+    let fpsEl = document.getElementById('fps-counter');
+    if (s.showFPS) {
+      if (!fpsEl) {
+        fpsEl = document.createElement('div');
+        fpsEl.id = 'fps-counter';
+        fpsEl.style.cssText = 'position:fixed;bottom:8px;right:8px;background:rgba(0,0,0,0.7);color:#4f4;font-size:10px;padding:3px 7px;border-radius:4px;z-index:9999;font-family:monospace;pointer-events:none';
+        document.body.appendChild(fpsEl);
+      }
+      fpsEl.textContent = `${Math.round(1000 / G.tickRate)} tick/s`;
+    } else if (fpsEl) {
+      fpsEl.remove();
+    }
   }
 }
 
 // ===== INIT =====
 function initGame() {
   loadGame();
-  // Re-register Gojo techniques into TECHNIQUES array if player has them
-  if (typeof GOJO_TECHNIQUES !== 'undefined') {
-    GOJO_TECHNIQUES.forEach(t => {
-      if (!TECHNIQUES.find(x => x.id === t.id)) TECHNIQUES.push(t);
-    });
-  }
   // Re-register all library spells into TECHNIQUES (they're added at runtime and lost on refresh)
   if (typeof MAGIC_SPELLS !== 'undefined') {
     MAGIC_SPELLS.forEach(s => {
@@ -365,6 +408,14 @@ function initGame() {
   renderHeritage();
   toast('Welcome back, Hero!', 'info');
   playBgMusic();
+  if (typeof startTutorial === 'function') startTutorial();
+
+  // Prevent double-tap zoom on iOS
+  document.addEventListener('touchend', function(e) {
+    const now = Date.now();
+    if (now - (document._lastTouch || 0) < 300) e.preventDefault();
+    document._lastTouch = now;
+  }, { passive: false });
 }
 
 window.addEventListener('DOMContentLoaded', initGame);
